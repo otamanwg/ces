@@ -1,0 +1,14 @@
+---
+description: Solo dev context for City Economic Simulator (CES)
+alwaysApply: true
+---
+
+# City Economic Simulator — Solo Project Context
+
+- Owner works **alone**, no team. Keep changes small, reviewable, and practical.
+- **Ukrainian** for user-facing docs and game text; code/comments may mix EN/UK as existing files do.
+- **Priority:** 5-minute core loop (register → job → work → sleep → exam → better job) before new systems.
+- **Frozen until MVP plays:** sports, shadow economy, cartels, unions, insurance, advanced routes.
+- Stack: Godot 4.2 C# client, FastAPI + SQLAlchemy, PostgreSQL.
+- Follow `SOLO_ROADMAP.md` for sprint order. Do not scope-creep.
+- Minimize diff scope; match existing conventions in `backend/app/services/`.

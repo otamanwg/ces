@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+.python-packages/
+
+# Local database/runtime
+.installers/
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+.env
+
+# Godot
+client/.godot/
+client/.import/
+client/export.cfg
+client/export_presets.cfg
+client/.mono/
+client/bin/
+client/obj/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
