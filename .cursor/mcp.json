@@ -1,8 +1,10 @@
 ﻿{
   "mcpServers": {
     "godot": {
-      "command": "C:\\ces\\.tools\\node\\npx.cmd",
-      "args": ["-y", "godot-mcp-server"],
+      "command": "C:\\ces\\.venv\\Scripts\\python.exe",
+      "args": [
+        "C:\\ces\\scripts\\godot_mcp_stdio.py"
+      ],
       "env": {
         "GODOT_PROJECT_PATH": "C:\\ces\\client"
       }
