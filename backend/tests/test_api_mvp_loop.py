@@ -3,12 +3,11 @@ from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
 
 from backend.app.database import get_db
-from backend.app.models import Base, Job, Player, TransactionModelLog
+from backend.app.models import Player, TransactionModelLog
 from backend.app.seed import seed_initial_data
+from backend.tests.db import make_test_session
 from backend.main import app
 
 TEST_DATABASE_URL = os.getenv("CITY_TEST_DATABASE_URL")
@@ -20,20 +19,9 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def make_session():
-    engine = create_engine(TEST_DATABASE_URL)
-    with engine.begin() as connection:
-        connection.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
-        connection.execute(text("CREATE SCHEMA public"))
-        connection.execute(text("GRANT ALL ON SCHEMA public TO city"))
-    Base.metadata.create_all(bind=engine)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    return SessionLocal()
-
-
 @pytest.fixture
 def client():
-    db = make_session()
+    db = make_test_session(TEST_DATABASE_URL)
     seed_initial_data(db)
 
     def override_get_db():

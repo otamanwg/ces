@@ -2,12 +2,11 @@ import os
 from decimal import Decimal
 
 import pytest
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
 
-from backend.app.models import Base, City, Hostel, Job, Player, TransactionModelLog
+from backend.app.models import City, Hostel, Job, Player, TransactionModelLog
 from backend.app.seed import seed_initial_data
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work
+from backend.tests.db import make_test_session
 
 
 TEST_DATABASE_URL = os.getenv("CITY_TEST_DATABASE_URL")
@@ -18,19 +17,8 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def make_session():
-    engine = create_engine(TEST_DATABASE_URL)
-    with engine.begin() as connection:
-        connection.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
-        connection.execute(text("CREATE SCHEMA public"))
-        connection.execute(text("GRANT ALL ON SCHEMA public TO city"))
-    Base.metadata.create_all(bind=engine)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    return SessionLocal()
-
-
 def test_seed_creates_core_city_data():
-    db = make_session()
+    db = make_test_session(TEST_DATABASE_URL)
     try:
         seed_initial_data(db)
 
@@ -42,7 +30,7 @@ def test_seed_creates_core_city_data():
 
 
 def test_work_and_sleep_loop_updates_player_and_logs_transactions():
-    db = make_session()
+    db = make_test_session(TEST_DATABASE_URL)
     try:
         seed_initial_data(db)
 
@@ -79,7 +67,7 @@ def test_work_and_sleep_loop_updates_player_and_logs_transactions():
 
 
 def test_game_day_tick_keeps_30_day_balance_stable():
-    db = make_session()
+    db = make_test_session(TEST_DATABASE_URL)
     try:
         seed_initial_data(db)
 
