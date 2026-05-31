@@ -48,6 +48,7 @@
 3. **.NET SDK**, сумісний із версією Godot .NET.
 4. **PostgreSQL 16+** або **Docker Desktop** для запуску Postgres контейнером.
 5. **Git** для контролю версій.
+6. **PowerShell 7** для локальних dev-скриптів.
 
 Корисно, але не обов'язково:
 
@@ -114,10 +115,23 @@ python scripts\smoke_mvp.py
 .\scripts\check.ps1
 ```
 
+Якщо системний terminal відкрив старий PowerShell, можна явно запускати через portable PowerShell 7:
+
+```powershell
+.\scripts\pwsh7.ps1 -NoProfile -File .\scripts\check.ps1
+```
+
 Playtest із чистої dev-бази та повною перевіркою перед запуском Godot:
 
 ```powershell
 .\scripts\play.ps1 -ResetDb -RunCheck
+```
+
+Локальний Godot MCP bridge для роботи зі сценами через відкритий Godot editor:
+
+```powershell
+.\scripts\start_godot_mcp_bridge.ps1
+.\scripts\invoke_godot_mcp.ps1 -Tool get_errors -ArgsJson '{"include_warnings":true}'
 ```
 
 Повторні POST-запити для `work`, `sleep` та `exam` можна захистити header-ом:
