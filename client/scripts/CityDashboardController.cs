@@ -14,6 +14,7 @@ public partial class CityDashboardController : Control
 	[Export] public Label StatusLabel;
 	[Export] public Label EffectsLabel;
 	[Export] public Label GoalLabel;
+	[Export] public Label NextActionLabel;
 	[Export] public ProgressBar GoalProgressBar;
 	[Export] public TextureProgressBar EnergyBar;
 	[Export] public TextureProgressBar MoodBar;
@@ -25,7 +26,15 @@ public partial class CityDashboardController : Control
 	private GameSession _session;
 	private NetworkManager _networkManager;
 	private ExamPanelController _examPanel;
+	private Button _applyJobButton;
+	private Button _workButton;
+	private Button _sleepButton;
+	private Button _examButton;
+	private Button _refreshButton;
 	private bool _applyFirstVacancy;
+	private bool _pendingApply;
+	private bool _bootstrapPending = true;
+	private bool _hasJob;
 	private string _playerEducation = "High School";
 	private string _pendingWorkKey = "";
 	private string _pendingSleepKey = "";
@@ -56,7 +65,18 @@ public partial class CityDashboardController : Control
 			_examPanel.Closed += () => SetStatus("Іспит закрито.");
 		}
 
+		if (EnergyBar != null)
+		{
+			EnergyBar.MaxValue = 100;
+		}
+
+		if (MoodBar != null)
+		{
+			MoodBar.MaxValue = 100;
+		}
+
 		SetStatus("Підключення до сервера...");
+		UpdateActionButtons();
 		_apiClient?.Get("/api/city/status");
 	}
 
@@ -70,28 +90,33 @@ public partial class CityDashboardController : Control
 		StatusLabel ??= GetNodeOrNull<Label>("%StatusLabel");
 		EffectsLabel ??= GetNodeOrNull<Label>("%EffectsLabel");
 		GoalLabel ??= GetNodeOrNull<Label>("%GoalLabel");
+		NextActionLabel ??= GetNodeOrNull<Label>("%NextActionLabel");
 		GoalProgressBar ??= GetNodeOrNull<ProgressBar>("%GoalProgressBar");
 		EnergyBar ??= GetNodeOrNull<TextureProgressBar>("%EnergyBar");
 		MoodBar ??= GetNodeOrNull<TextureProgressBar>("%MoodBar");
 		CityNameLabel ??= GetNodeOrNull<Label>("%CityNameLabel");
 		TreasuryLabel ??= GetNodeOrNull<Label>("%TreasuryLabel");
 		InflationLabel ??= GetNodeOrNull<Label>("%InflationLabel");
+		_applyJobButton ??= GetNodeOrNull<Button>("MarginContainer/VBoxContainer/ApplyJobButton");
+		_workButton ??= GetNodeOrNull<Button>("MarginContainer/VBoxContainer/WorkButton");
+		_sleepButton ??= GetNodeOrNull<Button>("MarginContainer/VBoxContainer/SleepButton");
+		_examButton ??= GetNodeOrNull<Button>("MarginContainer/VBoxContainer/ExamButton");
+		_refreshButton ??= GetNodeOrNull<Button>("MarginContainer/VBoxContainer/RefreshButton");
 	}
 
 	private void OnApiRequestFinished(string endpoint, bool success, string jsonBody)
 	{
-		ClearPendingAction(endpoint);
-
 		if (!success)
 		{
-			SetStatus("Помилка API. Запусти: .\\scripts\\dev.ps1");
-			_applyFirstVacancy = false;
+			HandleTransportError(endpoint, jsonBody);
 			return;
 		}
 
 		var root = JsonNode.Parse(jsonBody);
 		if (root == null)
 		{
+			SetStatus("Порожня відповідь сервера.");
+			ClearPendingAction(endpoint);
 			return;
 		}
 
@@ -119,8 +144,24 @@ public partial class CityDashboardController : Control
 
 		if (!apiSuccess)
 		{
-			SetStatus(message);
+			if (IsSessionError(message))
+			{
+				HandleInvalidSession(message);
+			}
+			else
+			{
+				SetStatus(message);
+			}
+
+			ClearPendingAction(endpoint);
 			return;
+		}
+
+		ClearPendingAction(endpoint);
+
+		if (endpoint == "/api/player/register" || endpoint.StartsWith("/api/player/"))
+		{
+			_bootstrapPending = false;
 		}
 
 		SetStatus(message);
@@ -136,8 +177,14 @@ public partial class CityDashboardController : Control
 			UpdateCityUI(data);
 		}
 
+		if (endpoint.StartsWith("/api/jobs/apply"))
+		{
+			_pendingApply = false;
+		}
+
 		if (endpoint == "/api/education/exam/submit")
 		{
+			_examPanel?.SetSubmitEnabled(true);
 			_examPanel?.HidePanel();
 			if (data?["passed"]?.GetValue<bool>() == true)
 			{
@@ -145,7 +192,54 @@ public partial class CityDashboardController : Control
 			}
 		}
 
+		UpdateNextActionHint(root["effects"]);
 		UpdateGoalUI(root["effects"]);
+		UpdateActionButtons();
+	}
+
+	private void HandleTransportError(string endpoint, string jsonBody)
+	{
+		_applyFirstVacancy = false;
+		_pendingApply = false;
+		ClearPendingAction(endpoint);
+		_examPanel?.SetSubmitEnabled(true);
+
+		if (!string.IsNullOrWhiteSpace(jsonBody))
+		{
+			try
+			{
+				var root = JsonNode.Parse(jsonBody);
+				string message = root?["message"]?.ToString() ?? "";
+				if (!string.IsNullOrEmpty(message))
+				{
+					SetStatus(message);
+					UpdateActionButtons();
+					return;
+				}
+			}
+			catch (Exception e)
+			{
+				GD.PrintErr($"CityDashboardController: error body parse failed: {e.Message}");
+			}
+		}
+
+		SetStatus("Backend недоступний. Запусти: .\\scripts\\play.ps1");
+		UpdateActionButtons();
+	}
+
+	private static bool IsSessionError(string message)
+	{
+		return message.Contains("Сесія гравця недійсна", StringComparison.Ordinal);
+	}
+
+	private void HandleInvalidSession(string message)
+	{
+		_session?.ClearSession();
+		_bootstrapPending = true;
+		_hasJob = false;
+		SetStatus($"{message} Створюємо нового гравця...");
+		UpdateActionButtons();
+		RegisterNewPlayer();
 	}
 
 	private void HandleCityStatus(JsonNode root)
@@ -153,6 +247,7 @@ public partial class CityDashboardController : Control
 		if (root["success"]?.GetValue<bool>() != true)
 		{
 			SetStatus("Місто недоступне.");
+			UpdateActionButtons();
 			return;
 		}
 
@@ -189,14 +284,18 @@ public partial class CityDashboardController : Control
 
 		if (root["success"]?.GetValue<bool>() != true)
 		{
+			_pendingApply = false;
 			SetStatus("Не вдалось отримати вакансії.");
+			UpdateActionButtons();
 			return;
 		}
 
 		var vacancies = root["data"]?["vacancies"]?.AsArray();
 		if (vacancies == null || vacancies.Count == 0)
 		{
+			_pendingApply = false;
 			SetStatus("Немає вільних вакансій.");
+			UpdateActionButtons();
 			return;
 		}
 
@@ -214,6 +313,8 @@ public partial class CityDashboardController : Control
 		string jobId = picked?["id"]?.ToString() ?? "";
 		if (string.IsNullOrEmpty(jobId) || _session == null)
 		{
+			_pendingApply = false;
+			UpdateActionButtons();
 			return;
 		}
 
@@ -249,6 +350,8 @@ public partial class CityDashboardController : Control
 		var answers = JsonSerializer.Deserialize<Dictionary<string, int>>(answersJson);
 		string payload = ApiClient.BuildJson(new { player_id = _session.PlayerId, answers });
 		_pendingExamKey = BuildActionKey("exam");
+		_examPanel?.SetSubmitEnabled(false);
+		UpdateActionButtons();
 		_apiClient?.PostAuthorizedIdempotent("/api/education/exam/submit", _session.AuthToken, _pendingExamKey, payload);
 	}
 
@@ -289,7 +392,9 @@ public partial class CityDashboardController : Control
 
 		if (CurrentJobLabel != null)
 		{
-			CurrentJobLabel.Text = data["job"]?.ToString() ?? "Безробітний";
+			string job = data["job"]?.ToString() ?? "Безробітний";
+			CurrentJobLabel.Text = job;
+			_hasJob = job != "Безробітний";
 		}
 
 		if (CurrentHostelLabel != null)
@@ -314,6 +419,8 @@ public partial class CityDashboardController : Control
 		{
 			_session?.SetPlayer(playerId, username, authToken);
 		}
+
+		UpdateActionButtons();
 	}
 
 	private void UpdateCityUI(JsonNode data)
@@ -334,6 +441,31 @@ public partial class CityDashboardController : Control
 			double inflation = data["inflation_rate"]?.GetValue<double>() ?? 0.0;
 			InflationLabel.Text = $"{inflation:F1}%";
 		}
+	}
+
+	private void UpdateNextActionHint(JsonNode effects)
+	{
+		if (NextActionLabel == null || effects == null)
+		{
+			return;
+		}
+
+		foreach (var effect in effects.AsArray())
+		{
+			if (effect?["key"]?.ToString() != "next_action")
+			{
+				continue;
+			}
+
+			string value = effect["value"]?.ToString() ?? "—";
+			string delta = effect["delta"]?.ToString() ?? "";
+			NextActionLabel.Text = string.IsNullOrEmpty(delta)
+				? $"→ {value}"
+				: $"→ {value} ({delta})";
+			return;
+		}
+
+		NextActionLabel.Text = "Наступний крок: —";
 	}
 
 	private void UpdateGoalUI(JsonNode effects)
@@ -384,6 +516,12 @@ public partial class CityDashboardController : Control
 		var parts = new List<string>();
 		foreach (var effect in effects.AsArray())
 		{
+			string key = effect?["key"]?.ToString() ?? "";
+			if (key == "next_action" || key.StartsWith("stability_"))
+			{
+				continue;
+			}
+
 			string label = effect?["label"]?.ToString();
 			string value = effect?["value"]?.ToString();
 			if (!string.IsNullOrEmpty(label))
@@ -393,6 +531,31 @@ public partial class CityDashboardController : Control
 		}
 
 		EffectsLabel.Text = parts.Count > 0 ? string.Join(" | ", parts) : "";
+	}
+
+	private void UpdateActionButtons()
+	{
+		bool hasPlayer = _session != null && _session.HasAuthenticatedPlayer;
+		bool actionBusy = _bootstrapPending
+			|| _pendingApply
+			|| !string.IsNullOrEmpty(_pendingWorkKey)
+			|| !string.IsNullOrEmpty(_pendingSleepKey)
+			|| !string.IsNullOrEmpty(_pendingExamKey);
+		bool canTakeExam = hasPlayer && _playerEducation == "High School";
+
+		SetButtonDisabled(_applyJobButton, !hasPlayer || actionBusy);
+		SetButtonDisabled(_workButton, !hasPlayer || !_hasJob || actionBusy);
+		SetButtonDisabled(_sleepButton, !hasPlayer || actionBusy);
+		SetButtonDisabled(_examButton, !canTakeExam || actionBusy);
+		SetButtonDisabled(_refreshButton, _bootstrapPending);
+	}
+
+	private static void SetButtonDisabled(Button button, bool disabled)
+	{
+		if (button != null)
+		{
+			button.Disabled = disabled;
+		}
 	}
 
 	private void SetStatus(string message)
@@ -422,6 +585,12 @@ public partial class CityDashboardController : Control
 		{
 			_pendingExamKey = "";
 		}
+		else if (endpoint.StartsWith("/api/jobs/apply"))
+		{
+			_pendingApply = false;
+		}
+
+		UpdateActionButtons();
 	}
 
 	public void OnApplyJobButtonPressed()
@@ -432,7 +601,16 @@ public partial class CityDashboardController : Control
 			return;
 		}
 
+		if (_pendingApply)
+		{
+			SetStatus("Влаштування вже обробляється...");
+			return;
+		}
+
+		_pendingApply = true;
 		_applyFirstVacancy = true;
+		UpdateActionButtons();
+		SetStatus("Шукаємо вакансію...");
 		_apiClient?.Get("/api/jobs/vacancies");
 	}
 
@@ -444,6 +622,12 @@ public partial class CityDashboardController : Control
 			return;
 		}
 
+		if (!_hasJob)
+		{
+			SetStatus("Спочатку влаштуйтесь на роботу.");
+			return;
+		}
+
 		if (!string.IsNullOrEmpty(_pendingWorkKey))
 		{
 			SetStatus("Зміна вже обробляється...");
@@ -451,6 +635,8 @@ public partial class CityDashboardController : Control
 		}
 
 		_pendingWorkKey = BuildActionKey("work");
+		UpdateActionButtons();
+		SetStatus("Відпрацьовуємо зміну...");
 		_apiClient?.PostAuthorizedIdempotent($"/api/jobs/work/{_session.PlayerId}", _session.AuthToken, _pendingWorkKey);
 	}
 
@@ -469,6 +655,8 @@ public partial class CityDashboardController : Control
 		}
 
 		_pendingSleepKey = BuildActionKey("sleep");
+		UpdateActionButtons();
+		SetStatus("Спимо та сплачуємо оренду...");
 		_apiClient?.PostAuthorizedIdempotent($"/api/hostels/sleep/{_session.PlayerId}", _session.AuthToken, _pendingSleepKey);
 	}
 
@@ -486,11 +674,13 @@ public partial class CityDashboardController : Control
 			return;
 		}
 
+		SetStatus("Завантажуємо іспит...");
 		_apiClient?.Get("/api/education/exam/info");
 	}
 
 	public void OnRefreshButtonPressed()
 	{
+		SetStatus("Оновлюємо статус...");
 		_apiClient?.Get("/api/city/status");
 		if (_session != null && _session.HasAuthenticatedPlayer)
 		{

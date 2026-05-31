@@ -90,7 +90,7 @@ def process_shift_work(db: Session, player_id: str) -> dict:
     }
 
 def process_rent_payment(db: Session, player_id: str) -> dict:
-    """Списання добової оренди за житло (хостел) та відновлення енергії"""
+    """Нічний сон гравця: одноразова оплата оренди та відновлення енергії/настрою."""
     player_uuid = to_uuid(player_id)
     player = db.query(Player).filter(Player.id == player_uuid).first()
     if not player:
@@ -174,16 +174,15 @@ def update_inflation_rate(db: Session, city_id: str) -> float:
 
 
 def game_day_tick(db: Session, city_id: str) -> dict:
-    """Apply one simplified city day: living costs, fatigue decay, and inflation refresh."""
+    """Dev-тick міста: пасивна втома, настрій та інфляція. Оренда — лише через sleep."""
     city_uuid = to_uuid(city_id)
     city = db.query(City).filter(City.id == city_uuid).first()
     if not city:
         return {"success": False, "message": "Місто не знайдено"}
 
     active_before = _active_money_supply(db, city_uuid)
-    rent_collected = money("0.00")
-    unpaid_rent = 0
     players_updated = 0
+    homeless_players = 0
 
     players = db.query(Player).filter(Player.city_id == city_uuid).all()
     for player in players:
@@ -193,42 +192,8 @@ def game_day_tick(db: Session, city_id: str) -> dict:
 
         hostel = db.query(Hostel).filter(Hostel.tenant_player_id == player.id).first()
         if not hostel:
+            homeless_players += 1
             player.mood = max(10, player.mood - 8)
-            continue
-
-        rent_price = money(hostel.rent_price_per_day)
-        if money(player.balance) >= rent_price:
-            business = db.query(Business).filter(Business.id == hostel.business_id).first()
-            player.balance = money(player.balance) - rent_price
-            rent_collected += rent_price
-
-            if business and business.owner_player_id is None:
-                city.treasury_balance = money(city.treasury_balance) + rent_price
-                receiver_id = city.id
-                receiver_type = "treasury"
-            elif business:
-                business.cash_balance = money(business.cash_balance) + rent_price
-                receiver_id = business.id
-                receiver_type = "business"
-            else:
-                city.treasury_balance = money(city.treasury_balance) + rent_price
-                receiver_id = city.id
-                receiver_type = "treasury"
-
-            log_transaction(
-                db,
-                city.id,
-                sender_id=player.id,
-                sender_type="player",
-                receiver_id=receiver_id,
-                receiver_type=receiver_type,
-                amount=float(rent_price),
-                tax=0.0,
-                purpose="daily_rent",
-            )
-        else:
-            unpaid_rent += 1
-            player.mood = max(10, player.mood - 12)
 
     active_after = _active_money_supply(db, city_uuid)
     player_count = max(1, len(players))
@@ -243,7 +208,7 @@ def game_day_tick(db: Session, city_id: str) -> dict:
 
     return {
         "success": True,
-        "message": "Ігровий день завершено.",
+        "message": "Настав новий день. Оренду сплачуйте кнопкою «Спати».",
         "city": {
             "id": str(city.id),
             "inflation_rate": float(city.inflation_rate),
@@ -251,8 +216,8 @@ def game_day_tick(db: Session, city_id: str) -> dict:
         },
         "stats": {
             "players_updated": players_updated,
-            "rent_collected": float(rent_collected),
-            "unpaid_rent": unpaid_rent,
+            "rent_collected": 0.0,
+            "homeless_players": homeless_players,
             "active_money_before": float(active_before),
             "active_money_after": float(active_after),
         },

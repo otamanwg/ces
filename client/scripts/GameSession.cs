@@ -43,6 +43,18 @@ public partial class GameSession : Node
     public bool HasPlayer => !string.IsNullOrEmpty(PlayerId);
     public bool HasAuthenticatedPlayer => !string.IsNullOrEmpty(PlayerId) && !string.IsNullOrEmpty(AuthToken);
 
+    public void ClearSession()
+    {
+        PlayerId = "";
+        Username = "";
+        AuthToken = "";
+        LastJobId = "";
+        if (File.Exists(SessionPath))
+        {
+            File.Delete(SessionPath);
+        }
+    }
+
     private void SaveSession()
     {
         var data = new SessionData

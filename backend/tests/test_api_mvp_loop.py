@@ -54,6 +54,9 @@ def test_full_mvp_api_loop(client):
     player_token = register_body["data"]["auth_token"]
     auth_headers = {"X-Player-Token": player_token}
     assert register_body["data"]["balance"] == 500.0
+    register_effects = register_body["effects"]
+    next_action = next(e for e in register_effects if e["key"] == "next_action")
+    assert next_action["value"] == "Влаштуйтесь на роботу"
 
     unauth_player = test_client.get(f"/api/player/{player_id}")
     assert unauth_player.status_code == 200
@@ -99,12 +102,17 @@ def test_full_mvp_api_loop(client):
     assert repeat_sleep.json() == sleep_body
     assert db.query(TransactionModelLog).count() == transactions_after_sleep
 
+    balance_after_sleep = sleep_body["data"]["balance"]
+
     tick_res = test_client.post("/api/city/tick-day")
     assert tick_res.status_code == 200
     tick_body = tick_res.json()
     assert tick_body["success"] is True
     assert tick_body["data"]["stats"]["players_updated"] == 1
-    assert tick_body["data"]["stats"]["rent_collected"] == 15.0
+    assert tick_body["data"]["stats"]["rent_collected"] == 0.0
+
+    player_after_tick = test_client.get(f"/api/player/{player_id}", headers=auth_headers).json()["data"]
+    assert player_after_tick["balance"] == balance_after_sleep
 
     exam_info = test_client.get("/api/education/exam/info")
     assert exam_info.status_code == 200

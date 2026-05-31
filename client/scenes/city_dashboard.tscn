@@ -54,6 +54,15 @@ autowrap_mode = 3
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="NextActionPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="NextActionLabel" type="Label" parent="MarginContainer/VBoxContainer/NextActionPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Наступний крок: —"
+autowrap_mode = 3
+
 [node name="CityPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 
@@ -108,9 +117,19 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Немає"
 
+[node name="EnergyLabel" type="Label" parent="MarginContainer/VBoxContainer/PlayerPanel/PlayerBox"]
+layout_mode = 2
+text = "Енергія"
+
 [node name="EnergyBar" type="TextureProgressBar" parent="MarginContainer/VBoxContainer/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
+max_value = 100.0
+value = 100.0
+
+[node name="MoodLabel" type="Label" parent="MarginContainer/VBoxContainer/PlayerPanel/PlayerBox"]
+layout_mode = 2
+text = "Настрій"
 
 [node name="MoodBar" type="TextureProgressBar" parent="MarginContainer/VBoxContainer/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true

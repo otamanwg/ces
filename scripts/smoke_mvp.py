@@ -50,15 +50,19 @@ def run_loop(client: httpx.Client) -> int:
         bal = sleep["data"]["balance"]
         print(f"OK cycle {cycle + 1}: balance={bal:.2f} energy={sleep['data']['energy']}")
 
+    balance_before_tick = bal
     tick = client.post("/api/city/tick-day").json()
     assert tick["success"], tick
+    assert tick["data"]["stats"]["rent_collected"] == 0.0, tick
     print(
         "OK day tick: "
         f"players={tick['data']['stats']['players_updated']} "
-        f"rent={tick['data']['stats']['rent_collected']:.2f}"
+        f"decay_only (rent via sleep)"
     )
 
     player = client.get(f"/api/player/{player_id}", headers=auth_headers).json()["data"]
+    assert player["balance"] == balance_before_tick, "tick-day must not charge rent after sleep"
+
     if player["balance"] < 100:
         print(f"FAIL: balance {player['balance']} < 100 for exam")
         return 1

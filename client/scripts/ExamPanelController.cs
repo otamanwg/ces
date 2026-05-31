@@ -116,6 +116,15 @@ public partial class ExamPanelController : Control
     {
         Visible = false;
         MouseFilter = MouseFilterEnum.Ignore;
+        SetSubmitEnabled(true);
+    }
+
+    public void SetSubmitEnabled(bool enabled)
+    {
+        if (SubmitButton != null)
+        {
+            SubmitButton.Disabled = !enabled;
+        }
     }
 
     private void OnSubmitPressed()
