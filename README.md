@@ -108,6 +108,12 @@ Smoke-перевірка повного HTTP MVP loop:
 python scripts\smoke_mvp.py
 ```
 
+Локальна перевірка перед комітом:
+
+```powershell
+.\scripts\check.ps1
+```
+
 Повторні POST-запити для `work`, `sleep` та `exam` можна захистити header-ом:
 
 ```http

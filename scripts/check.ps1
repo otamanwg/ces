@@ -1,0 +1,45 @@
+param(
+    [switch]$SkipClient
+)
+
+$ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+chcp 65001 | Out-Null
+
+$root = Split-Path -Parent $PSScriptRoot
+Set-Location $root
+
+$env:CITY_DATABASE_URL = if ($env:CITY_DATABASE_URL) {
+    $env:CITY_DATABASE_URL
+} else {
+    "postgresql+psycopg2://city:city_dev_password@127.0.0.1:5432/city_game"
+}
+
+$env:CITY_TEST_DATABASE_URL = if ($env:CITY_TEST_DATABASE_URL) {
+    $env:CITY_TEST_DATABASE_URL
+} else {
+    "postgresql+psycopg2://city:city_dev_password@127.0.0.1:5432/city_game_test"
+}
+
+$python = Join-Path $root ".venv\Scripts\python.exe"
+if (-not (Test-Path $python)) {
+    throw "Python venv not found at $python. Run backend setup first."
+}
+
+Write-Host "== Alembic upgrade =="
+& $python -m alembic upgrade head
+
+Write-Host "== Backend tests =="
+& $python -m pytest backend\tests -q
+
+if (-not $SkipClient) {
+    $dotnet = "C:\Tools\dotnet\dotnet.exe"
+    if (-not (Test-Path $dotnet)) {
+        $dotnet = "dotnet"
+    }
+
+    Write-Host "== Client build =="
+    & $dotnet build client\city_economic_simulator.csproj -c Debug -v minimal
+}
+
+Write-Host "All checks passed."
