@@ -124,6 +124,8 @@ X-Player-Token: player-auth-token
 
 Godot-клієнт зберігає цей token у локальній сесії та додає його до `apply`, `work`, `sleep`, `exam` і запиту статусу гравця.
 
+У репозиторії також є GitHub Actions workflow `.github/workflows/ci.yml`: на `push` і `pull_request` він запускає PostgreSQL 16, Alembic migrations, backend pytest і Godot C# build.
+
 ## 🧱 Міграції БД
 
 ```powershell

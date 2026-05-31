@@ -75,7 +75,7 @@ Advanced-системи (спорт, картелі, тіньовий секто
 - Auth (простий token) ✅
 - Idempotency для work/sleep/exam ✅
 - Godot UI polish (mobile portrait)
-- CI: pytest on push
+- CI: backend pytest + Godot C# build on push ✅
 
 ---
 
