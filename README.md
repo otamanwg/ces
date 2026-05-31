@@ -108,6 +108,14 @@ Smoke-перевірка повного HTTP MVP loop:
 python scripts\smoke_mvp.py
 ```
 
+Повторні POST-запити для `work`, `sleep` та `exam` можна захистити header-ом:
+
+```http
+Idempotency-Key: any-unique-action-key
+```
+
+Якщо той самий ключ повториться для тієї самої дії, backend поверне попередній результат без повторного нарахування або списання.
+
 ## 🧱 Міграції БД
 
 ```powershell

@@ -27,6 +27,9 @@ public partial class CityDashboardController : Control
 	private ExamPanelController _examPanel;
 	private bool _applyFirstVacancy;
 	private string _playerEducation = "High School";
+	private string _pendingWorkKey = "";
+	private string _pendingSleepKey = "";
+	private string _pendingExamKey = "";
 
 	public override void _Ready()
 	{
@@ -77,6 +80,8 @@ public partial class CityDashboardController : Control
 
 	private void OnApiRequestFinished(string endpoint, bool success, string jsonBody)
 	{
+		ClearPendingAction(endpoint);
+
 		if (!success)
 		{
 			SetStatus("Помилка API. Запусти: .\\scripts\\dev.ps1");
@@ -235,9 +240,16 @@ public partial class CityDashboardController : Control
 			return;
 		}
 
+		if (!string.IsNullOrEmpty(_pendingExamKey))
+		{
+			SetStatus("Іспит уже надсилається...");
+			return;
+		}
+
 		var answers = JsonSerializer.Deserialize<Dictionary<string, int>>(answersJson);
 		string payload = ApiClient.BuildJson(new { player_id = _session.PlayerId, answers });
-		_apiClient?.Post("/api/education/exam/submit", payload);
+		_pendingExamKey = BuildActionKey("exam");
+		_apiClient?.PostIdempotent("/api/education/exam/submit", _pendingExamKey, payload);
 	}
 
 	private void OnServerMessageReceived(string jsonMessage)
@@ -390,6 +402,27 @@ public partial class CityDashboardController : Control
 		}
 	}
 
+	private static string BuildActionKey(string action)
+	{
+		return $"{action}-{Guid.NewGuid():N}";
+	}
+
+	private void ClearPendingAction(string endpoint)
+	{
+		if (endpoint.StartsWith("/api/jobs/work/"))
+		{
+			_pendingWorkKey = "";
+		}
+		else if (endpoint.StartsWith("/api/hostels/sleep/"))
+		{
+			_pendingSleepKey = "";
+		}
+		else if (endpoint == "/api/education/exam/submit")
+		{
+			_pendingExamKey = "";
+		}
+	}
+
 	public void OnApplyJobButtonPressed()
 	{
 		if (_session == null || !_session.HasPlayer)
@@ -410,7 +443,14 @@ public partial class CityDashboardController : Control
 			return;
 		}
 
-		_apiClient?.Post($"/api/jobs/work/{_session.PlayerId}");
+		if (!string.IsNullOrEmpty(_pendingWorkKey))
+		{
+			SetStatus("Зміна вже обробляється...");
+			return;
+		}
+
+		_pendingWorkKey = BuildActionKey("work");
+		_apiClient?.PostIdempotent($"/api/jobs/work/{_session.PlayerId}", _pendingWorkKey);
 	}
 
 	public void OnSleepButtonPressed()
@@ -421,7 +461,14 @@ public partial class CityDashboardController : Control
 			return;
 		}
 
-		_apiClient?.Post($"/api/hostels/sleep/{_session.PlayerId}");
+		if (!string.IsNullOrEmpty(_pendingSleepKey))
+		{
+			SetStatus("Сон уже обробляється...");
+			return;
+		}
+
+		_pendingSleepKey = BuildActionKey("sleep");
+		_apiClient?.PostIdempotent($"/api/hostels/sleep/{_session.PlayerId}", _pendingSleepKey);
 	}
 
 	public void OnExamButtonPressed()

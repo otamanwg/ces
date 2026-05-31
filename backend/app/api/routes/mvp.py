@@ -1,6 +1,6 @@
 from typing import Dict
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -11,6 +11,7 @@ from backend.app.schemas.response import api_error, api_success
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work, update_inflation_rate
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.ids import to_uuid
+from backend.app.services.idempotency import get_idempotent_response, save_idempotent_response
 from backend.app.services.player_profile import build_player_snapshot, get_player_snapshot
 from backend.app.services.player_progress import build_goal_effects
 
@@ -170,7 +171,15 @@ def apply_for_job(data: JobApply, db: Session = Depends(get_db)):
 
 
 @router.post("/jobs/work/{player_id}")
-def do_work_shift(player_id: str, db: Session = Depends(get_db)):
+def do_work_shift(
+    player_id: str,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db),
+):
+    cached = get_idempotent_response(db, "work_shift", idempotency_key, player_id)
+    if cached:
+        return cached
+
     res = process_shift_work(db, player_id)
     if not res["success"]:
         return api_error(res["message"])
@@ -179,18 +188,28 @@ def do_work_shift(player_id: str, db: Session = Depends(get_db)):
     snapshot = build_player_snapshot(db, player)
     effects = build_goal_effects(db, player)
     data = {**snapshot, "city": res.get("city", {})}
-    return api_success(res["message"], data, effects)
+    response = api_success(res["message"], data, effects)
+    return save_idempotent_response(db, "work_shift", idempotency_key, player_id, response)
 
 
 @router.post("/hostels/sleep/{player_id}")
-def sleep_in_hostel(player_id: str, db: Session = Depends(get_db)):
+def sleep_in_hostel(
+    player_id: str,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db),
+):
+    cached = get_idempotent_response(db, "sleep", idempotency_key, player_id)
+    if cached:
+        return cached
+
     res = process_rent_payment(db, player_id)
     if not res["success"]:
         return api_error(res["message"])
 
     player = db.query(Player).filter(Player.id == to_uuid(player_id)).first()
     snapshot = build_player_snapshot(db, player)
-    return api_success(res["message"], snapshot, build_goal_effects(db, player))
+    response = api_success(res["message"], snapshot, build_goal_effects(db, player))
+    return save_idempotent_response(db, "sleep", idempotency_key, player_id, response)
 
 
 @router.get("/education/exam/info")
@@ -215,7 +234,15 @@ def get_exam_details():
 
 
 @router.post("/education/exam/submit")
-def submit_exam(data: ExamAnswers, db: Session = Depends(get_db)):
+def submit_exam(
+    data: ExamAnswers,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db),
+):
+    cached = get_idempotent_response(db, "exam_submit", idempotency_key, data.player_id)
+    if cached:
+        return cached
+
     res = process_exam_submission(db, data.player_id, data.answers)
     if not res["success"]:
         return api_error(res["message"])
@@ -228,4 +255,5 @@ def submit_exam(data: ExamAnswers, db: Session = Depends(get_db)):
         "score": res.get("score"),
         "details": res.get("details", []),
     }
-    return api_success(res["message"], data_out, build_goal_effects(db, player))
+    response = api_success(res["message"], data_out, build_goal_effects(db, player))
+    return save_idempotent_response(db, "exam_submit", idempotency_key, data.player_id, response)

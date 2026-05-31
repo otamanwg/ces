@@ -18,6 +18,7 @@ public partial class ApiClient : Node
         public string Path;
         public HttpClient.Method Method;
         public string Body;
+        public string[] Headers;
     }
 
     public override void _Ready()
@@ -31,22 +32,27 @@ public partial class ApiClient : Node
 
     public void Get(string path)
     {
-        Enqueue(path, HttpClient.Method.Get, null);
+        Enqueue(path, HttpClient.Method.Get, null, null);
     }
 
     public void Post(string path, string jsonBody)
     {
-        Enqueue(path, HttpClient.Method.Post, jsonBody);
+        Enqueue(path, HttpClient.Method.Post, jsonBody, null);
     }
 
     public void Post(string path)
     {
-        Enqueue(path, HttpClient.Method.Post, "{}");
+        Enqueue(path, HttpClient.Method.Post, "{}", null);
     }
 
-    private void Enqueue(string path, HttpClient.Method method, string body)
+    public void PostIdempotent(string path, string idempotencyKey, string jsonBody = "{}")
     {
-        _queue.Enqueue(new PendingRequest { Path = path, Method = method, Body = body });
+        Enqueue(path, HttpClient.Method.Post, jsonBody, new[] { $"Idempotency-Key: {idempotencyKey}" });
+    }
+
+    private void Enqueue(string path, HttpClient.Method method, string body, string[] extraHeaders)
+    {
+        _queue.Enqueue(new PendingRequest { Path = path, Method = method, Body = body, Headers = extraHeaders });
         GD.Print($"ApiClient: queued {method} {path}");
         TrySendNext();
     }
@@ -61,12 +67,16 @@ public partial class ApiClient : Node
         var req = _queue.Dequeue();
         _busy = true;
 
-        var headers = new[] { "Content-Type: application/json" };
+        var headers = new List<string> { "Content-Type: application/json" };
+        if (req.Headers != null)
+        {
+            headers.AddRange(req.Headers);
+        }
         string url = $"{BaseUrl}{req.Path}";
 
         Error err = req.Body == null
-            ? _http.Request(url, headers, req.Method)
-            : _http.Request(url, headers, req.Method, req.Body);
+            ? _http.Request(url, headers.ToArray(), req.Method)
+            : _http.Request(url, headers.ToArray(), req.Method, req.Body);
 
         if (err != Error.Ok)
         {

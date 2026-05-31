@@ -63,6 +63,7 @@ Advanced-системи (спорт, картелі, тіньовий секто
 - `game_day_tick` + формули з `economic_formulas.md` (спрощено) ✅
 - Баланс-тест: 30 ігрових днів без infinite money ✅
 - Dev endpoint `POST /api/city/tick-day` + smoke coverage ✅
+- Idempotency для `work/sleep/exam` ✅
 
 ### Checkpoint 3 — **ТИ ПОТРІБЕН**
 - Рішення: чи розморожувати спорт/тіньовий сектор

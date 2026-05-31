@@ -4,7 +4,7 @@
 from datetime import datetime
 import uuid
 from typing import List, Optional
-from sqlalchemy import String, Numeric as Decimal, Integer, Boolean, ForeignKey, DateTime, func
+from sqlalchemy import String, Numeric as Decimal, Integer, Boolean, ForeignKey, DateTime, JSON, UniqueConstraint, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 class Base(DeclarativeBase):
@@ -124,6 +124,20 @@ class TransactionModelLog(Base):
 
     # Зв'язки ORM
     city: Mapped["City"] = relationship("City", back_populates="transactions")
+
+
+class IdempotencyRecord(Base):
+    __tablename__ = "idempotency_records"
+    __table_args__ = (
+        UniqueConstraint("action", "key", "player_id", name="uq_idempotency_action_key_player"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    action: Mapped[str] = mapped_column(String(50), nullable=False)
+    key: Mapped[str] = mapped_column(String(120), nullable=False)
+    player_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"))
+    response_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 # 7. МОДЕЛЬ ПОЛІЦЕЙСЬКИХ ЗАПИСІВ
 class PoliceRecord(Base):

@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.app.database import get_db
-from backend.app.models import Player, TransactionModelLog
+from backend.app.models import IdempotencyRecord, Player, TransactionModelLog
 from backend.app.seed import seed_initial_data
 from backend.tests.db import make_test_session
 from backend.main import app
@@ -65,18 +65,32 @@ def test_full_mvp_api_loop(client):
     assert apply_res.status_code == 200
     assert apply_res.json()["success"] is True
 
-    work_res = test_client.post(f"/api/jobs/work/{player_id}")
+    work_headers = {"Idempotency-Key": "api-loop-work-1"}
+    work_res = test_client.post(f"/api/jobs/work/{player_id}", headers=work_headers)
     assert work_res.status_code == 200
     work_body = work_res.json()
     assert work_body["success"] is True
     assert work_body["data"]["energy"] == 70
     assert work_body["data"]["balance"] > 500
+    transactions_after_work = db.query(TransactionModelLog).count()
 
-    sleep_res = test_client.post(f"/api/hostels/sleep/{player_id}")
+    repeat_work = test_client.post(f"/api/jobs/work/{player_id}", headers=work_headers)
+    assert repeat_work.status_code == 200
+    assert repeat_work.json() == work_body
+    assert db.query(TransactionModelLog).count() == transactions_after_work
+
+    sleep_headers = {"Idempotency-Key": "api-loop-sleep-1"}
+    sleep_res = test_client.post(f"/api/hostels/sleep/{player_id}", headers=sleep_headers)
     assert sleep_res.status_code == 200
     sleep_body = sleep_res.json()
     assert sleep_body["success"] is True
     assert sleep_body["data"]["energy"] == 100
+    transactions_after_sleep = db.query(TransactionModelLog).count()
+
+    repeat_sleep = test_client.post(f"/api/hostels/sleep/{player_id}", headers=sleep_headers)
+    assert repeat_sleep.status_code == 200
+    assert repeat_sleep.json() == sleep_body
+    assert db.query(TransactionModelLog).count() == transactions_after_sleep
 
     tick_res = test_client.post("/api/city/tick-day")
     assert tick_res.status_code == 200
@@ -100,14 +114,26 @@ def test_full_mvp_api_loop(client):
     # All correct answers are index 0 in seed exam file
     answers = {str(q["id"]): 0 for q in exam["questions"]}
 
+    exam_headers = {"Idempotency-Key": "api-loop-exam-1"}
     submit_res = test_client.post(
         "/api/education/exam/submit",
         json={"player_id": player_id, "answers": answers},
+        headers=exam_headers,
     )
     assert submit_res.status_code == 200
     submit_body = submit_res.json()
     assert submit_body["success"] is True
     assert submit_body["data"]["passed"] is True
+    balance_after_exam = submit_body["data"]["balance"]
+
+    repeat_submit = test_client.post(
+        "/api/education/exam/submit",
+        json={"player_id": player_id, "answers": answers},
+        headers=exam_headers,
+    )
+    assert repeat_submit.status_code == 200
+    assert repeat_submit.json() == submit_body
+    assert repeat_submit.json()["data"]["balance"] == balance_after_exam
 
     db.refresh(player)
     assert player.education_level == "College"
@@ -121,3 +147,4 @@ def test_full_mvp_api_loop(client):
     assert apply_college.json()["success"] is True
 
     assert db.query(TransactionModelLog).count() >= 2
+    assert db.query(IdempotencyRecord).count() == 3
