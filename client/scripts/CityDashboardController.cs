@@ -167,9 +167,9 @@ public partial class CityDashboardController : Control
 		_session?.SetCityId(cityId);
 		_networkManager?.ConnectToCity(cityId);
 
-		if (_session != null && _session.HasPlayer)
+		if (_session != null && _session.HasAuthenticatedPlayer)
 		{
-			_apiClient?.Get($"/api/player/{_session.PlayerId}");
+			_apiClient?.GetAuthorized($"/api/player/{_session.PlayerId}", _session.AuthToken);
 			return;
 		}
 
@@ -218,7 +218,7 @@ public partial class CityDashboardController : Control
 		}
 
 		string payload = ApiClient.BuildJson(new { player_id = _session.PlayerId, job_id = jobId });
-		_apiClient?.Post("/api/jobs/apply", payload);
+		_apiClient?.PostAuthorized("/api/jobs/apply", _session.AuthToken, payload);
 	}
 
 	private void HandleExamInfo(JsonNode root)
@@ -234,7 +234,7 @@ public partial class CityDashboardController : Control
 
 	private void OnExamSubmitRequested(string answersJson)
 	{
-		if (_session == null || !_session.HasPlayer)
+		if (_session == null || !_session.HasAuthenticatedPlayer)
 		{
 			SetStatus("Немає активного гравця.");
 			return;
@@ -249,7 +249,7 @@ public partial class CityDashboardController : Control
 		var answers = JsonSerializer.Deserialize<Dictionary<string, int>>(answersJson);
 		string payload = ApiClient.BuildJson(new { player_id = _session.PlayerId, answers });
 		_pendingExamKey = BuildActionKey("exam");
-		_apiClient?.PostIdempotent("/api/education/exam/submit", _pendingExamKey, payload);
+		_apiClient?.PostAuthorizedIdempotent("/api/education/exam/submit", _session.AuthToken, _pendingExamKey, payload);
 	}
 
 	private void OnServerMessageReceived(string jsonMessage)
@@ -309,9 +309,10 @@ public partial class CityDashboardController : Control
 
 		string playerId = data["id"]?.ToString() ?? "";
 		string username = data["username"]?.ToString() ?? "";
+		string authToken = data["auth_token"]?.ToString() ?? "";
 		if (!string.IsNullOrEmpty(playerId))
 		{
-			_session?.SetPlayer(playerId, username);
+			_session?.SetPlayer(playerId, username, authToken);
 		}
 	}
 
@@ -425,7 +426,7 @@ public partial class CityDashboardController : Control
 
 	public void OnApplyJobButtonPressed()
 	{
-		if (_session == null || !_session.HasPlayer)
+		if (_session == null || !_session.HasAuthenticatedPlayer)
 		{
 			SetStatus("Спочатку потрібна реєстрація.");
 			return;
@@ -437,7 +438,7 @@ public partial class CityDashboardController : Control
 
 	public void OnWorkButtonPressed()
 	{
-		if (_session == null || !_session.HasPlayer)
+		if (_session == null || !_session.HasAuthenticatedPlayer)
 		{
 			SetStatus("Немає активного гравця.");
 			return;
@@ -450,12 +451,12 @@ public partial class CityDashboardController : Control
 		}
 
 		_pendingWorkKey = BuildActionKey("work");
-		_apiClient?.PostIdempotent($"/api/jobs/work/{_session.PlayerId}", _pendingWorkKey);
+		_apiClient?.PostAuthorizedIdempotent($"/api/jobs/work/{_session.PlayerId}", _session.AuthToken, _pendingWorkKey);
 	}
 
 	public void OnSleepButtonPressed()
 	{
-		if (_session == null || !_session.HasPlayer)
+		if (_session == null || !_session.HasAuthenticatedPlayer)
 		{
 			SetStatus("Немає активного гравця.");
 			return;
@@ -468,12 +469,12 @@ public partial class CityDashboardController : Control
 		}
 
 		_pendingSleepKey = BuildActionKey("sleep");
-		_apiClient?.PostIdempotent($"/api/hostels/sleep/{_session.PlayerId}", _pendingSleepKey);
+		_apiClient?.PostAuthorizedIdempotent($"/api/hostels/sleep/{_session.PlayerId}", _session.AuthToken, _pendingSleepKey);
 	}
 
 	public void OnExamButtonPressed()
 	{
-		if (_session == null || !_session.HasPlayer)
+		if (_session == null || !_session.HasAuthenticatedPlayer)
 		{
 			SetStatus("Немає активного гравця.");
 			return;
@@ -491,9 +492,9 @@ public partial class CityDashboardController : Control
 	public void OnRefreshButtonPressed()
 	{
 		_apiClient?.Get("/api/city/status");
-		if (_session != null && _session.HasPlayer)
+		if (_session != null && _session.HasAuthenticatedPlayer)
 		{
-			_apiClient?.Get($"/api/player/{_session.PlayerId}");
+			_apiClient?.GetAuthorized($"/api/player/{_session.PlayerId}", _session.AuthToken);
 		}
 	}
 }

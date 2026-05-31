@@ -2,6 +2,7 @@
 # Файл: backend/app/models.py
 
 from datetime import datetime
+import secrets
 import uuid
 from typing import List, Optional
 from sqlalchemy import String, Numeric as Decimal, Integer, Boolean, ForeignKey, DateTime, JSON, UniqueConstraint, func
@@ -37,6 +38,7 @@ class Player(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="RESTRICT"), nullable=False)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    auth_token: Mapped[str] = mapped_column(String(120), unique=True, nullable=False, default=lambda: secrets.token_urlsafe(32))
     balance: Mapped[float] = mapped_column(Decimal(15, 2), default=500.00)
     energy: Mapped[int] = mapped_column(Integer, default=100)
     mood: Mapped[int] = mapped_column(Integer, default=100)

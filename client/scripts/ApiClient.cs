@@ -35,6 +35,11 @@ public partial class ApiClient : Node
         Enqueue(path, HttpClient.Method.Get, null, null);
     }
 
+    public void GetAuthorized(string path, string playerToken)
+    {
+        Enqueue(path, HttpClient.Method.Get, null, BuildAuthHeaders(playerToken));
+    }
+
     public void Post(string path, string jsonBody)
     {
         Enqueue(path, HttpClient.Method.Post, jsonBody, null);
@@ -48,6 +53,26 @@ public partial class ApiClient : Node
     public void PostIdempotent(string path, string idempotencyKey, string jsonBody = "{}")
     {
         Enqueue(path, HttpClient.Method.Post, jsonBody, new[] { $"Idempotency-Key: {idempotencyKey}" });
+    }
+
+    public void PostAuthorized(string path, string playerToken, string jsonBody = "{}")
+    {
+        Enqueue(path, HttpClient.Method.Post, jsonBody, BuildAuthHeaders(playerToken));
+    }
+
+    public void PostAuthorizedIdempotent(string path, string playerToken, string idempotencyKey, string jsonBody = "{}")
+    {
+        Enqueue(
+            path,
+            HttpClient.Method.Post,
+            jsonBody,
+            new[] { $"X-Player-Token: {playerToken}", $"Idempotency-Key: {idempotencyKey}" }
+        );
+    }
+
+    private static string[] BuildAuthHeaders(string playerToken)
+    {
+        return string.IsNullOrEmpty(playerToken) ? null : new[] { $"X-Player-Token: {playerToken}" };
     }
 
     private void Enqueue(string path, HttpClient.Method method, string body, string[] extraHeaders)

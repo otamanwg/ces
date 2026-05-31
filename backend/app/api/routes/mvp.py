@@ -8,6 +8,7 @@ from backend.app.core.config import settings
 from backend.app.database import get_db
 from backend.app.models import City, Hostel, Job, Player
 from backend.app.schemas.response import api_error, api_success
+from backend.app.services.auth import get_authorized_player, new_player_token
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work, update_inflation_rate
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.ids import to_uuid
@@ -30,6 +31,10 @@ class JobApply(BaseModel):
 class ExamAnswers(BaseModel):
     player_id: str
     answers: Dict[str, int]
+
+
+def require_player(db: Session, player_id: str, player_token: str | None) -> Player | None:
+    return get_authorized_player(db, player_id, player_token)
 
 
 @router.get("/city/status")
@@ -86,6 +91,7 @@ def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
         energy=100,
         mood=100,
         education_level="High School",
+        auth_token=new_player_token(),
     )
     db.add(player)
     db.commit()
@@ -97,6 +103,7 @@ def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
         db.commit()
 
     snapshot = build_player_snapshot(db, player)
+    snapshot["auth_token"] = player.auth_token
     effects = build_goal_effects(db, player)
     hostel_msg = snapshot["hostel"]
     return api_success(
@@ -107,7 +114,14 @@ def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
 
 
 @router.get("/player/{player_id}")
-def get_player_status(player_id: str, db: Session = Depends(get_db)):
+def get_player_status(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    if not require_player(db, player_id, player_token):
+        return api_error("Сесія гравця недійсна. Зареєструйтесь знову.")
+
     snapshot = get_player_snapshot(db, player_id)
     if not snapshot:
         raise HTTPException(status_code=404, detail="Гравця не знайдено")
@@ -134,8 +148,12 @@ def get_vacancies(db: Session = Depends(get_db)):
 
 
 @router.post("/jobs/apply")
-def apply_for_job(data: JobApply, db: Session = Depends(get_db)):
-    player = db.query(Player).filter(Player.id == to_uuid(data.player_id)).first()
+def apply_for_job(
+    data: JobApply,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    player = require_player(db, data.player_id, player_token)
     job = db.query(Job).filter(Job.id == to_uuid(data.job_id)).first()
 
     if not player or not job:
@@ -173,9 +191,13 @@ def apply_for_job(data: JobApply, db: Session = Depends(get_db)):
 @router.post("/jobs/work/{player_id}")
 def do_work_shift(
     player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
 ):
+    if not require_player(db, player_id, player_token):
+        return api_error("Сесія гравця недійсна. Зареєструйтесь знову.")
+
     cached = get_idempotent_response(db, "work_shift", idempotency_key, player_id)
     if cached:
         return cached
@@ -195,9 +217,13 @@ def do_work_shift(
 @router.post("/hostels/sleep/{player_id}")
 def sleep_in_hostel(
     player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
 ):
+    if not require_player(db, player_id, player_token):
+        return api_error("Сесія гравця недійсна. Зареєструйтесь знову.")
+
     cached = get_idempotent_response(db, "sleep", idempotency_key, player_id)
     if cached:
         return cached
@@ -236,9 +262,13 @@ def get_exam_details():
 @router.post("/education/exam/submit")
 def submit_exam(
     data: ExamAnswers,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
 ):
+    if not require_player(db, data.player_id, player_token):
+        return api_error("Сесія гравця недійсна. Зареєструйтесь знову.")
+
     cached = get_idempotent_response(db, "exam_submit", idempotency_key, data.player_id)
     if cached:
         return cached

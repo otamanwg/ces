@@ -72,8 +72,8 @@ Advanced-системи (спорт, картелі, тіньовий секто
 
 ## Sprint 4 — Polish & Deploy Prep
 
-- Auth (простий token)
-- Idempotency для work/sleep/exam
+- Auth (простий token) ✅
+- Idempotency для work/sleep/exam ✅
 - Godot UI polish (mobile portrait)
 - CI: pytest on push
 

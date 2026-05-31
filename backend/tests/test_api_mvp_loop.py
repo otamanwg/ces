@@ -51,7 +51,13 @@ def test_full_mvp_api_loop(client):
     register_body = register_res.json()
     assert register_body["success"] is True
     player_id = register_body["data"]["id"]
+    player_token = register_body["data"]["auth_token"]
+    auth_headers = {"X-Player-Token": player_token}
     assert register_body["data"]["balance"] == 500.0
+
+    unauth_player = test_client.get(f"/api/player/{player_id}")
+    assert unauth_player.status_code == 200
+    assert unauth_player.json()["success"] is False
 
     vacancies_res = test_client.get("/api/jobs/vacancies")
     assert vacancies_res.status_code == 200
@@ -61,11 +67,12 @@ def test_full_mvp_api_loop(client):
     apply_res = test_client.post(
         "/api/jobs/apply",
         json={"player_id": player_id, "job_id": hs_job["id"]},
+        headers=auth_headers,
     )
     assert apply_res.status_code == 200
     assert apply_res.json()["success"] is True
 
-    work_headers = {"Idempotency-Key": "api-loop-work-1"}
+    work_headers = {"X-Player-Token": player_token, "Idempotency-Key": "api-loop-work-1"}
     work_res = test_client.post(f"/api/jobs/work/{player_id}", headers=work_headers)
     assert work_res.status_code == 200
     work_body = work_res.json()
@@ -79,7 +86,7 @@ def test_full_mvp_api_loop(client):
     assert repeat_work.json() == work_body
     assert db.query(TransactionModelLog).count() == transactions_after_work
 
-    sleep_headers = {"Idempotency-Key": "api-loop-sleep-1"}
+    sleep_headers = {"X-Player-Token": player_token, "Idempotency-Key": "api-loop-sleep-1"}
     sleep_res = test_client.post(f"/api/hostels/sleep/{player_id}", headers=sleep_headers)
     assert sleep_res.status_code == 200
     sleep_body = sleep_res.json()
@@ -106,15 +113,15 @@ def test_full_mvp_api_loop(client):
     # Earn enough for exam: work/sleep cycles
     player = db.query(Player).filter(Player.id == player_id).first()
     while float(player.balance) < 100:
-        test_client.post(f"/api/jobs/work/{player_id}")
-        test_client.post(f"/api/hostels/sleep/{player_id}")
+        test_client.post(f"/api/jobs/work/{player_id}", headers=auth_headers)
+        test_client.post(f"/api/hostels/sleep/{player_id}", headers=auth_headers)
         db.refresh(player)
 
     exam = test_client.get("/api/education/exam/info").json()["data"]
     # All correct answers are index 0 in seed exam file
     answers = {str(q["id"]): 0 for q in exam["questions"]}
 
-    exam_headers = {"Idempotency-Key": "api-loop-exam-1"}
+    exam_headers = {"X-Player-Token": player_token, "Idempotency-Key": "api-loop-exam-1"}
     submit_res = test_client.post(
         "/api/education/exam/submit",
         json={"player_id": player_id, "answers": answers},
@@ -143,6 +150,7 @@ def test_full_mvp_api_loop(client):
     apply_college = test_client.post(
         "/api/jobs/apply",
         json={"player_id": player_id, "job_id": college_job["id"]},
+        headers=auth_headers,
     )
     assert apply_college.json()["success"] is True
 

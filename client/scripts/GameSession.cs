@@ -7,6 +7,7 @@ public partial class GameSession : Node
 {
     public string PlayerId { get; private set; } = "";
     public string Username { get; private set; } = "";
+    public string AuthToken { get; private set; } = "";
     public string CityId { get; private set; } = "";
     public string LastJobId { get; private set; } = "";
 
@@ -17,10 +18,14 @@ public partial class GameSession : Node
         LoadSession();
     }
 
-    public void SetPlayer(string playerId, string username)
+    public void SetPlayer(string playerId, string username, string authToken = "")
     {
         PlayerId = playerId;
         Username = username;
+        if (!string.IsNullOrEmpty(authToken))
+        {
+            AuthToken = authToken;
+        }
         SaveSession();
     }
 
@@ -36,6 +41,7 @@ public partial class GameSession : Node
     }
 
     public bool HasPlayer => !string.IsNullOrEmpty(PlayerId);
+    public bool HasAuthenticatedPlayer => !string.IsNullOrEmpty(PlayerId) && !string.IsNullOrEmpty(AuthToken);
 
     private void SaveSession()
     {
@@ -43,6 +49,7 @@ public partial class GameSession : Node
         {
             PlayerId = PlayerId,
             Username = Username,
+            AuthToken = AuthToken,
             CityId = CityId,
         };
         File.WriteAllText(SessionPath, JsonSerializer.Serialize(data));
@@ -65,6 +72,7 @@ public partial class GameSession : Node
 
             PlayerId = data.PlayerId ?? "";
             Username = data.Username ?? "";
+            AuthToken = data.AuthToken ?? "";
             CityId = data.CityId ?? "";
         }
         catch (Exception e)
@@ -77,6 +85,7 @@ public partial class GameSession : Node
     {
         public string PlayerId { get; set; } = "";
         public string Username { get; set; } = "";
+        public string AuthToken { get; set; } = "";
         public string CityId { get; set; } = "";
     }
 }

@@ -29,6 +29,7 @@ def run_loop(client: httpx.Client) -> int:
     reg = client.post("/api/player/register", json={"username": USERNAME}).json()
     assert reg["success"], reg
     player_id = reg["data"]["id"]
+    auth_headers = {"X-Player-Token": reg["data"]["auth_token"]}
     print(f"OK register: {USERNAME} balance={reg['data']['balance']}")
 
     vacancies = client.get("/api/jobs/vacancies").json()["data"]["vacancies"]
@@ -36,14 +37,15 @@ def run_loop(client: httpx.Client) -> int:
     apply = client.post(
         "/api/jobs/apply",
         json={"player_id": player_id, "job_id": hs_job["id"]},
+        headers=auth_headers,
     ).json()
     assert apply["success"], apply
     print(f"OK apply: job_id={hs_job['id']}")
 
     for cycle in range(4):
-        work = client.post(f"/api/jobs/work/{player_id}").json()
+        work = client.post(f"/api/jobs/work/{player_id}", headers=auth_headers).json()
         assert work["success"], work
-        sleep = client.post(f"/api/hostels/sleep/{player_id}").json()
+        sleep = client.post(f"/api/hostels/sleep/{player_id}", headers=auth_headers).json()
         assert sleep["success"], sleep
         bal = sleep["data"]["balance"]
         print(f"OK cycle {cycle + 1}: balance={bal:.2f} energy={sleep['data']['energy']}")
@@ -56,7 +58,7 @@ def run_loop(client: httpx.Client) -> int:
         f"rent={tick['data']['stats']['rent_collected']:.2f}"
     )
 
-    player = client.get(f"/api/player/{player_id}").json()["data"]
+    player = client.get(f"/api/player/{player_id}", headers=auth_headers).json()["data"]
     if player["balance"] < 100:
         print(f"FAIL: balance {player['balance']} < 100 for exam")
         return 1
@@ -66,6 +68,7 @@ def run_loop(client: httpx.Client) -> int:
     submit = client.post(
         "/api/education/exam/submit",
         json={"player_id": player_id, "answers": answers},
+        headers=auth_headers,
     ).json()
     assert submit["success"], submit
     print(f"OK exam: passed={submit['data'].get('passed')} score={submit['data'].get('score')}")
@@ -77,6 +80,7 @@ def run_loop(client: httpx.Client) -> int:
             up = client.post(
                 "/api/jobs/apply",
                 json={"player_id": player_id, "job_id": college["id"]},
+                headers=auth_headers,
             ).json()
             assert up["success"], up
             print(f"OK promoted: job_id={college['id']}")
