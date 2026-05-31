@@ -12,7 +12,7 @@ config_version=5
 
 config/name="City Economic Simulator"
 run/main_scene="res://scenes/city_dashboard.tscn"
-config/features=PackedStringArray("4.2", "C#", "Forward Plus")
+config/features=PackedStringArray("4.3", "C#", "Forward Plus")
 
 [autoload]
 
@@ -32,7 +32,7 @@ window/handheld/orientation=1
 
 [dotnet]
 
-project/assembly_name="City Economic Simulator"
+project/assembly_name="city_economic_simulator"
 
 [editor_plugins]
 

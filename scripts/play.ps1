@@ -13,9 +13,10 @@ $Root = Split-Path $PSScriptRoot -Parent
 Set-Location $Root
 
 $env:PATH = "C:\tools\dotnet;C:\tools\MinGit\cmd;" + $env:PATH
+$env:DOTNET_ROOT = "C:\tools\dotnet"
 
 $python = if (Test-Path ".\.venv\Scripts\python.exe") { ".\.venv\Scripts\python.exe" } else { "python" }
-$godot = "C:\tools\Godot\Godot_v4.2.2-stable_mono_win64\Godot_v4.2.2-stable_mono_win64.exe"
+$godot = "C:\Tools\Godot\Godot_v4.3-stable_mono_win64\Godot_v4.3-stable_mono_win64.exe"
 
 if (-not (Test-Path $godot)) {
     Write-Host "Godot not found at $godot"
@@ -61,4 +62,4 @@ if (-not $backendUp) {
 Write-Host "Opening Godot project..."
 Write-Host "Godot MCP: keep editor open for Cursor AI (MCP Connected top-right)."
 Write-Host "Press F5 in Godot to play."
-Start-Process $godot -ArgumentList @("--path", "$Root\client")
+Start-Process $godot -ArgumentList @("--editor", "--path", "$Root\client")

@@ -44,7 +44,7 @@
 Обов'язково:
 
 1. **Python 3.12+** для backend.
-2. **Godot 4.2+ .NET edition** для клієнта.
+2. **Godot 4.3 .NET edition** для клієнта.
 3. **.NET SDK**, сумісний із версією Godot .NET.
 4. **PostgreSQL 16+** або **Docker Desktop** для запуску Postgres контейнером.
 5. **Git** для контролю версій.

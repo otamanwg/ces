@@ -155,7 +155,7 @@ python -m uvicorn backend.main:app --reload
 pytest
 ```
 
-Godot 4.2 .NET → відкрити `client/` → F5.
+Godot 4.3 .NET → відкрити `client/` → F5.
 
 ---
 

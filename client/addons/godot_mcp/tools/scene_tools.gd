@@ -6,7 +6,7 @@ class_name SceneTools
 ##          rename_node, move_node, attach_script, detach_script, set_collision_shape,
 ##          set_sprite_texture
 
-const _SKIP_PROPS: Dictionary[String, bool] = {
+const _SKIP_PROPS: Dictionary = {
 	"script": true, "owner": true, "scene_file_path": true,
 	"unique_name_in_owner": true, "editor_description": true,
 }
