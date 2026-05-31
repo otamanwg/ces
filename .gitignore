@@ -24,6 +24,10 @@ client/.mono/
 client/bin/
 client/obj/
 
+# Local tooling
+.tools/
+/package-lock.json
+
 # OS/editor
 .DS_Store
 Thumbs.db

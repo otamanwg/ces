@@ -6,9 +6,21 @@ alwaysApply: true
 # City Economic Simulator — Solo Project Context
 
 - Owner works **alone**, no team. Keep changes small, reviewable, and practical.
+- **Build reliably, gradually** — prefer slow correct progress over fast rework. No "build now, fix later".
 - **Ukrainian** for user-facing docs and game text; code/comments may mix EN/UK as existing files do.
-- **Priority:** 5-minute core loop (register → job → work → sleep → exam → better job) before new systems.
-- **Frozen until MVP plays:** sports, shadow economy, cartels, unions, insurance, advanced routes.
-- Stack: Godot 4.2 C# client, FastAPI + SQLAlchemy, PostgreSQL.
+- **Priority:** 5-minute core loop must stay playable after every change.
+- **Frozen until MVP is stable:** sports, shadow economy, cartels, unions, insurance, advanced routes.
+- Stack: Godot 4.2 C# client, FastAPI + SQLAlchemy, PostgreSQL, Alembic.
+- Godot MCP: `.cursor/mcp.json` + `client/addons/godot_mcp` (setup: `.\scripts\setup_godot_mcp.ps1`). Godot editor must be open with **MCP Connected** when editing scenes via AI.
 - Follow `SOLO_ROADMAP.md` for sprint order. Do not scope-creep.
 - Minimize diff scope; match existing conventions in `backend/app/services/`.
+
+## Reliability rules (always)
+
+1. **One change = one purpose** — small PR-sized diffs; no bundling unrelated refactors.
+2. **Tests before done** — run `.\scripts\check.ps1` (or at least `pytest`) before considering a task complete.
+3. **Migrate, don't recreate** — schema changes only via Alembic; never rely on `create_all` for production path.
+4. **Backend before client** — API + tests first, then Godot wiring.
+5. **No new systems** while a known bug or design conflict exists (document conflicts in roadmap, fix first).
+6. **Do not skip checkpoints** — playable verification beats adding the next feature.
+7. **Leave breadcrumbs** — update `SOLO_ROADMAP.md` when scope or status changes; commit when a slice is truly done.

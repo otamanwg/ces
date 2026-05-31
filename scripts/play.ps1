@@ -42,5 +42,6 @@ if (-not $backendUp) {
 }
 
 Write-Host "Opening Godot project..."
+Write-Host "Godot MCP: keep editor open for Cursor AI (MCP Connected top-right)."
 Write-Host "Press F5 in Godot to play."
 Start-Process $godot -ArgumentList @("--path", "$Root\client")

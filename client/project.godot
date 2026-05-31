@@ -33,3 +33,7 @@ window/handheld/orientation=1
 [dotnet]
 
 project/assembly_name="City Economic Simulator"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
