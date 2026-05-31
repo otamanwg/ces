@@ -35,6 +35,10 @@ public partial class CityDashboardController : Control
 	private bool _pendingApply;
 	private bool _bootstrapPending = true;
 	private bool _hasJob;
+	private bool _canApplyJob;
+	private bool _canWork;
+	private bool _canSleep;
+	private bool _canTakeExam;
 	private string _playerEducation = "High School";
 	private string _pendingWorkKey = "";
 	private string _pendingSleepKey = "";
@@ -237,6 +241,10 @@ public partial class CityDashboardController : Control
 		_session?.ClearSession();
 		_bootstrapPending = true;
 		_hasJob = false;
+		_canApplyJob = false;
+		_canWork = false;
+		_canSleep = false;
+		_canTakeExam = false;
 		SetStatus($"{message} Створюємо нового гравця...");
 		UpdateActionButtons();
 		RegisterNewPlayer();
@@ -412,6 +420,8 @@ public partial class CityDashboardController : Control
 			MoodBar.Value = data["mood"]?.GetValue<int>() ?? 0;
 		}
 
+		UpdateAvailableActions(data["actions"]);
+
 		string playerId = data["id"]?.ToString() ?? "";
 		string username = data["username"]?.ToString() ?? "";
 		string authToken = data["auth_token"]?.ToString() ?? "";
@@ -421,6 +431,23 @@ public partial class CityDashboardController : Control
 		}
 
 		UpdateActionButtons();
+	}
+
+	private void UpdateAvailableActions(JsonNode actions)
+	{
+		if (actions == null)
+		{
+			_canApplyJob = true;
+			_canWork = _hasJob;
+			_canSleep = true;
+			_canTakeExam = _playerEducation == "High School";
+			return;
+		}
+
+		_canApplyJob = actions["can_apply_job"]?.GetValue<bool>() ?? false;
+		_canWork = actions["can_work"]?.GetValue<bool>() ?? false;
+		_canSleep = actions["can_sleep"]?.GetValue<bool>() ?? false;
+		_canTakeExam = actions["can_take_exam"]?.GetValue<bool>() ?? false;
 	}
 
 	private void UpdateCityUI(JsonNode data)
@@ -541,12 +568,10 @@ public partial class CityDashboardController : Control
 			|| !string.IsNullOrEmpty(_pendingWorkKey)
 			|| !string.IsNullOrEmpty(_pendingSleepKey)
 			|| !string.IsNullOrEmpty(_pendingExamKey);
-		bool canTakeExam = hasPlayer && _playerEducation == "High School";
-
-		SetButtonDisabled(_applyJobButton, !hasPlayer || actionBusy);
-		SetButtonDisabled(_workButton, !hasPlayer || !_hasJob || actionBusy);
-		SetButtonDisabled(_sleepButton, !hasPlayer || actionBusy);
-		SetButtonDisabled(_examButton, !canTakeExam || actionBusy);
+		SetButtonDisabled(_applyJobButton, !hasPlayer || !_canApplyJob || actionBusy);
+		SetButtonDisabled(_workButton, !hasPlayer || !_canWork || actionBusy);
+		SetButtonDisabled(_sleepButton, !hasPlayer || !_canSleep || actionBusy);
+		SetButtonDisabled(_examButton, !hasPlayer || !_canTakeExam || actionBusy);
 		SetButtonDisabled(_refreshButton, _bootstrapPending);
 	}
 

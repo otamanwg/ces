@@ -5,6 +5,7 @@ import pytest
 
 from backend.app.models import City, Hostel, Job, Player
 from backend.app.seed import seed_initial_data
+from backend.app.services.player_profile import build_player_snapshot
 from backend.app.services.player_progress import build_goal_effects
 from backend.tests.db import make_test_session
 
@@ -151,5 +152,47 @@ def test_next_action_suggests_college_job_after_diploma():
         assert hint is not None
         assert hint["value"] == "Влаштуйтесь на кращу посаду"
         assert "Диспетчер" in (hint.get("delta") or "")
+    finally:
+        db.close()
+
+
+def test_player_snapshot_actions_follow_current_state():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="snapshot-actions",
+            balance=Decimal("50.00"),
+            energy=100,
+            mood=100,
+            education_level="High School",
+        )
+        db.add(player)
+        db.flush()
+
+        room = db.query(Hostel).first()
+        room.tenant_player_id = player.id
+        job = db.query(Job).filter(Job.min_education == "High School").first()
+        job.filled_by_player_id = player.id
+        db.commit()
+
+        snapshot = build_player_snapshot(db, player)
+        assert snapshot["actions"] == {
+            "can_apply_job": True,
+            "can_work": True,
+            "can_sleep": True,
+            "can_take_exam": False,
+        }
+
+        player.energy = 10
+        player.balance = Decimal("150.00")
+        db.commit()
+
+        snapshot = build_player_snapshot(db, player)
+        assert snapshot["actions"]["can_work"] is False
+        assert snapshot["actions"]["can_sleep"] is True
+        assert snapshot["actions"]["can_take_exam"] is True
     finally:
         db.close()

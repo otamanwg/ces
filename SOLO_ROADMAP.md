@@ -120,6 +120,7 @@ Advanced-системи (спорт, картелі, тіньовий секто
 1. ✅ Узгодити «день/ніч» (оренда, енергія) — backend + тест + UI
 2. ✅ Godot UI polish (feedback, disabled buttons, помилки сесії)
 2b. ✅ Підказка «Наступний крок» (backend `next_action` + UI)
+2c. ✅ Backend-driven action availability для кнопок Godot
 3. ✅ Playtest launch path: `.\scripts\play.ps1 -ResetDb -RunCheck`
 4. ⬜ Checkpoint 2 — твій feedback «цікаво / нудно»
 5. ⬜ Mobile export (останнім)
