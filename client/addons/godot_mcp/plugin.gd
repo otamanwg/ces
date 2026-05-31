@@ -3,9 +3,6 @@ extends EditorPlugin
 ## Godot MCP Plugin
 ## Connects to the godot-mcp-server via WebSocket and executes tools.
 
-const MCPClientScript = preload("res://addons/godot_mcp/mcp_client.gd")
-const ToolExecutorScript = preload("res://addons/godot_mcp/tool_executor.gd")
-
 var _mcp_client: Node  # MCPClient
 var _tool_executor: Node  # ToolExecutor
 var _status_label: Label
@@ -14,12 +11,12 @@ func _enter_tree() -> void:
 	print("[Godot MCP] Plugin loading...")
 
 	# Create MCP client
-	_mcp_client = MCPClientScript.new()
+	_mcp_client = MCPClient.new()
 	_mcp_client.name = "MCPClient"
 	add_child(_mcp_client)
 
 	# Create tool executor
-	_tool_executor = ToolExecutorScript.new()
+	_tool_executor = ToolExecutor.new()
 	_tool_executor.name = "ToolExecutor"
 	add_child(_tool_executor)  # _ready() runs here, creating child tools
 	_tool_executor.set_editor_plugin(self)  # Now _visualizer_tools exists
