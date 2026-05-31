@@ -114,6 +114,12 @@ python scripts\smoke_mvp.py
 .\scripts\check.ps1
 ```
 
+Playtest із чистої dev-бази та повною перевіркою перед запуском Godot:
+
+```powershell
+.\scripts\play.ps1 -ResetDb -RunCheck
+```
+
 Повторні POST-запити для `work`, `sleep` та `exam` можна захистити header-ом:
 
 ```http

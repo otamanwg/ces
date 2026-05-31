@@ -1,5 +1,10 @@
+param(
+    [switch]$ResetDb,
+    [switch]$RunCheck
+)
+
 # One-click dev launch for City Economic Simulator
-# Usage: .\scripts\play.ps1
+# Usage: .\scripts\play.ps1 [-ResetDb] [-RunCheck]
 
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -19,6 +24,18 @@ if (-not (Test-Path $godot)) {
 
 if (-not (Test-Path ".env")) {
     Copy-Item ".env.example" ".env"
+}
+
+if ($ResetDb) {
+    Write-Host "Resetting dev database before playtest..."
+    & "$Root\scripts\reset_dev_db.ps1"
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
+
+if ($RunCheck) {
+    Write-Host "Running local checks before playtest..."
+    & "$Root\scripts\check.ps1"
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
 Write-Host "Building Godot C# project..."
