@@ -231,3 +231,48 @@ def test_full_mvp_api_loop(client):
 
     assert db.query(TransactionModelLog).count() >= 2
     assert db.query(IdempotencyRecord).count() == 3
+
+
+def test_idempotency_key_is_scoped_by_action_and_player(client):
+    test_client, db = client
+
+    first_register = test_client.post("/api/player/register", json={"username": "idempotent-one"}).json()
+    second_register = test_client.post("/api/player/register", json={"username": "idempotent-two"}).json()
+    first_player_id = first_register["data"]["id"]
+    second_player_id = second_register["data"]["id"]
+    first_headers = {"X-Player-Token": first_register["data"]["auth_token"]}
+    second_headers = {"X-Player-Token": second_register["data"]["auth_token"]}
+
+    vacancies = test_client.get("/api/jobs/vacancies").json()["data"]["vacancies"]
+    starter_job = next(j for j in vacancies if j["min_education"] == "High School")
+    apply_res = test_client.post(
+        "/api/jobs/apply",
+        json={"player_id": first_player_id, "job_id": starter_job["id"]},
+        headers=first_headers,
+    )
+    assert apply_res.json()["success"] is True
+
+    shared_key = "shared-client-key"
+    first_sleep = test_client.post(
+        f"/api/hostels/sleep/{first_player_id}",
+        headers={**first_headers, "Idempotency-Key": shared_key},
+    ).json()
+    assert first_sleep["success"] is True
+    assert first_sleep["data"]["id"] == first_player_id
+
+    second_sleep = test_client.post(
+        f"/api/hostels/sleep/{second_player_id}",
+        headers={**second_headers, "Idempotency-Key": shared_key},
+    ).json()
+    assert second_sleep["success"] is True
+    assert second_sleep["data"]["id"] == second_player_id
+
+    first_work = test_client.post(
+        f"/api/jobs/work/{first_player_id}",
+        headers={**first_headers, "Idempotency-Key": shared_key},
+    ).json()
+    assert first_work["success"] is True
+    assert first_work["data"]["id"] == first_player_id
+    assert first_work["message"] != first_sleep["message"]
+
+    assert db.query(IdempotencyRecord).count() == 3
