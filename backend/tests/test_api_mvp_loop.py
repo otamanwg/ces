@@ -281,6 +281,50 @@ def test_business_market_and_buy_endpoint_are_idempotent(client):
     assert malformed_buy.json()["message"] == "Бізнес не знайдено"
 
 
+def test_business_dividend_endpoint_is_idempotent(client):
+    test_client, db = client
+
+    register = test_client.post("/api/player/register", json={"username": "api-dividend-owner"}).json()
+    player_id = register["data"]["id"]
+    headers = {"X-Player-Token": register["data"]["auth_token"]}
+    player = db.query(Player).filter(Player.id == player_id).first()
+    player.balance = Decimal("1500.00")
+    db.commit()
+
+    business = test_client.get("/api/businesses/market").json()["data"]["businesses"][0]
+    buy_payload = {"player_id": player_id, "business_id": business["id"]}
+    buy_res = test_client.post(
+        "/api/businesses/buy",
+        json=buy_payload,
+        headers={**headers, "Idempotency-Key": "api-dividend-buy"},
+    ).json()
+    assert buy_res["success"] is True
+
+    dividend_headers = {**headers, "Idempotency-Key": "api-dividend-1"}
+    dividend_res = test_client.post("/api/businesses/dividend", json=buy_payload, headers=dividend_headers)
+    assert dividend_res.status_code == 200
+    dividend_body = dividend_res.json()
+    assert dividend_body["success"] is True
+    assert dividend_body["data"]["balance"] == 400.0
+    assert dividend_body["data"]["dividend"] == 100.0
+    assert dividend_body["data"]["business"]["cash_balance"] == 900.0
+    transactions_after_dividend = db.query(TransactionModelLog).count()
+
+    repeat_dividend = test_client.post("/api/businesses/dividend", json=buy_payload, headers=dividend_headers)
+    assert repeat_dividend.status_code == 200
+    assert repeat_dividend.json() == dividend_body
+    assert db.query(TransactionModelLog).count() == transactions_after_dividend
+
+    malformed_dividend = test_client.post(
+        "/api/businesses/dividend",
+        json={"player_id": player_id, "business_id": "not-a-uuid"},
+        headers=headers,
+    )
+    assert malformed_dividend.status_code == 200
+    assert malformed_dividend.json()["success"] is False
+    assert malformed_dividend.json()["message"] == "Бізнес не знайдено"
+
+
 def test_eat_endpoint_is_idempotent_and_logs_food(client):
     test_client, db = client
 

@@ -35,6 +35,7 @@ public partial class CityDashboardController : Control
 	private Button _sleepButton;
 	private Button _eatButton;
 	private Button _buyBusinessButton;
+	private Button _collectDividendButton;
 	private Button _examButton;
 	private Button _refreshButton;
 	private DashboardStatusPresenter _statusPresenter;
@@ -51,18 +52,22 @@ public partial class CityDashboardController : Control
 	private bool _canSleep;
 	private bool _canEat;
 	private bool _canBuyBusiness;
+	private bool _canCollectDividend;
 	private bool _canTakeExam;
 	private string _playerEducation = "High School";
+	private string _ownedBusinessId = "";
 	private string _pendingWorkKey = "";
 	private string _pendingSleepKey = "";
 	private string _pendingEatKey = "";
 	private string _pendingBusinessBuyKey = "";
+	private string _pendingDividendKey = "";
 	private string _pendingExamKey = "";
 	private const string ApplyJobText = "Знайти роботу";
 	private const string WorkText = "Працювати";
 	private const string SleepText = "Спати";
 	private const string EatText = "Поїсти";
 	private const string BuyBusinessText = "Купити бізнес";
+	private const string CollectDividendText = "Зібрати дивіденд";
 	private const string ExamText = "Іспит";
 	private const string RefreshText = "Оновити";
 
@@ -138,6 +143,7 @@ public partial class CityDashboardController : Control
 		_sleepButton ??= GetNodeOrNull<Button>("%SleepButton");
 		_eatButton ??= GetNodeOrNull<Button>("%EatButton");
 		_buyBusinessButton ??= GetNodeOrNull<Button>("%BuyBusinessButton");
+		_collectDividendButton ??= GetNodeOrNull<Button>("%CollectDividendButton");
 		_examButton ??= GetNodeOrNull<Button>("%ExamButton");
 		_refreshButton ??= GetNodeOrNull<Button>("%RefreshButton");
 	}
@@ -298,6 +304,7 @@ public partial class CityDashboardController : Control
 		_canSleep = false;
 		_canEat = false;
 		_canBuyBusiness = false;
+		_canCollectDividend = false;
 		_canTakeExam = false;
 		SetErrorState($"{message} Створюємо нового гравця...");
 		UpdateActionButtons();
@@ -507,9 +514,16 @@ public partial class CityDashboardController : Control
 		if (OwnedBusinessLabel != null)
 		{
 			var businesses = data["owned_businesses"]?.AsArray();
-			OwnedBusinessLabel.Text = businesses == null || businesses.Count == 0
-				? "Бізнес: немає"
-				: $"Бізнес: {businesses[0]?["name"]}";
+			if (businesses == null || businesses.Count == 0)
+			{
+				_ownedBusinessId = "";
+				OwnedBusinessLabel.Text = "Бізнес: немає";
+			}
+			else
+			{
+				_ownedBusinessId = businesses[0]?["id"]?.ToString() ?? "";
+				OwnedBusinessLabel.Text = $"Бізнес: {businesses[0]?["name"]}";
+			}
 		}
 
 		if (EnergyBar != null)
@@ -549,6 +563,7 @@ public partial class CityDashboardController : Control
 			_canSleep = true;
 			_canEat = false;
 			_canBuyBusiness = false;
+			_canCollectDividend = false;
 			_canTakeExam = _playerEducation == "High School";
 			return;
 		}
@@ -558,6 +573,7 @@ public partial class CityDashboardController : Control
 		_canSleep = actions["can_sleep"]?.GetValue<bool>() ?? false;
 		_canEat = actions["can_eat"]?.GetValue<bool>() ?? false;
 		_canBuyBusiness = actions["can_buy_business"]?.GetValue<bool>() ?? false;
+		_canCollectDividend = actions["can_collect_dividend"]?.GetValue<bool>() ?? false;
 		_canTakeExam = actions["can_take_exam"]?.GetValue<bool>() ?? false;
 	}
 
@@ -705,12 +721,14 @@ public partial class CityDashboardController : Control
 			|| !string.IsNullOrEmpty(_pendingSleepKey)
 			|| !string.IsNullOrEmpty(_pendingEatKey)
 			|| !string.IsNullOrEmpty(_pendingBusinessBuyKey)
+			|| !string.IsNullOrEmpty(_pendingDividendKey)
 			|| !string.IsNullOrEmpty(_pendingExamKey);
 		SetButtonState(_applyJobButton, !hasPlayer || !_canApplyJob || actionBusy, _pendingApply ? "Шукаємо..." : ApplyJobText);
 		SetButtonState(_workButton, !hasPlayer || !_canWork || actionBusy, !string.IsNullOrEmpty(_pendingWorkKey) ? "Працюємо..." : WorkText);
 		SetButtonState(_sleepButton, !hasPlayer || !_canSleep || actionBusy, !string.IsNullOrEmpty(_pendingSleepKey) ? "Спимо..." : SleepText);
 		SetButtonState(_eatButton, !hasPlayer || !_canEat || actionBusy, !string.IsNullOrEmpty(_pendingEatKey) ? "Їмо..." : EatText);
 		SetButtonState(_buyBusinessButton, !hasPlayer || !_canBuyBusiness || actionBusy, !string.IsNullOrEmpty(_pendingBusinessBuyKey) ? "Купуємо..." : _pendingBusinessMarket ? "Шукаємо..." : BuyBusinessText);
+		SetButtonState(_collectDividendButton, !hasPlayer || !_canCollectDividend || string.IsNullOrEmpty(_ownedBusinessId) || actionBusy, !string.IsNullOrEmpty(_pendingDividendKey) ? "Збираємо..." : CollectDividendText);
 		string examButtonText = !string.IsNullOrEmpty(_pendingExamKey)
 			? "Надсилаємо..."
 			: _pendingExamInfo ? "Завантаження..." : ExamText;
@@ -779,6 +797,10 @@ public partial class CityDashboardController : Control
 		else if (endpoint == "/api/businesses/buy")
 		{
 			_pendingBusinessBuyKey = "";
+		}
+		else if (endpoint == "/api/businesses/dividend")
+		{
+			_pendingDividendKey = "";
 		}
 		else if (endpoint == "/api/businesses/market")
 		{
@@ -915,6 +937,34 @@ public partial class CityDashboardController : Control
 		ClearErrorState();
 		SetStatus("Шукаємо доступний бізнес...");
 		_apiClient?.Get("/api/businesses/market");
+	}
+
+	public void OnCollectDividendButtonPressed()
+	{
+		if (_session == null || !_session.HasAuthenticatedPlayer)
+		{
+			SetStatus("Немає активного гравця.");
+			return;
+		}
+
+		if (string.IsNullOrEmpty(_ownedBusinessId))
+		{
+			SetStatus("Спочатку купіть бізнес.");
+			return;
+		}
+
+		if (!string.IsNullOrEmpty(_pendingDividendKey))
+		{
+			SetStatus("Дивіденд уже збирається...");
+			return;
+		}
+
+		string payload = ApiClient.BuildJson(new { player_id = _session.PlayerId, business_id = _ownedBusinessId });
+		_pendingDividendKey = BuildActionKey("dividend");
+		UpdateActionButtons();
+		ClearErrorState();
+		SetStatus("Збираємо дивіденд...");
+		_apiClient?.PostAuthorizedIdempotent("/api/businesses/dividend", _session.AuthToken, _pendingDividendKey, payload);
 	}
 
 	public void OnExamButtonPressed()

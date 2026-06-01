@@ -229,6 +229,13 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Купити бізнес"
 
+[node name="CollectDividendButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Зібрати дивіденд"
+
 [node name="ExamOverlay" type="PanelContainer" parent="."]
 visible = false
 layout_mode = 1
@@ -295,6 +302,7 @@ text = "Закрити"
 [connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/WorkButton" to="." method="OnWorkButtonPressed"]
 [connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/SleepButton" to="." method="OnSleepButtonPressed"]
 [connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/EatButton" to="." method="OnEatButtonPressed"]
-[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/BuyBusinessButton" to="." method="OnBuyBusinessButtonPressed"]
 [connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/ExamButton" to="." method="OnExamButtonPressed"]
 [connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/RefreshButton" to="." method="OnRefreshButtonPressed"]
+[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/BuyBusinessButton" to="." method="OnBuyBusinessButtonPressed"]
+[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/CollectDividendButton" to="." method="OnCollectDividendButtonPressed"]

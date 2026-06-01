@@ -22,6 +22,7 @@ def build_player_actions(db: Session, player: Player, job: Job | None, hostel: H
         "can_sleep": hostel is not None,
         "can_eat": (player.hunger or 0) > 0 and money(player.balance) >= MEAL_COST,
         "can_buy_business": (cheapest_business_price(db) or Decimal("999999999.00")) <= money(player.balance),
+        "can_collect_dividend": any(money(b.cash_balance) >= Decimal("250.00") for b in get_owned_businesses(db, player.id)),
         "can_take_exam": player.education_level == "High School" and money(player.balance) >= exam_cost,
     }
 

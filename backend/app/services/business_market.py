@@ -13,6 +13,8 @@ BUSINESS_PURCHASE_PRICES = {
     "factory": money("3000.00"),
     "private_hostel": money("5000.00"),
 }
+DIVIDEND_RATE = money("0.10")
+MIN_DIVIDEND_AMOUNT = money("25.00")
 
 
 def get_business_price(business: Business) -> Decimal | None:
@@ -97,4 +99,54 @@ def process_business_purchase(db: Session, player_id: str, business_id: str) -> 
         "player": {
             "balance": float(player.balance),
         },
+    }
+
+
+def process_business_dividend_collection(db: Session, player_id: str, business_id: str) -> dict:
+    player_uuid = to_uuid(player_id)
+    business_uuid = to_uuid(business_id)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return {"success": False, "message": "Гравця не знайдено"}
+
+    business = db.query(Business).filter(Business.id == business_uuid).first()
+    if not business:
+        return {"success": False, "message": "Бізнес не знайдено"}
+
+    if business.owner_player_id != player.id:
+        return {"success": False, "message": "Ви не є власником цього бізнесу."}
+
+    dividend = (money(business.cash_balance) * DIVIDEND_RATE).quantize(money("0.01"))
+    if dividend < MIN_DIVIDEND_AMOUNT:
+        return {"success": False, "message": f"У бізнесу замало вільної каси для дивідендів. Мінімум: {MIN_DIVIDEND_AMOUNT:.2f} ₴."}
+
+    debit(db, business, "cash_balance", dividend)
+    credit(db, player, "balance", dividend)
+
+    log_transaction(
+        db,
+        player.city_id,
+        sender_id=business.id,
+        sender_type="business",
+        receiver_id=player.id,
+        receiver_type="player",
+        amount=float(dividend),
+        tax=0.0,
+        purpose="business_dividend",
+    )
+
+    db.commit()
+    return {
+        "success": True,
+        "message": f"Отримано дивіденд {dividend:.2f} ₴ від бізнесу '{business.name}'.",
+        "business": {
+            "id": str(business.id),
+            "name": business.name,
+            "type": business.type,
+            "cash_balance": float(business.cash_balance),
+        },
+        "player": {
+            "balance": float(player.balance),
+        },
+        "dividend": float(dividend),
     }

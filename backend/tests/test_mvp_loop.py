@@ -5,7 +5,11 @@ import pytest
 
 from backend.app.models import Business, City, Hostel, Job, Player, TransactionModelLog
 from backend.app.seed import seed_initial_data
-from backend.app.services.business_market import get_buyable_businesses, process_business_purchase
+from backend.app.services.business_market import (
+    get_buyable_businesses,
+    process_business_dividend_collection,
+    process_business_purchase,
+)
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.needs import process_meal_purchase
@@ -146,6 +150,44 @@ def test_business_purchase_transfers_money_to_treasury_and_assigns_owner():
         assert purchase_log.receiver_id == city.id
         assert purchase_log.receiver_type == "treasury"
         assert purchase_log.amount == Decimal("1200.00")
+    finally:
+        db.close()
+
+
+def test_business_dividend_moves_cash_from_owned_business_to_player():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+
+        city = db.query(City).first()
+        business = db.query(Business).filter(Business.type == "shop").one()
+        player = Player(
+            city_id=city.id,
+            username="dividend-owner",
+            balance=Decimal("100.00"),
+            energy=100,
+            mood=100,
+            education_level="High School",
+        )
+        db.add(player)
+        db.flush()
+        business.owner_player_id = player.id
+        db.commit()
+
+        result = process_business_dividend_collection(db, str(player.id), str(business.id))
+
+        assert result["success"] is True
+        db.refresh(player)
+        db.refresh(business)
+        assert Decimal(str(player.balance)) == Decimal("200.00")
+        assert Decimal(str(business.cash_balance)) == Decimal("900.00")
+
+        dividend_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "business_dividend").one()
+        assert dividend_log.sender_id == business.id
+        assert dividend_log.sender_type == "business"
+        assert dividend_log.receiver_id == player.id
+        assert dividend_log.receiver_type == "player"
+        assert dividend_log.amount == Decimal("100.00")
     finally:
         db.close()
 

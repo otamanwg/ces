@@ -173,13 +173,13 @@ DoD:
 2. ✅ Backend: ownership snapshot/actions/effects, ledger `business_purchase`.
 3. ✅ Tests: service/API/idempotency coverage для купівлі бізнесу.
 4. ✅ Client: показ власного бізнесу + кнопка “Купити бізнес”.
-5. ⏳ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
+5. ✅ Backend/client: owner dividend action із каси бізнесу.
+6. ⏳ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
 
 Наступний вузький крок після Sprint 10:
 
-1. Owner income/dividend action.
-2. City events/news.
-3. Sports as lightweight side progression.
+1. City events/news.
+2. Sports as lightweight side progression.
 
 Поки не чіпати:
 

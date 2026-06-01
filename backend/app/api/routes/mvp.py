@@ -10,7 +10,12 @@ from backend.app.models import City, Hostel, Player
 from backend.app.schemas.mvp import BusinessMarketData, BusinessMarketItem, ExamInfoData, ExamQuestionData, VacanciesData, VacancyItem
 from backend.app.schemas.response import api_error, api_success
 from backend.app.services.auth import get_authorized_player, new_player_token
-from backend.app.services.business_market import get_business_price, get_buyable_businesses, process_business_purchase
+from backend.app.services.business_market import (
+    get_business_price,
+    get_buyable_businesses,
+    process_business_dividend_collection,
+    process_business_purchase,
+)
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work, update_inflation_rate
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.ids import to_uuid, try_uuid
@@ -34,6 +39,11 @@ class JobApply(BaseModel):
 
 
 class BusinessBuy(BaseModel):
+    player_id: str
+    business_id: str
+
+
+class BusinessDividend(BaseModel):
     player_id: str
     business_id: str
 
@@ -203,6 +213,39 @@ def buy_business(
     snapshot = build_player_snapshot(db, player)
     response = api_success(res["message"], {**snapshot, "business": res["business"]}, build_goal_effects(db, player))
     return save_idempotent_response(db, "business_buy", idempotency_key, data.player_id, response)
+
+
+@router.post("/businesses/dividend")
+def collect_business_dividend(
+    data: BusinessDividend,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db),
+):
+    player = require_player(db, data.player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    cached = get_idempotent_response(db, "business_dividend", idempotency_key, data.player_id)
+    if cached:
+        return cached
+
+    business_uuid = try_uuid(data.business_id)
+    if business_uuid is None:
+        return api_error("Бізнес не знайдено")
+
+    res = process_business_dividend_collection(db, data.player_id, str(business_uuid))
+    if not res["success"]:
+        return api_error(res["message"])
+
+    db.refresh(player)
+    snapshot = build_player_snapshot(db, player)
+    response = api_success(
+        res["message"],
+        {**snapshot, "business": res["business"], "dividend": res["dividend"]},
+        build_goal_effects(db, player),
+    )
+    return save_idempotent_response(db, "business_dividend", idempotency_key, data.player_id, response)
 
 
 @router.post("/jobs/apply")

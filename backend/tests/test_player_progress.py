@@ -187,6 +187,7 @@ def test_player_snapshot_actions_follow_current_state():
             "can_sleep": True,
             "can_eat": False,
             "can_buy_business": False,
+            "can_collect_dividend": False,
             "can_take_exam": False,
         }
 
@@ -200,6 +201,7 @@ def test_player_snapshot_actions_follow_current_state():
         assert snapshot["actions"]["can_sleep"] is True
         assert snapshot["actions"]["can_eat"] is True
         assert snapshot["actions"]["can_buy_business"] is True
+        assert snapshot["actions"]["can_collect_dividend"] is False
         assert snapshot["actions"]["can_take_exam"] is True
     finally:
         db.close()
