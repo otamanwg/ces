@@ -49,11 +49,11 @@ public partial class CityDashboardController : Control
 	private string _pendingExamKey = "";
 	private string _lastHistoryMessage = "";
 	private readonly Queue<string> _eventHistory = new();
-	private const string ApplyJobText = "Влаштуватись на роботу";
-	private const string WorkText = "Відпрацювати зміну";
-	private const string SleepText = "Спати (оренда + відновлення)";
-	private const string ExamText = "Скласти іспит (коледж)";
-	private const string RefreshText = "Оновити статус";
+	private const string ApplyJobText = "Знайти роботу";
+	private const string WorkText = "Працювати";
+	private const string SleepText = "Спати";
+	private const string ExamText = "Іспит";
+	private const string RefreshText = "Оновити";
 
 	public override void _Ready()
 	{

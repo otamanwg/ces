@@ -17,10 +17,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = 24.0
-offset_right = -24.0
-offset_bottom = -24.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -31,6 +31,7 @@ size_flags_vertical = 3
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/ContentScroll"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer"]
@@ -81,57 +82,69 @@ autowrap_mode = 3
 
 [node name="CityPanel" type="PanelContainer" parent="MarginContainer/ContentScroll/VBoxContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="CityBox" type="VBoxContainer" parent="MarginContainer/ContentScroll/VBoxContainer/CityPanel"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
 [node name="CityNameLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/CityPanel/CityBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Підключення..."
+autowrap_mode = 3
 
 [node name="TreasuryLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/CityPanel/CityBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "0.00 ₴"
+autowrap_mode = 3
 
 [node name="InflationLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/CityPanel/CityBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "0.0%"
+autowrap_mode = 3
 
 [node name="PlayerPanel" type="PanelContainer" parent="MarginContainer/ContentScroll/VBoxContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="PlayerBox" type="VBoxContainer" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
 [node name="UsernameLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Завантаження..."
+autowrap_mode = 3
 
 [node name="BalanceLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "0.00 ₴"
+autowrap_mode = 3
 
 [node name="EducationLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "-"
+autowrap_mode = 3
 
 [node name="CurrentJobLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Безробітний"
+autowrap_mode = 3
 
 [node name="CurrentHostelLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Немає"
+autowrap_mode = 3
 
 [node name="EnergyLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
 layout_mode = 2
@@ -140,6 +153,7 @@ text = "Енергія"
 [node name="EnergyBar" type="TextureProgressBar" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 value = 100.0
 
 [node name="MoodLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
@@ -149,31 +163,42 @@ text = "Настрій"
 [node name="MoodBar" type="TextureProgressBar" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="ApplyJobButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "Влаштуватись на роботу"
+size_flags_horizontal = 3
+text = "Знайти роботу"
 
 [node name="WorkButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "Відпрацювати зміну"
+size_flags_horizontal = 3
+text = "Працювати"
 
 [node name="SleepButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "Спати (оренда + відновлення)"
+size_flags_horizontal = 3
+text = "Спати"
 
 [node name="ExamButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "Скласти іспит (коледж)"
+size_flags_horizontal = 3
+text = "Іспит"
 
 [node name="RefreshButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "Оновити статус"
+size_flags_horizontal = 3
+text = "Оновити"
 
 [node name="ExamOverlay" type="PanelContainer" parent="."]
 visible = false
