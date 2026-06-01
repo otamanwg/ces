@@ -11,7 +11,7 @@ from backend.app.schemas.response import api_error, api_success
 from backend.app.services.auth import get_authorized_player, new_player_token
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work, update_inflation_rate
 from backend.app.services.education import load_manager_exam, process_exam_submission
-from backend.app.services.ids import to_uuid
+from backend.app.services.ids import to_uuid, try_uuid
 from backend.app.services.idempotency import get_idempotent_response, save_idempotent_response
 from backend.app.services.player_profile import build_player_snapshot, get_player_snapshot
 from backend.app.services.player_progress import build_goal_effects
@@ -157,7 +157,11 @@ def apply_for_job(
     if not player:
         return api_error("Сесія гравця недійсна. Зареєструйтесь знову.")
 
-    job = db.query(Job).filter(Job.id == to_uuid(data.job_id)).first()
+    job_uuid = try_uuid(data.job_id)
+    if job_uuid is None:
+        return api_error("Вакансію не знайдено.")
+
+    job = db.query(Job).filter(Job.id == job_uuid).first()
 
     if not job:
         return api_error("Вакансію не знайдено.")

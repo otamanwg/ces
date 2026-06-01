@@ -85,6 +85,26 @@ def test_full_mvp_api_loop(client):
     assert invalid_apply_body["success"] is False
     assert "Сесія гравця недійсна" in invalid_apply_body["message"]
 
+    malformed_player = test_client.post(
+        "/api/jobs/apply",
+        json={"player_id": "not-a-uuid", "job_id": hs_job["id"]},
+        headers=auth_headers,
+    )
+    assert malformed_player.status_code == 200
+    malformed_player_body = malformed_player.json()
+    assert malformed_player_body["success"] is False
+    assert "Сесія гравця недійсна" in malformed_player_body["message"]
+
+    malformed_job = test_client.post(
+        "/api/jobs/apply",
+        json={"player_id": player_id, "job_id": "not-a-uuid"},
+        headers=auth_headers,
+    )
+    assert malformed_job.status_code == 200
+    malformed_job_body = malformed_job.json()
+    assert malformed_job_body["success"] is False
+    assert malformed_job_body["message"] == "Вакансію не знайдено."
+
     work_headers = {"X-Player-Token": player_token, "Idempotency-Key": "api-loop-work-1"}
     work_res = test_client.post(f"/api/jobs/work/{player_id}", headers=work_headers)
     assert work_res.status_code == 200
