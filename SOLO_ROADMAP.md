@@ -122,7 +122,7 @@ DoD:
 
 1. ✅ Зафіксувати target loop: старт не може скласти іспит, після 1 work + 1 sleep вже може.
 2. ✅ Налаштувати exam cost під target loop: 650 ₴ при старті 500 ₴.
-3. Додати balance tests: гравець може пройти loop без grind і без infinite money.
+3. ✅ Додати balance tests: гравець може пройти loop без grind і без infinite money.
 4. Перевірити `next_action` після кожного кроку.
 5. Оновити README з очікуваним dev playtest сценарієм.
 

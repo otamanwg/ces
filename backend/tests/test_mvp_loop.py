@@ -192,3 +192,57 @@ def test_exam_payment_updates_treasury_and_logs_fee():
         assert exam_fee.tax_deducted == Decimal("0.00")
     finally:
         db.close()
+
+
+def test_starter_balance_reaches_college_after_one_work_sleep_cycle():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="starter-balance-loop",
+            balance=Decimal("500.00"),
+            energy=100,
+            mood=100,
+            education_level="High School",
+        )
+        db.add(player)
+        db.flush()
+
+        room = db.query(Hostel).first()
+        room.tenant_player_id = player.id
+        job = db.query(Job).filter(Job.min_education == "High School").order_by(Job.salary_per_hour).first()
+        job.filled_by_player_id = player.id
+        db.commit()
+
+        exam = load_manager_exam()
+        answers = {str(q["id"]): q["correct_option_index"] for q in exam["questions"]}
+        exam_cost = Decimal(str(exam["cost_to_take"]))
+        assert Decimal(str(player.balance)) < exam_cost
+
+        work_result = process_shift_work(db, str(player.id))
+        assert work_result["success"] is True
+        db.refresh(player)
+        assert Decimal(str(player.balance)) == Decimal("680.00")
+        assert player.energy == 70
+
+        sleep_result = process_rent_payment(db, str(player.id))
+        assert sleep_result["success"] is True
+        db.refresh(player)
+        assert Decimal(str(player.balance)) == Decimal("665.00")
+        assert player.energy == 100
+        assert Decimal(str(player.balance)) >= exam_cost
+
+        exam_result = process_exam_submission(db, str(player.id), answers)
+        assert exam_result["success"] is True
+        assert exam_result["passed"] is True
+        db.refresh(player)
+        assert player.education_level == "College"
+        assert Decimal(str(player.balance)) == Decimal("15.00")
+
+        purposes = [row.purpose for row in db.query(TransactionModelLog).order_by(TransactionModelLog.timestamp).all()]
+        assert purposes == ["salary", "rent", "exam_fee"]
+    finally:
+        db.close()
