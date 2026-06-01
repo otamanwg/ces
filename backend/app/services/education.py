@@ -31,6 +31,8 @@ def process_exam_submission(db: Session, player_id: str, submitted_answers: Dict
     player = db.query(Player).filter(Player.id == player_uuid).first()
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
+    if player.education_level != "High School":
+        return {"success": False, "message": "Іспит доступний лише для переходу з High School до College."}
 
     exam = load_manager_exam()
     if not exam:

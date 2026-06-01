@@ -183,6 +183,19 @@ def test_full_mvp_api_loop(client):
     db.refresh(player)
     assert player.education_level == "College"
 
+    balance_after_pass = player.balance
+    second_exam = test_client.post(
+        "/api/education/exam/submit",
+        json={"player_id": player_id, "answers": answers},
+        headers={"X-Player-Token": player_token, "Idempotency-Key": "api-loop-exam-2"},
+    )
+    assert second_exam.status_code == 200
+    second_exam_body = second_exam.json()
+    assert second_exam_body["success"] is False
+    assert "High School до College" in second_exam_body["message"]
+    db.refresh(player)
+    assert player.balance == balance_after_pass
+
     vacancies_after = test_client.get("/api/jobs/vacancies").json()["data"]["vacancies"]
     college_job = next(j for j in vacancies_after if j["min_education"] == "College")
     apply_college = test_client.post(
