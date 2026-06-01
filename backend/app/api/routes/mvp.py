@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from backend.app.core.config import settings
 from backend.app.database import get_db
 from backend.app.models import City, Hostel, Player
+from backend.app.schemas.mvp import ExamInfoData, ExamQuestionData, VacanciesData, VacancyItem
 from backend.app.schemas.response import api_error, api_success
 from backend.app.services.auth import get_authorized_player, new_player_token
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work, update_inflation_rate
@@ -133,20 +134,20 @@ def get_player_status(
 @router.get("/jobs/vacancies")
 def get_vacancies(db: Session = Depends(get_db)):
     vacancies = get_vacant_jobs(db)
-    data = {
-        "vacancies": [
-            {
-                "id": str(j.id),
-                "business_name": j.business.name,
-                "title": j.title,
-                "salary_per_hour": float(j.salary_per_hour),
-                "min_education": j.min_education,
-                "energy_cost": j.energy_cost_per_shift,
-            }
+    data = VacanciesData(
+        vacancies=[
+            VacancyItem(
+                id=str(j.id),
+                business_name=j.business.name,
+                title=j.title,
+                salary_per_hour=float(j.salary_per_hour),
+                min_education=j.min_education,
+                energy_cost=j.energy_cost_per_shift,
+            )
             for j in vacancies
         ]
-    }
-    return api_success("Доступні вакансії.", data)
+    )
+    return api_success("Доступні вакансії.", data.model_dump())
 
 
 @router.post("/jobs/apply")
@@ -252,19 +253,19 @@ def get_exam_details():
     if not exam:
         raise HTTPException(status_code=404, detail="Файл квізу не знайдено на сервері")
 
-    clean_exam = {
-        "exam_id": exam["exam_id"],
-        "title": exam["title"],
-        "cost_to_take": exam["cost_to_take"],
-        "passing_score": exam["passing_score"],
-        "time_limit_seconds": exam["time_limit_seconds"],
-        "description": exam["description"],
-        "questions": [
-            {"id": q["id"], "text": q["text"], "options": q["options"]}
+    clean_exam = ExamInfoData(
+        exam_id=exam["exam_id"],
+        title=exam["title"],
+        cost_to_take=exam["cost_to_take"],
+        passing_score=exam["passing_score"],
+        time_limit_seconds=exam["time_limit_seconds"],
+        description=exam["description"],
+        questions=[
+            ExamQuestionData(id=q["id"], text=q["text"], options=q["options"])
             for q in exam["questions"]
         ],
-    }
-    return api_success("Інформація про іспит.", clean_exam)
+    )
+    return api_success("Інформація про іспит.", clean_exam.model_dump())
 
 
 @router.post("/education/exam/submit")
