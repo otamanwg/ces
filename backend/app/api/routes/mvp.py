@@ -13,6 +13,7 @@ from backend.app.services.economy import game_day_tick, process_rent_payment, pr
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.ids import to_uuid, try_uuid
 from backend.app.services.idempotency import get_idempotent_response, save_idempotent_response
+from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
 from backend.app.services.player_profile import build_player_snapshot, get_player_snapshot
 from backend.app.services.player_progress import build_goal_effects
 
@@ -120,7 +121,7 @@ def get_player_status(
     db: Session = Depends(get_db),
 ):
     if not require_player(db, player_id, player_token):
-        return api_error("Сесія гравця недійсна. Зареєструйтесь знову.")
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
 
     snapshot = get_player_snapshot(db, player_id)
     if not snapshot:
@@ -155,16 +156,16 @@ def apply_for_job(
 ):
     player = require_player(db, data.player_id, player_token)
     if not player:
-        return api_error("Сесія гравця недійсна. Зареєструйтесь знову.")
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
 
     job_uuid = try_uuid(data.job_id)
     if job_uuid is None:
-        return api_error("Вакансію не знайдено.")
+        return api_error(JOB_NOT_FOUND_MESSAGE)
 
     job = db.query(Job).filter(Job.id == job_uuid).first()
 
     if not job:
-        return api_error("Вакансію не знайдено.")
+        return api_error(JOB_NOT_FOUND_MESSAGE)
 
     if job.filled_by_player_id is not None:
         return api_error("Ця вакансія вже зайнята.")
@@ -203,7 +204,7 @@ def do_work_shift(
     db: Session = Depends(get_db),
 ):
     if not require_player(db, player_id, player_token):
-        return api_error("Сесія гравця недійсна. Зареєструйтесь знову.")
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
 
     cached = get_idempotent_response(db, "work_shift", idempotency_key, player_id)
     if cached:
@@ -229,7 +230,7 @@ def sleep_in_hostel(
     db: Session = Depends(get_db),
 ):
     if not require_player(db, player_id, player_token):
-        return api_error("Сесія гравця недійсна. Зареєструйтесь знову.")
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
 
     cached = get_idempotent_response(db, "sleep", idempotency_key, player_id)
     if cached:
@@ -274,7 +275,7 @@ def submit_exam(
     db: Session = Depends(get_db),
 ):
     if not require_player(db, data.player_id, player_token):
-        return api_error("Сесія гравця недійсна. Зареєструйтесь знову.")
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
 
     cached = get_idempotent_response(db, "exam_submit", idempotency_key, data.player_id)
     if cached:

@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from backend.app.database import get_db
 from backend.app.models import IdempotencyRecord, Player, TransactionModelLog
 from backend.app.seed import seed_initial_data
+from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
 from backend.tests.db import make_test_session
 from backend.main import app
 
@@ -61,6 +62,7 @@ def test_full_mvp_api_loop(client):
     unauth_player = test_client.get(f"/api/player/{player_id}")
     assert unauth_player.status_code == 200
     assert unauth_player.json()["success"] is False
+    assert unauth_player.json()["message"] == INVALID_PLAYER_SESSION_MESSAGE
 
     vacancies_res = test_client.get("/api/jobs/vacancies")
     assert vacancies_res.status_code == 200
@@ -83,7 +85,7 @@ def test_full_mvp_api_loop(client):
     assert invalid_apply.status_code == 200
     invalid_apply_body = invalid_apply.json()
     assert invalid_apply_body["success"] is False
-    assert "Сесія гравця недійсна" in invalid_apply_body["message"]
+    assert invalid_apply_body["message"] == INVALID_PLAYER_SESSION_MESSAGE
 
     malformed_player = test_client.post(
         "/api/jobs/apply",
@@ -93,7 +95,7 @@ def test_full_mvp_api_loop(client):
     assert malformed_player.status_code == 200
     malformed_player_body = malformed_player.json()
     assert malformed_player_body["success"] is False
-    assert "Сесія гравця недійсна" in malformed_player_body["message"]
+    assert malformed_player_body["message"] == INVALID_PLAYER_SESSION_MESSAGE
 
     malformed_job = test_client.post(
         "/api/jobs/apply",
@@ -103,7 +105,7 @@ def test_full_mvp_api_loop(client):
     assert malformed_job.status_code == 200
     malformed_job_body = malformed_job.json()
     assert malformed_job_body["success"] is False
-    assert malformed_job_body["message"] == "Вакансію не знайдено."
+    assert malformed_job_body["message"] == JOB_NOT_FOUND_MESSAGE
 
     work_headers = {"X-Player-Token": player_token, "Idempotency-Key": "api-loop-work-1"}
     work_res = test_client.post(f"/api/jobs/work/{player_id}", headers=work_headers)
@@ -123,7 +125,7 @@ def test_full_mvp_api_loop(client):
     assert malformed_work.status_code == 200
     malformed_work_body = malformed_work.json()
     assert malformed_work_body["success"] is False
-    assert "Сесія гравця недійсна" in malformed_work_body["message"]
+    assert malformed_work_body["message"] == INVALID_PLAYER_SESSION_MESSAGE
 
     sleep_headers = {"X-Player-Token": player_token, "Idempotency-Key": "api-loop-sleep-1"}
     sleep_res = test_client.post(f"/api/hostels/sleep/{player_id}", headers=sleep_headers)
@@ -142,7 +144,7 @@ def test_full_mvp_api_loop(client):
     assert malformed_sleep.status_code == 200
     malformed_sleep_body = malformed_sleep.json()
     assert malformed_sleep_body["success"] is False
-    assert "Сесія гравця недійсна" in malformed_sleep_body["message"]
+    assert malformed_sleep_body["message"] == INVALID_PLAYER_SESSION_MESSAGE
 
     balance_after_sleep = sleep_body["data"]["balance"]
 
@@ -200,7 +202,7 @@ def test_full_mvp_api_loop(client):
     assert malformed_exam.status_code == 200
     malformed_exam_body = malformed_exam.json()
     assert malformed_exam_body["success"] is False
-    assert "Сесія гравця недійсна" in malformed_exam_body["message"]
+    assert malformed_exam_body["message"] == INVALID_PLAYER_SESSION_MESSAGE
 
     db.refresh(player)
     assert player.education_level == "College"
