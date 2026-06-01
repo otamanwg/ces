@@ -47,6 +47,17 @@ def process_exam_submission(db: Session, player_id: str, submitted_answers: Dict
     player.balance = money(player.balance) - cost
     city = db.query(City).filter(City.id == player.city_id).first()
     city.treasury_balance = money(city.treasury_balance) + cost
+    log_transaction(
+        db,
+        city.id,
+        sender_id=player.id,
+        sender_type="player",
+        receiver_id=city.id,
+        receiver_type="treasury",
+        amount=float(cost),
+        tax=0.0,
+        purpose="exam_fee",
+    )
 
     # Оцінювання відповідей
     correct_count = 0

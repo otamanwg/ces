@@ -6,6 +6,7 @@ import pytest
 from backend.app.models import City, Hostel, Job, Player, TransactionModelLog
 from backend.app.seed import seed_initial_data
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work
+from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.tests.db import make_test_session
 
 
@@ -146,5 +147,48 @@ def test_sleep_then_tick_does_not_double_charge_rent():
         assert player.balance == balance_after_sleep
         assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "rent").count() == 1
         assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "daily_rent").count() == 0
+    finally:
+        db.close()
+
+
+def test_exam_payment_updates_treasury_and_logs_fee():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="exam-ledger-player",
+            balance=Decimal("500.00"),
+            energy=100,
+            mood=100,
+            education_level="High School",
+        )
+        db.add(player)
+        db.commit()
+
+        exam = load_manager_exam()
+        answers = {str(q["id"]): q["correct_option_index"] for q in exam["questions"]}
+        exam_cost = Decimal(str(exam["cost_to_take"]))
+        starting_player_balance = Decimal(str(player.balance))
+        starting_treasury = Decimal(str(city.treasury_balance))
+
+        result = process_exam_submission(db, str(player.id), answers)
+        assert result["success"] is True
+        assert result["passed"] is True
+
+        db.refresh(player)
+        db.refresh(city)
+        assert Decimal(str(player.balance)) == starting_player_balance - exam_cost
+        assert Decimal(str(city.treasury_balance)) == starting_treasury + exam_cost
+
+        exam_fee = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "exam_fee").one()
+        assert exam_fee.sender_id == player.id
+        assert exam_fee.sender_type == "player"
+        assert exam_fee.receiver_id == city.id
+        assert exam_fee.receiver_type == "treasury"
+        assert exam_fee.amount == exam_cost
+        assert exam_fee.tax_deducted == Decimal("0.00")
     finally:
         db.close()

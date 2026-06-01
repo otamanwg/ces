@@ -87,7 +87,7 @@
 | 5.4 | Перевірити malformed IDs для `work/sleep/exam` routes | ✅ | `test_api_mvp_loop.py` |
 | 5.5 | Уніфікувати user-facing error messages для core actions | ✅ | API tests + client status |
 | 5.6 | Перевірити idempotency edge cases: same key, wrong player/action | ✅ | service/API tests |
-| 5.7 | Перевірити money/ledger consistency після work/sleep/exam | ⬜ | transaction tests |
+| 5.7 | Перевірити money/ledger consistency після work/sleep/exam | ✅ | transaction tests |
 
 Після кожного пункту: `scripts/check.ps1`, commit.
 
