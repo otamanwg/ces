@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from backend.app.models import Player, City, Job, Hostel, TransactionModelLog, Business
 from backend.app.services.ids import to_uuid
 from backend.app.services.job_queries import get_active_job
-from backend.app.services.ledger import log_transaction
+from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
 
 
@@ -56,16 +56,16 @@ def process_shift_work(db: Session, player_id: str) -> dict:
 
     # Виконання транзакції
     player.energy -= job.energy_cost_per_shift
-    player.balance = money(player.balance) + net_salary
+    credit(db, player, "balance", net_salary)
     
     # Зміна балансів казначейства та бізнесу
-    city.treasury_balance = money(city.treasury_balance) + tax_amount
+    credit(db, city, "treasury_balance", tax_amount)
     
     # Зарплата виплачується з балансу бізнесу (якщо це приватний) або казначейства (державний)
     if business.owner_player_id is None:  # Комунальне/державне підприємство
-        city.treasury_balance = money(city.treasury_balance) - gross_salary
+        debit(db, city, "treasury_balance", gross_salary)
     else:
-        business.cash_balance = money(business.cash_balance) - gross_salary
+        debit(db, business, "cash_balance", gross_salary)
 
     # Логування ЗП
     log_transaction(
@@ -108,15 +108,15 @@ def process_rent_payment(db: Session, player_id: str) -> dict:
 
     # Перевірка наявності коштів
     if money(player.balance) >= rent_price:
-        player.balance = money(player.balance) - rent_price
+        debit(db, player, "balance", rent_price)
         player.energy = min(100, player.energy + (hostel.energy_regen_per_hour * 8)) # 8 годин сну
         player.mood = min(100, player.mood + 15)
         
         # Гроші за оренду йдуть власнику хостелу (приватний бізнес або Скарбниця міста)
         if business.owner_player_id is None:
-            city.treasury_balance = money(city.treasury_balance) + rent_price
+            credit(db, city, "treasury_balance", rent_price)
         else:
-            business.cash_balance = money(business.cash_balance) + rent_price
+            credit(db, business, "cash_balance", rent_price)
 
         log_transaction(
             db, city.id,

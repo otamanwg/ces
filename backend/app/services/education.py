@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.models import Player, PoliceRecord, City
 from backend.app.services.ids import to_uuid
-from backend.app.services.ledger import log_transaction
+from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
 
 COLLEGE_EXAM_FILE = os.path.abspath(
@@ -44,9 +44,9 @@ def process_exam_submission(db: Session, player_id: str, submitted_answers: Dict
         return {"success": False, "message": f"Недостатньо грошей для складання іспиту! Потрібно: {cost} ₴"}
 
     # Списання оплати в Скарбницю
-    player.balance = money(player.balance) - cost
+    debit(db, player, "balance", cost)
     city = db.query(City).filter(City.id == player.city_id).first()
-    city.treasury_balance = money(city.treasury_balance) + cost
+    credit(db, city, "treasury_balance", cost)
     log_transaction(
         db,
         city.id,
