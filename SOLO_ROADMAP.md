@@ -52,6 +52,29 @@
 
 ---
 
+## Autonomous Execution Queue
+
+Це черга, яку Codex виконує без додаткового підтвердження, поки немає архітектурного конфлікту або повторного падіння тестів.
+
+1. Брати перший незакритий пункт активного sprint.
+2. Написати або оновити regression test.
+3. Реалізувати мінімальний fix.
+4. Запустити targeted tests.
+5. Запустити `scripts/check.ps1`.
+6. Якщо є Godot/client зміни: перевірити Godot MCP `get_errors`.
+7. Оновити статус у цьому roadmap, якщо пункт закритий.
+8. Зробити commit.
+9. Перейти до наступного пункту черги.
+
+Зупинка потрібна тільки якщо:
+
+- потрібне продуктове рішення між двома різними gameplay-напрямками;
+- зміна ламає існуючу архітектуру або потребує схеми БД;
+- tests/check падають після 2 спроб;
+- користувач прямо каже зупинитись або переключитись.
+
+---
+
 ## Sprint 5 — MVP Hardening (поточний)
 
 Ціль: прибрати неочевидні поломки core loop, вирівняти API-помилки, зробити клієнт стійким до поганого стану.
@@ -61,7 +84,7 @@
 | 5.1 | Invalid session на `jobs/apply` повертає session error | ✅ | `test_api_mvp_loop.py` |
 | 5.2 | Malformed IDs не дають 500 у auth/apply flow | ✅ | `test_api_mvp_loop.py` |
 | 5.3 | Повторний college exam не списує гроші вдруге | ✅ | `test_api_mvp_loop.py` |
-| 5.4 | Перевірити malformed IDs для `work/sleep/exam` routes | ⬜ | API regression tests |
+| 5.4 | Перевірити malformed IDs для `work/sleep/exam` routes | ✅ | `test_api_mvp_loop.py` |
 | 5.5 | Уніфікувати user-facing error messages для core actions | ⬜ | API tests + client status |
 | 5.6 | Перевірити idempotency edge cases: same key, wrong player/action | ⬜ | service/API tests |
 | 5.7 | Перевірити money/ledger consistency після work/sleep/exam | ⬜ | transaction tests |

@@ -119,6 +119,12 @@ def test_full_mvp_api_loop(client):
     assert repeat_work.json() == work_body
     assert db.query(TransactionModelLog).count() == transactions_after_work
 
+    malformed_work = test_client.post("/api/jobs/work/not-a-uuid", headers=auth_headers)
+    assert malformed_work.status_code == 200
+    malformed_work_body = malformed_work.json()
+    assert malformed_work_body["success"] is False
+    assert "Сесія гравця недійсна" in malformed_work_body["message"]
+
     sleep_headers = {"X-Player-Token": player_token, "Idempotency-Key": "api-loop-sleep-1"}
     sleep_res = test_client.post(f"/api/hostels/sleep/{player_id}", headers=sleep_headers)
     assert sleep_res.status_code == 200
@@ -131,6 +137,12 @@ def test_full_mvp_api_loop(client):
     assert repeat_sleep.status_code == 200
     assert repeat_sleep.json() == sleep_body
     assert db.query(TransactionModelLog).count() == transactions_after_sleep
+
+    malformed_sleep = test_client.post("/api/hostels/sleep/not-a-uuid", headers=auth_headers)
+    assert malformed_sleep.status_code == 200
+    malformed_sleep_body = malformed_sleep.json()
+    assert malformed_sleep_body["success"] is False
+    assert "Сесія гравця недійсна" in malformed_sleep_body["message"]
 
     balance_after_sleep = sleep_body["data"]["balance"]
 
@@ -179,6 +191,16 @@ def test_full_mvp_api_loop(client):
     assert repeat_submit.status_code == 200
     assert repeat_submit.json() == submit_body
     assert repeat_submit.json()["data"]["balance"] == balance_after_exam
+
+    malformed_exam = test_client.post(
+        "/api/education/exam/submit",
+        json={"player_id": "not-a-uuid", "answers": answers},
+        headers=auth_headers,
+    )
+    assert malformed_exam.status_code == 200
+    malformed_exam_body = malformed_exam.json()
+    assert malformed_exam_body["success"] is False
+    assert "Сесія гравця недійсна" in malformed_exam_body["message"]
 
     db.refresh(player)
     assert player.education_level == "College"
