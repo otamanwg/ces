@@ -33,6 +33,7 @@ public partial class CityDashboardController : Control
 	private Button _sleepButton;
 	private Button _examButton;
 	private Button _refreshButton;
+	private DashboardStatusPresenter _statusPresenter;
 	private bool _applyFirstVacancy;
 	private bool _pendingApply;
 	private bool _pendingExamInfo;
@@ -47,8 +48,6 @@ public partial class CityDashboardController : Control
 	private string _pendingWorkKey = "";
 	private string _pendingSleepKey = "";
 	private string _pendingExamKey = "";
-	private string _lastHistoryMessage = "";
-	private readonly Queue<string> _eventHistory = new();
 	private const string ApplyJobText = "Знайти роботу";
 	private const string WorkText = "Працювати";
 	private const string SleepText = "Спати";
@@ -58,6 +57,7 @@ public partial class CityDashboardController : Control
 	public override void _Ready()
 	{
 		BindUiNodes();
+		_statusPresenter = new DashboardStatusPresenter(StatusLabel, ErrorStateLabel, EventHistoryLabel);
 
 		_apiClient = GetNodeOrNull<ApiClient>("/root/ApiClient");
 		_session = GetNodeOrNull<GameSession>("/root/GameSession");
@@ -620,52 +620,17 @@ public partial class CityDashboardController : Control
 
 	private void SetStatus(string message, bool addToHistory = false)
 	{
-		if (StatusLabel != null)
-		{
-			StatusLabel.Text = message;
-		}
-
-		if (addToHistory && !string.IsNullOrWhiteSpace(message))
-		{
-			AddEventHistory(message);
-		}
+		_statusPresenter?.SetStatus(message, addToHistory);
 	}
 
 	private void SetErrorState(string message)
 	{
-		SetStatus(message, true);
-		if (ErrorStateLabel != null)
-		{
-			ErrorStateLabel.Text = message;
-		}
+		_statusPresenter?.SetError(message);
 	}
 
 	private void ClearErrorState()
 	{
-		if (ErrorStateLabel != null)
-		{
-			ErrorStateLabel.Text = "";
-		}
-	}
-
-	private void AddEventHistory(string message)
-	{
-		if (_lastHistoryMessage == message)
-		{
-			return;
-		}
-
-		_lastHistoryMessage = message;
-		_eventHistory.Enqueue(message);
-		while (_eventHistory.Count > 5)
-		{
-			_eventHistory.Dequeue();
-		}
-
-		if (EventHistoryLabel != null)
-		{
-			EventHistoryLabel.Text = "Події:\n" + string.Join("\n", _eventHistory);
-		}
+		_statusPresenter?.ClearError();
 	}
 
 	private static string BuildActionErrorMessage(string endpoint, string message)

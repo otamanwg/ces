@@ -137,7 +137,7 @@ DoD:
 1. ✅ Винести повторювані player/job/city queries у repositories або focused service helpers.
 2. ✅ Переглянути прямі money mutations, де потрібен ledger/debit/credit helper.
 3. ✅ Додати route-level DTO там, де зараз сирі dict-структури.
-4. Зменшити відповідальність `CityDashboardController.cs`, якщо UI стане важким.
+4. ✅ Зменшити відповідальність `CityDashboardController.cs`, якщо UI стане важким.
 
 Не робити це наперед: тільки після Sprint 5-7 або коли зміна реально спрощує наступний крок.
 
