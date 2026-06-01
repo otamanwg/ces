@@ -3,8 +3,9 @@ from decimal import Decimal
 
 import pytest
 
-from backend.app.models import City, Hostel, Job, Player, TransactionModelLog
+from backend.app.models import Business, City, Hostel, Job, Player, TransactionModelLog
 from backend.app.seed import seed_initial_data
+from backend.app.services.business_market import get_buyable_businesses, process_business_purchase
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.needs import process_meal_purchase
@@ -27,6 +28,7 @@ def test_seed_creates_core_city_data():
         assert db.query(City).count() == 1
         assert db.query(Job).count() == 3
         assert db.query(Hostel).count() == 5
+        assert len(get_buyable_businesses(db)) == 1
     finally:
         db.close()
 
@@ -105,6 +107,45 @@ def test_meal_purchase_reduces_hunger_charges_player_and_logs_food():
         assert food_log.receiver_id == city.id
         assert food_log.receiver_type == "treasury"
         assert food_log.amount == Decimal("25.00")
+    finally:
+        db.close()
+
+
+def test_business_purchase_transfers_money_to_treasury_and_assigns_owner():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+
+        city = db.query(City).first()
+        business = db.query(Business).filter(Business.type == "shop").one()
+        player = Player(
+            city_id=city.id,
+            username="business-buyer",
+            balance=Decimal("1500.00"),
+            energy=100,
+            mood=100,
+            education_level="High School",
+        )
+        db.add(player)
+        db.commit()
+
+        starting_treasury = Decimal(str(city.treasury_balance))
+        result = process_business_purchase(db, str(player.id), str(business.id))
+
+        assert result["success"] is True
+        db.refresh(player)
+        db.refresh(city)
+        db.refresh(business)
+        assert business.owner_player_id == player.id
+        assert Decimal(str(player.balance)) == Decimal("300.00")
+        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal("1200.00")
+
+        purchase_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "business_purchase").one()
+        assert purchase_log.sender_id == player.id
+        assert purchase_log.sender_type == "player"
+        assert purchase_log.receiver_id == city.id
+        assert purchase_log.receiver_type == "treasury"
+        assert purchase_log.amount == Decimal("1200.00")
     finally:
         db.close()
 

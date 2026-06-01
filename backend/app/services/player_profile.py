@@ -3,6 +3,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from backend.app.models import Hostel, Job, Player
+from backend.app.services.business_market import cheapest_business_price, get_owned_businesses
 from backend.app.services.education import load_manager_exam
 from backend.app.services.ids import to_uuid
 from backend.app.services.job_queries import education_rank, get_active_job, has_eligible_vacancy
@@ -20,6 +21,7 @@ def build_player_actions(db: Session, player: Player, job: Job | None, hostel: H
         "can_work": bool(job and player.energy >= job.energy_cost_per_shift),
         "can_sleep": hostel is not None,
         "can_eat": (player.hunger or 0) > 0 and money(player.balance) >= MEAL_COST,
+        "can_buy_business": (cheapest_business_price(db) or Decimal("999999999.00")) <= money(player.balance),
         "can_take_exam": player.education_level == "High School" and money(player.balance) >= exam_cost,
     }
 
@@ -28,6 +30,7 @@ def build_player_snapshot(db: Session, player: Player) -> dict:
     job = get_active_job(db, player.id)
     hostel = db.query(Hostel).filter(Hostel.tenant_player_id == player.id).first()
     actions = build_player_actions(db, player, job, hostel)
+    owned_businesses = get_owned_businesses(db, player.id)
 
     return {
         "id": str(player.id),
@@ -41,6 +44,15 @@ def build_player_snapshot(db: Session, player: Player) -> dict:
         "job": job.title if job else "Безробітний",
         "job_id": str(job.id) if job else None,
         "hostel": f"Кімната №{hostel.room_number} (Хостел)" if hostel else "На вулиці",
+        "owned_businesses": [
+            {
+                "id": str(b.id),
+                "name": b.name,
+                "type": b.type,
+                "cash_balance": float(b.cash_balance),
+            }
+            for b in owned_businesses
+        ],
         "actions": actions,
         "goal_effects": build_goal_effects(db, player),
     }

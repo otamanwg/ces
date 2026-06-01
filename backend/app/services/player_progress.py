@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.models import Player
 from backend.app.schemas.response import GameEffect
+from backend.app.services.business_market import cheapest_business_price, get_owned_businesses
 from backend.app.services.education import load_manager_exam
 from backend.app.services.job_queries import get_active_job, get_first_vacant_job_by_min_education
 from backend.app.services.money import money
@@ -79,6 +80,7 @@ def build_next_action_hint(db: Session, player: Player) -> dict:
 def build_goal_effects(db: Session, player: Player) -> list[dict]:
     effects: list[dict] = [build_next_action_hint(db, player)]
     balance = money(player.balance)
+    owned_businesses = get_owned_businesses(db, player.id)
 
     if player.education_level == "High School":
         exam = load_manager_exam()
@@ -101,6 +103,28 @@ def build_goal_effects(db: Session, player: Player) -> list[dict]:
                     label="Краща посада",
                     value=manager_job.title,
                     delta="Вакансія доступна",
+                ).model_dump()
+            )
+
+    if owned_businesses:
+        effects.append(
+            GameEffect(
+                key="goal_business_owner",
+                label="Бізнеси",
+                value=str(len(owned_businesses)),
+                delta=owned_businesses[0].name,
+            ).model_dump()
+        )
+    else:
+        business_price = cheapest_business_price(db)
+        if business_price is not None:
+            pct = int(min(Decimal("100"), (balance / business_price) * Decimal("100")))
+            effects.append(
+                GameEffect(
+                    key="goal_first_business",
+                    label="Перший бізнес",
+                    value=f"{pct}%",
+                    delta=f"Потрібно {business_price:.0f} ₴",
                 ).model_dump()
             )
 

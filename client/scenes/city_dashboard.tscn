@@ -174,6 +174,12 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="OwnedBusinessLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Бізнес: немає"
+autowrap_mode = 3
+
 [node name="ApplyJobButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
@@ -215,6 +221,13 @@ custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Оновити"
+
+[node name="BuyBusinessButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Купити бізнес"
 
 [node name="ExamOverlay" type="PanelContainer" parent="."]
 visible = false
@@ -282,5 +295,6 @@ text = "Закрити"
 [connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/WorkButton" to="." method="OnWorkButtonPressed"]
 [connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/SleepButton" to="." method="OnSleepButtonPressed"]
 [connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/EatButton" to="." method="OnEatButtonPressed"]
+[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/BuyBusinessButton" to="." method="OnBuyBusinessButtonPressed"]
 [connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/ExamButton" to="." method="OnExamButtonPressed"]
 [connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/RefreshButton" to="." method="OnRefreshButtonPressed"]

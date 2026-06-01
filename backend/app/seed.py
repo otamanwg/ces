@@ -37,7 +37,14 @@ def seed_initial_data(db: Session) -> None:
         owner_player_id=None,
         cash_balance=15000.00,
     )
-    db.add_all([gkh, voda])
+    coffee_shop = Business(
+        city_id=city.id,
+        name="Кав'ярня біля вокзалу",
+        type="shop",
+        owner_player_id=None,
+        cash_balance=1000.00,
+    )
+    db.add_all([gkh, voda, coffee_shop])
     db.flush()
 
     db.add_all(

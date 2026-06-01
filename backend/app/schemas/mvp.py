@@ -14,6 +14,18 @@ class VacanciesData(BaseModel):
     vacancies: list[VacancyItem]
 
 
+class BusinessMarketItem(BaseModel):
+    id: str
+    name: str
+    type: str
+    cash_balance: float
+    purchase_price: float
+
+
+class BusinessMarketData(BaseModel):
+    businesses: list[BusinessMarketItem]
+
+
 class ExamQuestionData(BaseModel):
     id: int
     text: str

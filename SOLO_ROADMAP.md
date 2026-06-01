@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 9: Food/basic needs.**
+**Sprint 10: Simple business ownership.**
 
-Мета: додати першу нову gameplay door після стабільного MVP loop без розморожування великих систем.
+Мета: дати гравцю перший шлях від найманої роботи до власного малого бізнесу.
 
 ---
 
@@ -158,6 +158,26 @@ DoD:
 Наступні кандидати після закриття Sprint 9:
 
 1. Simple business ownership.
+2. City events/news.
+3. Sports as lightweight side progression.
+
+---
+
+## Sprint 10 — Simple Business Ownership
+
+Ціль: додати перший MVP-шлях “заробив гроші -> купив малий бізнес” без повної симуляції компаній.
+
+Порядок:
+
+1. ✅ Backend: buyable seed business, market listing, purchase service.
+2. ✅ Backend: ownership snapshot/actions/effects, ledger `business_purchase`.
+3. ✅ Tests: service/API/idempotency coverage для купівлі бізнесу.
+4. ✅ Client: показ власного бізнесу + кнопка “Купити бізнес”.
+5. ⏳ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
+
+Наступний вузький крок після Sprint 10:
+
+1. Owner income/dividend action.
 2. City events/news.
 3. Sports as lightweight side progression.
 

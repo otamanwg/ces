@@ -236,6 +236,51 @@ def test_full_mvp_api_loop(client):
     assert db.query(IdempotencyRecord).count() == 3
 
 
+def test_business_market_and_buy_endpoint_are_idempotent(client):
+    test_client, db = client
+
+    register = test_client.post("/api/player/register", json={"username": "api-owner"}).json()
+    player_id = register["data"]["id"]
+    headers = {"X-Player-Token": register["data"]["auth_token"]}
+
+    market_res = test_client.get("/api/businesses/market")
+    assert market_res.status_code == 200
+    market_body = market_res.json()
+    assert market_body["success"] is True
+    assert len(market_body["data"]["businesses"]) == 1
+    business = market_body["data"]["businesses"][0]
+    assert business["type"] == "shop"
+    assert business["purchase_price"] == 1200.0
+
+    player = db.query(Player).filter(Player.id == player_id).first()
+    player.balance = Decimal("1500.00")
+    db.commit()
+
+    buy_payload = {"player_id": player_id, "business_id": business["id"]}
+    buy_headers = {**headers, "Idempotency-Key": "api-business-buy-1"}
+    buy_res = test_client.post("/api/businesses/buy", json=buy_payload, headers=buy_headers)
+    assert buy_res.status_code == 200
+    buy_body = buy_res.json()
+    assert buy_body["success"] is True
+    assert buy_body["data"]["balance"] == 300.0
+    assert buy_body["data"]["owned_businesses"][0]["name"] == business["name"]
+    transactions_after_buy = db.query(TransactionModelLog).count()
+
+    repeat_buy = test_client.post("/api/businesses/buy", json=buy_payload, headers=buy_headers)
+    assert repeat_buy.status_code == 200
+    assert repeat_buy.json() == buy_body
+    assert db.query(TransactionModelLog).count() == transactions_after_buy
+
+    malformed_buy = test_client.post(
+        "/api/businesses/buy",
+        json={"player_id": player_id, "business_id": "not-a-uuid"},
+        headers=headers,
+    )
+    assert malformed_buy.status_code == 200
+    assert malformed_buy.json()["success"] is False
+    assert malformed_buy.json()["message"] == "Бізнес не знайдено"
+
+
 def test_eat_endpoint_is_idempotent_and_logs_food(client):
     test_client, db = client
 

@@ -11,6 +11,7 @@ public partial class CityDashboardController : Control
 	[Export] public Label EducationLabel;
 	[Export] public Label CurrentJobLabel;
 	[Export] public Label CurrentHostelLabel;
+	[Export] public Label OwnedBusinessLabel;
 	[Export] public Label StatusLabel;
 	[Export] public Label EffectsLabel;
 	[Export] public Label ErrorStateLabel;
@@ -33,11 +34,14 @@ public partial class CityDashboardController : Control
 	private Button _workButton;
 	private Button _sleepButton;
 	private Button _eatButton;
+	private Button _buyBusinessButton;
 	private Button _examButton;
 	private Button _refreshButton;
 	private DashboardStatusPresenter _statusPresenter;
 	private bool _applyFirstVacancy;
+	private bool _buyFirstBusiness;
 	private bool _pendingApply;
+	private bool _pendingBusinessMarket;
 	private bool _pendingExamInfo;
 	private bool _pendingRefresh;
 	private bool _bootstrapPending = true;
@@ -46,16 +50,19 @@ public partial class CityDashboardController : Control
 	private bool _canWork;
 	private bool _canSleep;
 	private bool _canEat;
+	private bool _canBuyBusiness;
 	private bool _canTakeExam;
 	private string _playerEducation = "High School";
 	private string _pendingWorkKey = "";
 	private string _pendingSleepKey = "";
 	private string _pendingEatKey = "";
+	private string _pendingBusinessBuyKey = "";
 	private string _pendingExamKey = "";
 	private const string ApplyJobText = "Знайти роботу";
 	private const string WorkText = "Працювати";
 	private const string SleepText = "Спати";
 	private const string EatText = "Поїсти";
+	private const string BuyBusinessText = "Купити бізнес";
 	private const string ExamText = "Іспит";
 	private const string RefreshText = "Оновити";
 
@@ -112,6 +119,7 @@ public partial class CityDashboardController : Control
 		EducationLabel ??= GetNodeOrNull<Label>("%EducationLabel");
 		CurrentJobLabel ??= GetNodeOrNull<Label>("%CurrentJobLabel");
 		CurrentHostelLabel ??= GetNodeOrNull<Label>("%CurrentHostelLabel");
+		OwnedBusinessLabel ??= GetNodeOrNull<Label>("%OwnedBusinessLabel");
 		StatusLabel ??= GetNodeOrNull<Label>("%StatusLabel");
 		EffectsLabel ??= GetNodeOrNull<Label>("%EffectsLabel");
 		ErrorStateLabel ??= GetNodeOrNull<Label>("%ErrorStateLabel");
@@ -129,6 +137,7 @@ public partial class CityDashboardController : Control
 		_workButton ??= GetNodeOrNull<Button>("%WorkButton");
 		_sleepButton ??= GetNodeOrNull<Button>("%SleepButton");
 		_eatButton ??= GetNodeOrNull<Button>("%EatButton");
+		_buyBusinessButton ??= GetNodeOrNull<Button>("%BuyBusinessButton");
 		_examButton ??= GetNodeOrNull<Button>("%ExamButton");
 		_refreshButton ??= GetNodeOrNull<Button>("%RefreshButton");
 	}
@@ -158,6 +167,12 @@ public partial class CityDashboardController : Control
 		if (endpoint == "/api/jobs/vacancies" && _applyFirstVacancy)
 		{
 			HandleVacanciesForApply(root);
+			return;
+		}
+
+		if (endpoint == "/api/businesses/market" && _buyFirstBusiness)
+		{
+			HandleBusinessMarketForBuy(root);
 			return;
 		}
 
@@ -237,7 +252,9 @@ public partial class CityDashboardController : Control
 	private void HandleTransportError(string endpoint, string jsonBody)
 	{
 		_applyFirstVacancy = false;
+		_buyFirstBusiness = false;
 		_pendingApply = false;
+		_pendingBusinessMarket = false;
 		_pendingExamInfo = false;
 		_pendingRefresh = false;
 		ClearPendingAction(endpoint);
@@ -280,6 +297,7 @@ public partial class CityDashboardController : Control
 		_canWork = false;
 		_canSleep = false;
 		_canEat = false;
+		_canBuyBusiness = false;
 		_canTakeExam = false;
 		SetErrorState($"{message} Створюємо нового гравця...");
 		UpdateActionButtons();
@@ -368,6 +386,40 @@ public partial class CityDashboardController : Control
 		_apiClient?.PostAuthorized("/api/jobs/apply", _session.AuthToken, payload);
 	}
 
+	private void HandleBusinessMarketForBuy(JsonNode root)
+	{
+		_buyFirstBusiness = false;
+		_pendingBusinessMarket = false;
+
+		if (root["success"]?.GetValue<bool>() != true)
+		{
+			SetErrorState("Не вдалось отримати бізнеси.");
+			UpdateActionButtons();
+			return;
+		}
+
+		var businesses = root["data"]?["businesses"]?.AsArray();
+		if (businesses == null || businesses.Count == 0)
+		{
+			SetErrorState("Немає доступних бізнесів для купівлі.");
+			UpdateActionButtons();
+			return;
+		}
+
+		JsonNode picked = businesses[0];
+		string businessId = picked?["id"]?.ToString() ?? "";
+		if (string.IsNullOrEmpty(businessId) || _session == null)
+		{
+			UpdateActionButtons();
+			return;
+		}
+
+		string payload = ApiClient.BuildJson(new { player_id = _session.PlayerId, business_id = businessId });
+		_pendingBusinessBuyKey = BuildActionKey("business");
+		UpdateActionButtons();
+		_apiClient?.PostAuthorizedIdempotent("/api/businesses/buy", _session.AuthToken, _pendingBusinessBuyKey, payload);
+	}
+
 	private void HandleExamInfo(JsonNode root)
 	{
 		_pendingExamInfo = false;
@@ -452,6 +504,14 @@ public partial class CityDashboardController : Control
 			CurrentHostelLabel.Text = data["hostel"]?.ToString() ?? "Вулиця";
 		}
 
+		if (OwnedBusinessLabel != null)
+		{
+			var businesses = data["owned_businesses"]?.AsArray();
+			OwnedBusinessLabel.Text = businesses == null || businesses.Count == 0
+				? "Бізнес: немає"
+				: $"Бізнес: {businesses[0]?["name"]}";
+		}
+
 		if (EnergyBar != null)
 		{
 			EnergyBar.Value = data["energy"]?.GetValue<int>() ?? 0;
@@ -488,6 +548,7 @@ public partial class CityDashboardController : Control
 			_canWork = _hasJob;
 			_canSleep = true;
 			_canEat = false;
+			_canBuyBusiness = false;
 			_canTakeExam = _playerEducation == "High School";
 			return;
 		}
@@ -496,6 +557,7 @@ public partial class CityDashboardController : Control
 		_canWork = actions["can_work"]?.GetValue<bool>() ?? false;
 		_canSleep = actions["can_sleep"]?.GetValue<bool>() ?? false;
 		_canEat = actions["can_eat"]?.GetValue<bool>() ?? false;
+		_canBuyBusiness = actions["can_buy_business"]?.GetValue<bool>() ?? false;
 		_canTakeExam = actions["can_take_exam"]?.GetValue<bool>() ?? false;
 	}
 
@@ -579,6 +641,28 @@ public partial class CityDashboardController : Control
 
 				return;
 			}
+
+			if (key == "goal_first_business" || key == "goal_business_owner")
+			{
+				GoalLabel.Text = $"{effect["label"]}: {effect["value"]} ({effect["delta"]})";
+				if (GoalProgressBar != null)
+				{
+					if (key == "goal_business_owner")
+					{
+						GoalProgressBar.Value = 100;
+					}
+					else
+					{
+						string pctText = effect["value"]?.ToString()?.Replace("%", "") ?? "0";
+						if (double.TryParse(pctText, out double pct))
+						{
+							GoalProgressBar.Value = pct;
+						}
+					}
+				}
+
+				return;
+			}
 		}
 	}
 
@@ -614,16 +698,19 @@ public partial class CityDashboardController : Control
 		bool hasPlayer = _session != null && _session.HasAuthenticatedPlayer;
 		bool actionBusy = _bootstrapPending
 			|| _pendingApply
+			|| _pendingBusinessMarket
 			|| _pendingExamInfo
 			|| _pendingRefresh
 			|| !string.IsNullOrEmpty(_pendingWorkKey)
 			|| !string.IsNullOrEmpty(_pendingSleepKey)
 			|| !string.IsNullOrEmpty(_pendingEatKey)
+			|| !string.IsNullOrEmpty(_pendingBusinessBuyKey)
 			|| !string.IsNullOrEmpty(_pendingExamKey);
 		SetButtonState(_applyJobButton, !hasPlayer || !_canApplyJob || actionBusy, _pendingApply ? "Шукаємо..." : ApplyJobText);
 		SetButtonState(_workButton, !hasPlayer || !_canWork || actionBusy, !string.IsNullOrEmpty(_pendingWorkKey) ? "Працюємо..." : WorkText);
 		SetButtonState(_sleepButton, !hasPlayer || !_canSleep || actionBusy, !string.IsNullOrEmpty(_pendingSleepKey) ? "Спимо..." : SleepText);
 		SetButtonState(_eatButton, !hasPlayer || !_canEat || actionBusy, !string.IsNullOrEmpty(_pendingEatKey) ? "Їмо..." : EatText);
+		SetButtonState(_buyBusinessButton, !hasPlayer || !_canBuyBusiness || actionBusy, !string.IsNullOrEmpty(_pendingBusinessBuyKey) ? "Купуємо..." : _pendingBusinessMarket ? "Шукаємо..." : BuyBusinessText);
 		string examButtonText = !string.IsNullOrEmpty(_pendingExamKey)
 			? "Надсилаємо..."
 			: _pendingExamInfo ? "Завантаження..." : ExamText;
@@ -688,6 +775,14 @@ public partial class CityDashboardController : Control
 		else if (endpoint.StartsWith("/api/needs/eat/"))
 		{
 			_pendingEatKey = "";
+		}
+		else if (endpoint == "/api/businesses/buy")
+		{
+			_pendingBusinessBuyKey = "";
+		}
+		else if (endpoint == "/api/businesses/market")
+		{
+			_pendingBusinessMarket = false;
 		}
 		else if (endpoint == "/api/education/exam/submit")
 		{
@@ -798,6 +893,28 @@ public partial class CityDashboardController : Control
 		ClearErrorState();
 		SetStatus("Купуємо обід...");
 		_apiClient?.PostAuthorizedIdempotent($"/api/needs/eat/{_session.PlayerId}", _session.AuthToken, _pendingEatKey);
+	}
+
+	public void OnBuyBusinessButtonPressed()
+	{
+		if (_session == null || !_session.HasAuthenticatedPlayer)
+		{
+			SetStatus("Немає активного гравця.");
+			return;
+		}
+
+		if (_pendingBusinessMarket || !string.IsNullOrEmpty(_pendingBusinessBuyKey))
+		{
+			SetStatus("Купівля бізнесу вже обробляється...");
+			return;
+		}
+
+		_pendingBusinessMarket = true;
+		_buyFirstBusiness = true;
+		UpdateActionButtons();
+		ClearErrorState();
+		SetStatus("Шукаємо доступний бізнес...");
+		_apiClient?.Get("/api/businesses/market");
 	}
 
 	public void OnExamButtonPressed()

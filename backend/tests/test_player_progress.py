@@ -186,11 +186,12 @@ def test_player_snapshot_actions_follow_current_state():
             "can_work": True,
             "can_sleep": True,
             "can_eat": False,
+            "can_buy_business": False,
             "can_take_exam": False,
         }
 
         player.energy = 10
-        player.balance = Decimal("700.00")
+        player.balance = Decimal("1500.00")
         player.hunger = 40
         db.commit()
 
@@ -198,6 +199,7 @@ def test_player_snapshot_actions_follow_current_state():
         assert snapshot["actions"]["can_work"] is False
         assert snapshot["actions"]["can_sleep"] is True
         assert snapshot["actions"]["can_eat"] is True
+        assert snapshot["actions"]["can_buy_business"] is True
         assert snapshot["actions"]["can_take_exam"] is True
     finally:
         db.close()
