@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 10: Simple business ownership.**
+**Sprint 11: City events/news.**
 
-Мета: дати гравцю перший шлях від найманої роботи до власного малого бізнесу.
+Мета: зробити стан міста видимим через короткі новини/події без великої event-системи.
 
 ---
 
@@ -180,6 +180,25 @@ DoD:
 
 1. City events/news.
 2. Sports as lightweight side progression.
+
+---
+
+## Sprint 11 — City Events / News
+
+Ціль: показувати гравцю короткі події міста з реального стану системи.
+
+Порядок:
+
+1. ✅ Backend: generated city news для `/api/city/status`.
+2. ✅ Backend: day tick news для `/api/city/tick-day`.
+3. ✅ Tests: API/service coverage для news payload.
+4. ✅ Client: додавати `news[]` в історію подій dashboard.
+5. ⏳ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
+
+Наступний вузький крок після Sprint 11:
+
+1. Sports as lightweight side progression.
+2. News polish/filtering, якщо feed стане шумним.
 
 Поки не чіпати:
 

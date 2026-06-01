@@ -46,6 +46,7 @@ def test_full_mvp_api_loop(client):
     city_body = city_res.json()
     assert city_body["success"] is True
     assert city_body["data"]["name"] == "Київ-Нейтральний"
+    assert city_body["data"]["news"][0]["type"] == "business_market"
 
     register_res = test_client.post("/api/player/register", json={"username": "solo-dev"})
     assert register_res.status_code == 200
@@ -157,6 +158,7 @@ def test_full_mvp_api_loop(client):
     assert tick_body["success"] is True
     assert tick_body["data"]["stats"]["players_updated"] == 1
     assert tick_body["data"]["stats"]["rent_collected"] == 0.0
+    assert tick_body["data"]["news"][0]["type"] == "day_tick"
 
     player_after_tick = test_client.get(f"/api/player/{player_id}", headers=auth_headers).json()["data"]
     assert player_after_tick["balance"] == balance_after_sleep

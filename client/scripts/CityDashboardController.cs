@@ -222,6 +222,7 @@ public partial class CityDashboardController : Control
 		ClearErrorState();
 		SetStatus(message, true);
 		UpdateEffectsUI(root["effects"]);
+		AddNewsToHistory(data);
 
 		if (data != null && data["username"] != null)
 		{
@@ -328,6 +329,7 @@ public partial class CityDashboardController : Control
 		}
 
 		UpdateCityUI(data);
+		AddNewsToHistory(data);
 		_pendingRefresh = false;
 		string cityId = data["id"]?.ToString() ?? "";
 		_session?.SetCityId(cityId);
@@ -594,6 +596,27 @@ public partial class CityDashboardController : Control
 		{
 			double inflation = data["inflation_rate"]?.GetValue<double>() ?? 0.0;
 			InflationLabel.Text = $"{inflation:F1}%";
+		}
+	}
+
+	private void AddNewsToHistory(JsonNode data)
+	{
+		var news = data?["news"]?.AsArray();
+		if (news == null)
+		{
+			return;
+		}
+
+		foreach (var item in news)
+		{
+			string title = item?["title"]?.ToString() ?? "";
+			string message = item?["message"]?.ToString() ?? "";
+			if (string.IsNullOrWhiteSpace(message))
+			{
+				continue;
+			}
+
+			_statusPresenter?.AddEvent(string.IsNullOrWhiteSpace(title) ? message : $"{title}: {message}");
 		}
 	}
 

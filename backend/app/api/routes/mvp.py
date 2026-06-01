@@ -20,6 +20,7 @@ from backend.app.services.economy import game_day_tick, process_rent_payment, pr
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.ids import to_uuid, try_uuid
 from backend.app.services.idempotency import get_idempotent_response, save_idempotent_response
+from backend.app.services.city_news import build_city_news, build_day_tick_news
 from backend.app.services.job_queries import education_rank, get_active_job, get_job, get_vacant_jobs
 from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
 from backend.app.services.needs import process_meal_purchase
@@ -71,6 +72,7 @@ def get_city_status(db: Session = Depends(get_db)):
         "tax_rate_income": float(city.tax_rate_income),
         "tax_rate_property": float(city.tax_rate_property),
         "inflation_rate": float(city.inflation_rate),
+        "news": build_city_news(db, city),
     }
     return api_success("Статус міста оновлено.", data)
 
@@ -87,7 +89,7 @@ def run_city_day_tick(db: Session = Depends(get_db)):
     res = game_day_tick(db, str(city.id))
     if not res["success"]:
         return api_error(res["message"])
-    return api_success(res["message"], {"city": res["city"], "stats": res["stats"]})
+    return api_success(res["message"], {"city": res["city"], "stats": res["stats"], "news": build_day_tick_news(res["stats"])})
 
 
 @router.post("/player/register")

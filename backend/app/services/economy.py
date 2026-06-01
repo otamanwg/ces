@@ -190,6 +190,7 @@ def game_day_tick(db: Session, city_id: str) -> dict:
     active_before = _active_money_supply(db, city_uuid)
     players_updated = 0
     homeless_players = 0
+    hungry_players = 0
 
     players = db.query(Player).filter(Player.city_id == city_uuid).all()
     for player in players:
@@ -198,6 +199,7 @@ def game_day_tick(db: Session, city_id: str) -> dict:
         player.mood = max(10, player.mood - 2)
         increase_hunger(player, DAY_HUNGER_INCREASE)
         if player.hunger >= 90:
+            hungry_players += 1
             player.mood = max(10, player.mood - 5)
 
         hostel = db.query(Hostel).filter(Hostel.tenant_player_id == player.id).first()
@@ -228,6 +230,7 @@ def game_day_tick(db: Session, city_id: str) -> dict:
             "players_updated": players_updated,
             "rent_collected": 0.0,
             "homeless_players": homeless_players,
+            "hungry_players": hungry_players,
             "active_money_before": float(active_before),
             "active_money_after": float(active_after),
         },

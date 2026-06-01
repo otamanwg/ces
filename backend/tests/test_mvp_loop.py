@@ -221,6 +221,7 @@ def test_game_day_tick_applies_decay_without_rent():
             last_result = game_day_tick(db, str(city.id))
             assert last_result["success"] is True
             assert last_result["stats"]["rent_collected"] == 0.0
+            assert "hungry_players" in last_result["stats"]
 
         db.refresh(player)
         db.refresh(city)

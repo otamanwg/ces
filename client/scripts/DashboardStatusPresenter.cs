@@ -46,6 +46,14 @@ public sealed class DashboardStatusPresenter
 		}
 	}
 
+	public void AddEvent(string message)
+	{
+		if (!string.IsNullOrWhiteSpace(message))
+		{
+			AddEventHistory(message);
+		}
+	}
+
 	private void AddEventHistory(string message)
 	{
 		if (_lastHistoryMessage == message)
