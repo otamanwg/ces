@@ -101,11 +101,11 @@ public partial class CityDashboardController : Control
 		CityNameLabel ??= GetNodeOrNull<Label>("%CityNameLabel");
 		TreasuryLabel ??= GetNodeOrNull<Label>("%TreasuryLabel");
 		InflationLabel ??= GetNodeOrNull<Label>("%InflationLabel");
-		_applyJobButton ??= GetNodeOrNull<Button>("MarginContainer/VBoxContainer/ApplyJobButton");
-		_workButton ??= GetNodeOrNull<Button>("MarginContainer/VBoxContainer/WorkButton");
-		_sleepButton ??= GetNodeOrNull<Button>("MarginContainer/VBoxContainer/SleepButton");
-		_examButton ??= GetNodeOrNull<Button>("MarginContainer/VBoxContainer/ExamButton");
-		_refreshButton ??= GetNodeOrNull<Button>("MarginContainer/VBoxContainer/RefreshButton");
+		_applyJobButton ??= GetNodeOrNull<Button>("%ApplyJobButton");
+		_workButton ??= GetNodeOrNull<Button>("%WorkButton");
+		_sleepButton ??= GetNodeOrNull<Button>("%SleepButton");
+		_examButton ??= GetNodeOrNull<Button>("%ExamButton");
+		_refreshButton ??= GetNodeOrNull<Button>("%RefreshButton");
 	}
 
 	private void OnApiRequestFinished(string endpoint, bool success, string jsonBody)
