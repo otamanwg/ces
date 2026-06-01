@@ -70,9 +70,11 @@ def process_shift_work(db: Session, player_id: str) -> dict:
         debit(db, business, "cash_balance", gross_salary)
 
     # Логування ЗП
+    salary_sender_id = city.id if business.owner_player_id is None else business.id
+    salary_sender_type = "treasury" if business.owner_player_id is None else "business"
     log_transaction(
         db, city.id, 
-        sender_id=business.id, sender_type="business",
+        sender_id=salary_sender_id, sender_type=salary_sender_type,
         receiver_id=player.id, receiver_type="player",
         amount=float(net_salary), tax=float(tax_amount),
         purpose="salary"
@@ -125,7 +127,8 @@ def process_rent_payment(db: Session, player_id: str) -> dict:
         log_transaction(
             db, city.id,
             sender_id=player.id, sender_type="player",
-            receiver_id=business.id, receiver_type="business",
+            receiver_id=city.id if business.owner_player_id is None else business.id,
+            receiver_type="treasury" if business.owner_player_id is None else "business",
             amount=float(rent_price), tax=0.0,
             purpose="rent"
         )

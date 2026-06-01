@@ -57,21 +57,41 @@ def test_work_and_sleep_loop_updates_player_and_logs_transactions():
         room = db.query(Hostel).first()
         room.tenant_player_id = player.id
 
-        job = db.query(Job).filter(Job.min_education == "High School").first()
+        job = db.query(Job).filter(Job.min_education == "High School").order_by(Job.salary_per_hour).first()
         job.filled_by_player_id = player.id
         db.commit()
+        starting_treasury = Decimal(str(city.treasury_balance))
 
         work_result = process_shift_work(db, str(player.id))
         assert work_result["success"] is True
         assert work_result["player"]["energy"] == 70
         assert work_result["player"]["hunger"] == 20
         assert work_result["player"]["balance"] > 500
+        db.refresh(city)
+        assert Decimal(str(city.treasury_balance)) == starting_treasury - Decimal("180.00")
 
         sleep_result = process_rent_payment(db, str(player.id))
         assert sleep_result["success"] is True
         assert sleep_result["player"]["energy"] == 100
         assert sleep_result["player"]["hunger"] == 30
+        db.refresh(city)
+        assert Decimal(str(city.treasury_balance)) == starting_treasury - Decimal("165.00")
         assert db.query(TransactionModelLog).count() == 2
+
+        salary_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "salary").one()
+        assert salary_log.sender_id == city.id
+        assert salary_log.sender_type == "treasury"
+        assert salary_log.receiver_id == player.id
+        assert salary_log.receiver_type == "player"
+        assert salary_log.amount == Decimal("180.00")
+        assert salary_log.tax_deducted == Decimal("20.00")
+
+        rent_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "rent").one()
+        assert rent_log.sender_id == player.id
+        assert rent_log.sender_type == "player"
+        assert rent_log.receiver_id == city.id
+        assert rent_log.receiver_type == "treasury"
+        assert rent_log.amount == Decimal("15.00")
     finally:
         db.close()
 
@@ -111,6 +131,67 @@ def test_meal_purchase_reduces_hunger_charges_player_and_logs_food():
         assert food_log.receiver_id == city.id
         assert food_log.receiver_type == "treasury"
         assert food_log.amount == Decimal("25.00")
+    finally:
+        db.close()
+
+
+def test_private_business_shift_pays_worker_from_business_cash_and_taxes_city():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+
+        city = db.query(City).first()
+        owner = Player(
+            city_id=city.id,
+            username="private-owner",
+            balance=Decimal("500.00"),
+            energy=100,
+            mood=100,
+            education_level="High School",
+        )
+        worker = Player(
+            city_id=city.id,
+            username="private-worker",
+            balance=Decimal("100.00"),
+            energy=100,
+            mood=100,
+            education_level="High School",
+        )
+        db.add_all([owner, worker])
+        db.flush()
+
+        business = db.query(Business).filter(Business.type == "shop").one()
+        business.owner_player_id = owner.id
+        business.cash_balance = Decimal("1000.00")
+        job = Job(
+            business_id=business.id,
+            title="Бариста",
+            salary_per_hour=Decimal("10.00"),
+            min_education="High School",
+            energy_cost_per_shift=20,
+            filled_by_player_id=worker.id,
+        )
+        db.add(job)
+        db.commit()
+
+        starting_treasury = Decimal(str(city.treasury_balance))
+        result = process_shift_work(db, str(worker.id))
+
+        assert result["success"] is True
+        db.refresh(worker)
+        db.refresh(business)
+        db.refresh(city)
+        assert Decimal(str(worker.balance)) == Decimal("172.00")
+        assert Decimal(str(business.cash_balance)) == Decimal("920.00")
+        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal("8.00")
+
+        salary_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "salary").one()
+        assert salary_log.sender_id == business.id
+        assert salary_log.sender_type == "business"
+        assert salary_log.receiver_id == worker.id
+        assert salary_log.receiver_type == "player"
+        assert salary_log.amount == Decimal("72.00")
+        assert salary_log.tax_deducted == Decimal("8.00")
     finally:
         db.close()
 
