@@ -154,10 +154,13 @@ def apply_for_job(
     db: Session = Depends(get_db),
 ):
     player = require_player(db, data.player_id, player_token)
+    if not player:
+        return api_error("Сесія гравця недійсна. Зареєструйтесь знову.")
+
     job = db.query(Job).filter(Job.id == to_uuid(data.job_id)).first()
 
-    if not player or not job:
-        return api_error("Гравця або вакансію не знайдено.")
+    if not job:
+        return api_error("Вакансію не знайдено.")
 
     if job.filled_by_player_id is not None:
         return api_error("Ця вакансія вже зайнята.")

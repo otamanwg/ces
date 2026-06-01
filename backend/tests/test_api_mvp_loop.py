@@ -75,6 +75,16 @@ def test_full_mvp_api_loop(client):
     assert apply_res.status_code == 200
     assert apply_res.json()["success"] is True
 
+    invalid_apply = test_client.post(
+        "/api/jobs/apply",
+        json={"player_id": player_id, "job_id": hs_job["id"]},
+        headers={"X-Player-Token": "invalid-token"},
+    )
+    assert invalid_apply.status_code == 200
+    invalid_apply_body = invalid_apply.json()
+    assert invalid_apply_body["success"] is False
+    assert "Сесія гравця недійсна" in invalid_apply_body["message"]
+
     work_headers = {"X-Player-Token": player_token, "Idempotency-Key": "api-loop-work-1"}
     work_res = test_client.post(f"/api/jobs/work/{player_id}", headers=work_headers)
     assert work_res.status_code == 200
