@@ -100,7 +100,7 @@
 Порядок:
 
 1. ✅ Status/effects history: останні 3-5 подій після дій гравця.
-2. Чіткі loading/busy стани для кнопок під час API-запиту.
+2. ✅ Чіткі loading/busy стани для кнопок під час API-запиту.
 3. Error states: backend unavailable, invalid session, no vacancies, insufficient energy.
 4. Mobile layout pass: 360x640 і 720x1280 без обрізання тексту.
 5. Exam panel polish: варіанти відповідей, disabled submit без відповіді, результат після складання.

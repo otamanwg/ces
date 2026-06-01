@@ -34,6 +34,8 @@ public partial class CityDashboardController : Control
 	private Button _refreshButton;
 	private bool _applyFirstVacancy;
 	private bool _pendingApply;
+	private bool _pendingExamInfo;
+	private bool _pendingRefresh;
 	private bool _bootstrapPending = true;
 	private bool _hasJob;
 	private bool _canApplyJob;
@@ -46,6 +48,11 @@ public partial class CityDashboardController : Control
 	private string _pendingExamKey = "";
 	private string _lastHistoryMessage = "";
 	private readonly Queue<string> _eventHistory = new();
+	private const string ApplyJobText = "Влаштуватись на роботу";
+	private const string WorkText = "Відпрацювати зміну";
+	private const string SleepText = "Спати (оренда + відновлення)";
+	private const string ExamText = "Скласти іспит (коледж)";
+	private const string RefreshText = "Оновити статус";
 
 	public override void _Ready()
 	{
@@ -209,6 +216,8 @@ public partial class CityDashboardController : Control
 	{
 		_applyFirstVacancy = false;
 		_pendingApply = false;
+		_pendingExamInfo = false;
+		_pendingRefresh = false;
 		ClearPendingAction(endpoint);
 		_examPanel?.SetSubmitEnabled(true);
 
@@ -258,6 +267,7 @@ public partial class CityDashboardController : Control
 	{
 		if (root["success"]?.GetValue<bool>() != true)
 		{
+			_pendingRefresh = false;
 			SetStatus("Місто недоступне.", true);
 			UpdateActionButtons();
 			return;
@@ -270,6 +280,7 @@ public partial class CityDashboardController : Control
 		}
 
 		UpdateCityUI(data);
+		_pendingRefresh = false;
 		string cityId = data["id"]?.ToString() ?? "";
 		_session?.SetCityId(cityId);
 		_networkManager?.ConnectToCity(cityId);
@@ -336,13 +347,16 @@ public partial class CityDashboardController : Control
 
 	private void HandleExamInfo(JsonNode root)
 	{
+		_pendingExamInfo = false;
 		if (root["success"]?.GetValue<bool>() != true)
 		{
 			SetStatus("Не вдалось завантажити іспит.", true);
+			UpdateActionButtons();
 			return;
 		}
 
 		_examPanel?.LoadExam(root["data"]);
+		UpdateActionButtons();
 	}
 
 	private void OnExamSubmitRequested(string answersJson)
@@ -569,21 +583,27 @@ public partial class CityDashboardController : Control
 		bool hasPlayer = _session != null && _session.HasAuthenticatedPlayer;
 		bool actionBusy = _bootstrapPending
 			|| _pendingApply
+			|| _pendingExamInfo
+			|| _pendingRefresh
 			|| !string.IsNullOrEmpty(_pendingWorkKey)
 			|| !string.IsNullOrEmpty(_pendingSleepKey)
 			|| !string.IsNullOrEmpty(_pendingExamKey);
-		SetButtonDisabled(_applyJobButton, !hasPlayer || !_canApplyJob || actionBusy);
-		SetButtonDisabled(_workButton, !hasPlayer || !_canWork || actionBusy);
-		SetButtonDisabled(_sleepButton, !hasPlayer || !_canSleep || actionBusy);
-		SetButtonDisabled(_examButton, !hasPlayer || !_canTakeExam || actionBusy);
-		SetButtonDisabled(_refreshButton, _bootstrapPending);
+		SetButtonState(_applyJobButton, !hasPlayer || !_canApplyJob || actionBusy, _pendingApply ? "Шукаємо..." : ApplyJobText);
+		SetButtonState(_workButton, !hasPlayer || !_canWork || actionBusy, !string.IsNullOrEmpty(_pendingWorkKey) ? "Працюємо..." : WorkText);
+		SetButtonState(_sleepButton, !hasPlayer || !_canSleep || actionBusy, !string.IsNullOrEmpty(_pendingSleepKey) ? "Спимо..." : SleepText);
+		string examButtonText = !string.IsNullOrEmpty(_pendingExamKey)
+			? "Надсилаємо..."
+			: _pendingExamInfo ? "Завантаження..." : ExamText;
+		SetButtonState(_examButton, !hasPlayer || !_canTakeExam || actionBusy, examButtonText);
+		SetButtonState(_refreshButton, _bootstrapPending || _pendingRefresh, _pendingRefresh ? "Оновлюємо..." : RefreshText);
 	}
 
-	private static void SetButtonDisabled(Button button, bool disabled)
+	private static void SetButtonState(Button button, bool disabled, string text)
 	{
 		if (button != null)
 		{
 			button.Disabled = disabled;
+			button.Text = text;
 		}
 	}
 
@@ -638,6 +658,14 @@ public partial class CityDashboardController : Control
 		else if (endpoint == "/api/education/exam/submit")
 		{
 			_pendingExamKey = "";
+		}
+		else if (endpoint == "/api/education/exam/info")
+		{
+			_pendingExamInfo = false;
+		}
+		else if (endpoint == "/api/city/status")
+		{
+			_pendingRefresh = false;
 		}
 		else if (endpoint.StartsWith("/api/jobs/apply"))
 		{
@@ -729,12 +757,16 @@ public partial class CityDashboardController : Control
 		}
 
 		SetStatus("Завантажуємо іспит...");
+		_pendingExamInfo = true;
+		UpdateActionButtons();
 		_apiClient?.Get("/api/education/exam/info");
 	}
 
 	public void OnRefreshButtonPressed()
 	{
 		SetStatus("Оновлюємо статус...");
+		_pendingRefresh = true;
+		UpdateActionButtons();
 		_apiClient?.Get("/api/city/status");
 		if (_session != null && _session.HasAuthenticatedPlayer)
 		{
