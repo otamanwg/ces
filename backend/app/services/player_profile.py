@@ -7,6 +7,7 @@ from backend.app.services.education import load_manager_exam
 from backend.app.services.ids import to_uuid
 from backend.app.services.job_queries import education_rank, get_active_job, has_eligible_vacancy
 from backend.app.services.money import money
+from backend.app.services.needs import MEAL_COST
 from backend.app.services.player_progress import build_goal_effects
 
 
@@ -18,6 +19,7 @@ def build_player_actions(db: Session, player: Player, job: Job | None, hostel: H
         "can_apply_job": has_eligible_vacancy(db, player.education_level),
         "can_work": bool(job and player.energy >= job.energy_cost_per_shift),
         "can_sleep": hostel is not None,
+        "can_eat": (player.hunger or 0) > 0 and money(player.balance) >= MEAL_COST,
         "can_take_exam": player.education_level == "High School" and money(player.balance) >= exam_cost,
     }
 
@@ -33,6 +35,7 @@ def build_player_snapshot(db: Session, player: Player) -> dict:
         "balance": float(player.balance),
         "energy": player.energy,
         "mood": player.mood,
+        "hunger": player.hunger,
         "education_level": player.education_level,
         "diploma_verified": player.diploma_verified,
         "job": job.title if job else "Безробітний",

@@ -7,6 +7,7 @@ from backend.app.schemas.response import GameEffect
 from backend.app.services.education import load_manager_exam
 from backend.app.services.job_queries import get_active_job, get_first_vacant_job_by_min_education
 from backend.app.services.money import money
+from backend.app.services.needs import HUNGER_WARNING_THRESHOLD, MEAL_COST
 
 
 def build_next_action_hint(db: Session, player: Player) -> dict:
@@ -46,6 +47,14 @@ def build_next_action_hint(db: Session, player: Player) -> dict:
             label="Наступний крок",
             value="Спати (оренда + відновлення)",
             delta=f"Потрібно {job.energy_cost_per_shift} енергії, у вас {player.energy}",
+        ).model_dump()
+
+    if (player.hunger or 0) >= HUNGER_WARNING_THRESHOLD:
+        return GameEffect(
+            key="next_action",
+            label="Наступний крок",
+            value="Поїжте",
+            delta=f"Голод {player.hunger}/100, обід {MEAL_COST:.0f} ₴",
         ).model_dump()
 
     if player.education_level == "High School":
@@ -108,6 +117,14 @@ def build_goal_effects(db: Session, player: Player) -> list[dict]:
             key="stability_mood",
             label="Настрій",
             value=f"{player.mood}/100",
+            delta=None,
+        ).model_dump()
+    )
+    effects.append(
+        GameEffect(
+            key="stability_hunger",
+            label="Голод",
+            value=f"{player.hunger}/100",
             delta=None,
         ).model_dump()
     )

@@ -7,6 +7,7 @@ from backend.app.models import City, Hostel, Job, Player, TransactionModelLog
 from backend.app.seed import seed_initial_data
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work
 from backend.app.services.education import load_manager_exam, process_exam_submission
+from backend.app.services.needs import process_meal_purchase
 from backend.tests.db import make_test_session
 
 
@@ -57,12 +58,53 @@ def test_work_and_sleep_loop_updates_player_and_logs_transactions():
         work_result = process_shift_work(db, str(player.id))
         assert work_result["success"] is True
         assert work_result["player"]["energy"] == 70
+        assert work_result["player"]["hunger"] == 20
         assert work_result["player"]["balance"] > 500
 
         sleep_result = process_rent_payment(db, str(player.id))
         assert sleep_result["success"] is True
         assert sleep_result["player"]["energy"] == 100
+        assert sleep_result["player"]["hunger"] == 30
         assert db.query(TransactionModelLog).count() == 2
+    finally:
+        db.close()
+
+
+def test_meal_purchase_reduces_hunger_charges_player_and_logs_food():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="hungry-player",
+            balance=Decimal("100.00"),
+            energy=100,
+            mood=80,
+            hunger=80,
+            education_level="High School",
+        )
+        db.add(player)
+        db.commit()
+
+        starting_treasury = Decimal(str(city.treasury_balance))
+        meal_result = process_meal_purchase(db, str(player.id))
+
+        assert meal_result["success"] is True
+        db.refresh(player)
+        db.refresh(city)
+        assert Decimal(str(player.balance)) == Decimal("75.00")
+        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal("25.00")
+        assert player.hunger == 45
+        assert player.mood == 85
+
+        food_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "food").one()
+        assert food_log.sender_id == player.id
+        assert food_log.sender_type == "player"
+        assert food_log.receiver_id == city.id
+        assert food_log.receiver_type == "treasury"
+        assert food_log.amount == Decimal("25.00")
     finally:
         db.close()
 

@@ -20,6 +20,7 @@ public partial class CityDashboardController : Control
 	[Export] public ProgressBar GoalProgressBar;
 	[Export] public TextureProgressBar EnergyBar;
 	[Export] public TextureProgressBar MoodBar;
+	[Export] public TextureProgressBar HungerBar;
 	[Export] public Label CityNameLabel;
 	[Export] public Label TreasuryLabel;
 	[Export] public Label InflationLabel;
@@ -31,6 +32,7 @@ public partial class CityDashboardController : Control
 	private Button _applyJobButton;
 	private Button _workButton;
 	private Button _sleepButton;
+	private Button _eatButton;
 	private Button _examButton;
 	private Button _refreshButton;
 	private DashboardStatusPresenter _statusPresenter;
@@ -43,14 +45,17 @@ public partial class CityDashboardController : Control
 	private bool _canApplyJob;
 	private bool _canWork;
 	private bool _canSleep;
+	private bool _canEat;
 	private bool _canTakeExam;
 	private string _playerEducation = "High School";
 	private string _pendingWorkKey = "";
 	private string _pendingSleepKey = "";
+	private string _pendingEatKey = "";
 	private string _pendingExamKey = "";
 	private const string ApplyJobText = "Знайти роботу";
 	private const string WorkText = "Працювати";
 	private const string SleepText = "Спати";
+	private const string EatText = "Поїсти";
 	private const string ExamText = "Іспит";
 	private const string RefreshText = "Оновити";
 
@@ -90,6 +95,11 @@ public partial class CityDashboardController : Control
 			MoodBar.MaxValue = 100;
 		}
 
+		if (HungerBar != null)
+		{
+			HungerBar.MaxValue = 100;
+		}
+
 		SetStatus("Підключення до сервера...");
 		UpdateActionButtons();
 		_apiClient?.Get("/api/city/status");
@@ -111,12 +121,14 @@ public partial class CityDashboardController : Control
 		GoalProgressBar ??= GetNodeOrNull<ProgressBar>("%GoalProgressBar");
 		EnergyBar ??= GetNodeOrNull<TextureProgressBar>("%EnergyBar");
 		MoodBar ??= GetNodeOrNull<TextureProgressBar>("%MoodBar");
+		HungerBar ??= GetNodeOrNull<TextureProgressBar>("%HungerBar");
 		CityNameLabel ??= GetNodeOrNull<Label>("%CityNameLabel");
 		TreasuryLabel ??= GetNodeOrNull<Label>("%TreasuryLabel");
 		InflationLabel ??= GetNodeOrNull<Label>("%InflationLabel");
 		_applyJobButton ??= GetNodeOrNull<Button>("%ApplyJobButton");
 		_workButton ??= GetNodeOrNull<Button>("%WorkButton");
 		_sleepButton ??= GetNodeOrNull<Button>("%SleepButton");
+		_eatButton ??= GetNodeOrNull<Button>("%EatButton");
 		_examButton ??= GetNodeOrNull<Button>("%ExamButton");
 		_refreshButton ??= GetNodeOrNull<Button>("%RefreshButton");
 	}
@@ -267,6 +279,7 @@ public partial class CityDashboardController : Control
 		_canApplyJob = false;
 		_canWork = false;
 		_canSleep = false;
+		_canEat = false;
 		_canTakeExam = false;
 		SetErrorState($"{message} Створюємо нового гравця...");
 		UpdateActionButtons();
@@ -449,6 +462,11 @@ public partial class CityDashboardController : Control
 			MoodBar.Value = data["mood"]?.GetValue<int>() ?? 0;
 		}
 
+		if (HungerBar != null)
+		{
+			HungerBar.Value = data["hunger"]?.GetValue<int>() ?? 0;
+		}
+
 		UpdateAvailableActions(data["actions"]);
 
 		string playerId = data["id"]?.ToString() ?? "";
@@ -469,6 +487,7 @@ public partial class CityDashboardController : Control
 			_canApplyJob = true;
 			_canWork = _hasJob;
 			_canSleep = true;
+			_canEat = false;
 			_canTakeExam = _playerEducation == "High School";
 			return;
 		}
@@ -476,6 +495,7 @@ public partial class CityDashboardController : Control
 		_canApplyJob = actions["can_apply_job"]?.GetValue<bool>() ?? false;
 		_canWork = actions["can_work"]?.GetValue<bool>() ?? false;
 		_canSleep = actions["can_sleep"]?.GetValue<bool>() ?? false;
+		_canEat = actions["can_eat"]?.GetValue<bool>() ?? false;
 		_canTakeExam = actions["can_take_exam"]?.GetValue<bool>() ?? false;
 	}
 
@@ -598,10 +618,12 @@ public partial class CityDashboardController : Control
 			|| _pendingRefresh
 			|| !string.IsNullOrEmpty(_pendingWorkKey)
 			|| !string.IsNullOrEmpty(_pendingSleepKey)
+			|| !string.IsNullOrEmpty(_pendingEatKey)
 			|| !string.IsNullOrEmpty(_pendingExamKey);
 		SetButtonState(_applyJobButton, !hasPlayer || !_canApplyJob || actionBusy, _pendingApply ? "Шукаємо..." : ApplyJobText);
 		SetButtonState(_workButton, !hasPlayer || !_canWork || actionBusy, !string.IsNullOrEmpty(_pendingWorkKey) ? "Працюємо..." : WorkText);
 		SetButtonState(_sleepButton, !hasPlayer || !_canSleep || actionBusy, !string.IsNullOrEmpty(_pendingSleepKey) ? "Спимо..." : SleepText);
+		SetButtonState(_eatButton, !hasPlayer || !_canEat || actionBusy, !string.IsNullOrEmpty(_pendingEatKey) ? "Їмо..." : EatText);
 		string examButtonText = !string.IsNullOrEmpty(_pendingExamKey)
 			? "Надсилаємо..."
 			: _pendingExamInfo ? "Завантаження..." : ExamText;
@@ -662,6 +684,10 @@ public partial class CityDashboardController : Control
 		else if (endpoint.StartsWith("/api/hostels/sleep/"))
 		{
 			_pendingSleepKey = "";
+		}
+		else if (endpoint.StartsWith("/api/needs/eat/"))
+		{
+			_pendingEatKey = "";
 		}
 		else if (endpoint == "/api/education/exam/submit")
 		{
@@ -751,6 +777,27 @@ public partial class CityDashboardController : Control
 		ClearErrorState();
 		SetStatus("Спимо та сплачуємо оренду...");
 		_apiClient?.PostAuthorizedIdempotent($"/api/hostels/sleep/{_session.PlayerId}", _session.AuthToken, _pendingSleepKey);
+	}
+
+	public void OnEatButtonPressed()
+	{
+		if (_session == null || !_session.HasAuthenticatedPlayer)
+		{
+			SetStatus("Немає активного гравця.");
+			return;
+		}
+
+		if (!string.IsNullOrEmpty(_pendingEatKey))
+		{
+			SetStatus("Їжа вже обробляється...");
+			return;
+		}
+
+		_pendingEatKey = BuildActionKey("eat");
+		UpdateActionButtons();
+		ClearErrorState();
+		SetStatus("Купуємо обід...");
+		_apiClient?.PostAuthorizedIdempotent($"/api/needs/eat/{_session.PlayerId}", _session.AuthToken, _pendingEatKey);
 	}
 
 	public void OnExamButtonPressed()

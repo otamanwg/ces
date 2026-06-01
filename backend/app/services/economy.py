@@ -10,6 +10,7 @@ from backend.app.services.ids import to_uuid
 from backend.app.services.job_queries import get_active_job
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
+from backend.app.services.needs import DAY_HUNGER_INCREASE, SLEEP_HUNGER_INCREASE, WORK_HUNGER_INCREASE, increase_hunger
 
 
 def _active_money_supply(db: Session, city_id) -> Decimal:
@@ -56,6 +57,7 @@ def process_shift_work(db: Session, player_id: str) -> dict:
 
     # Виконання транзакції
     player.energy -= job.energy_cost_per_shift
+    increase_hunger(player, WORK_HUNGER_INCREASE)
     credit(db, player, "balance", net_salary)
     
     # Зміна балансів казначейства та бізнесу
@@ -84,6 +86,7 @@ def process_shift_work(db: Session, player_id: str) -> dict:
         "player": {
             "balance": float(player.balance),
             "energy": player.energy,
+            "hunger": player.hunger,
         },
         "city": {
             "treasury_balance": float(city.treasury_balance)
@@ -111,6 +114,7 @@ def process_rent_payment(db: Session, player_id: str) -> dict:
         debit(db, player, "balance", rent_price)
         player.energy = min(100, player.energy + (hostel.energy_regen_per_hour * 8)) # 8 годин сну
         player.mood = min(100, player.mood + 15)
+        increase_hunger(player, SLEEP_HUNGER_INCREASE)
         
         # Гроші за оренду йдуть власнику хостелу (приватний бізнес або Скарбниця міста)
         if business.owner_player_id is None:
@@ -130,6 +134,7 @@ def process_rent_payment(db: Session, player_id: str) -> dict:
         # Безкоштовний сон на вулиці (погане відновлення)
         player.energy = min(100, player.energy + 20)
         player.mood = max(10, player.mood - 20)
+        increase_hunger(player, SLEEP_HUNGER_INCREASE)
         message = "Недостатньо коштів на оренду! Ви спали на лавці в парку. Енергія майже не відновилась."
 
     db.commit()
@@ -139,7 +144,8 @@ def process_rent_payment(db: Session, player_id: str) -> dict:
         "player": {
             "balance": float(player.balance),
             "energy": player.energy,
-            "mood": player.mood
+            "mood": player.mood,
+            "hunger": player.hunger,
         }
     }
 
@@ -190,6 +196,9 @@ def game_day_tick(db: Session, city_id: str) -> dict:
         players_updated += 1
         player.energy = max(0, player.energy - 5)
         player.mood = max(10, player.mood - 2)
+        increase_hunger(player, DAY_HUNGER_INCREASE)
+        if player.hunger >= 90:
+            player.mood = max(10, player.mood - 5)
 
         hostel = db.query(Hostel).filter(Hostel.tenant_player_id == player.id).first()
         if not hostel:

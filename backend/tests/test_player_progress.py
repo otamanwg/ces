@@ -185,17 +185,49 @@ def test_player_snapshot_actions_follow_current_state():
             "can_apply_job": True,
             "can_work": True,
             "can_sleep": True,
+            "can_eat": False,
             "can_take_exam": False,
         }
 
         player.energy = 10
         player.balance = Decimal("700.00")
+        player.hunger = 40
         db.commit()
 
         snapshot = build_player_snapshot(db, player)
         assert snapshot["actions"]["can_work"] is False
         assert snapshot["actions"]["can_sleep"] is True
+        assert snapshot["actions"]["can_eat"] is True
         assert snapshot["actions"]["can_take_exam"] is True
+    finally:
+        db.close()
+
+
+def test_next_action_suggests_food_when_hunger_is_high():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="hint-hungry",
+            balance=Decimal("500.00"),
+            energy=100,
+            mood=70,
+            hunger=75,
+            education_level="High School",
+        )
+        db.add(player)
+        db.flush()
+
+        job = db.query(Job).filter(Job.min_education == "High School").first()
+        job.filled_by_player_id = player.id
+        db.commit()
+
+        hint = _next_action(build_goal_effects(db, player))
+        assert hint is not None
+        assert hint["value"] == "Поїжте"
+        assert "75/100" in (hint.get("delta") or "")
     finally:
         db.close()
 

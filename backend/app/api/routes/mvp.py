@@ -16,6 +16,7 @@ from backend.app.services.ids import to_uuid, try_uuid
 from backend.app.services.idempotency import get_idempotent_response, save_idempotent_response
 from backend.app.services.job_queries import education_rank, get_active_job, get_job, get_vacant_jobs
 from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
+from backend.app.services.needs import process_meal_purchase
 from backend.app.services.player_profile import build_player_snapshot, get_player_snapshot
 from backend.app.services.player_progress import build_goal_effects
 
@@ -93,6 +94,7 @@ def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
         balance=500.00,
         energy=100,
         mood=100,
+        hunger=0,
         education_level="High School",
         auth_token=new_player_token(),
     )
@@ -245,6 +247,30 @@ def sleep_in_hostel(
     snapshot = build_player_snapshot(db, player)
     response = api_success(res["message"], snapshot, build_goal_effects(db, player))
     return save_idempotent_response(db, "sleep", idempotency_key, player_id, response)
+
+
+@router.post("/needs/eat/{player_id}")
+def eat_meal(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db),
+):
+    if not require_player(db, player_id, player_token):
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    cached = get_idempotent_response(db, "eat", idempotency_key, player_id)
+    if cached:
+        return cached
+
+    res = process_meal_purchase(db, player_id)
+    if not res["success"]:
+        return api_error(res["message"])
+
+    player = db.query(Player).filter(Player.id == to_uuid(player_id)).first()
+    snapshot = build_player_snapshot(db, player)
+    response = api_success(res["message"], snapshot, build_goal_effects(db, player))
+    return save_idempotent_response(db, "eat", idempotency_key, player_id, response)
 
 
 @router.get("/education/exam/info")

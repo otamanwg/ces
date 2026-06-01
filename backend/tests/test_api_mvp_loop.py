@@ -114,6 +114,7 @@ def test_full_mvp_api_loop(client):
     work_body = work_res.json()
     assert work_body["success"] is True
     assert work_body["data"]["energy"] == 70
+    assert work_body["data"]["hunger"] == 20
     assert work_body["data"]["balance"] > 500
     transactions_after_work = db.query(TransactionModelLog).count()
 
@@ -134,6 +135,7 @@ def test_full_mvp_api_loop(client):
     sleep_body = sleep_res.json()
     assert sleep_body["success"] is True
     assert sleep_body["data"]["energy"] == 100
+    assert sleep_body["data"]["hunger"] == 30
     transactions_after_sleep = db.query(TransactionModelLog).count()
 
     repeat_sleep = test_client.post(f"/api/hostels/sleep/{player_id}", headers=sleep_headers)
@@ -232,6 +234,37 @@ def test_full_mvp_api_loop(client):
 
     assert db.query(TransactionModelLog).count() >= 2
     assert db.query(IdempotencyRecord).count() == 3
+
+
+def test_eat_endpoint_is_idempotent_and_logs_food(client):
+    test_client, db = client
+
+    register = test_client.post("/api/player/register", json={"username": "api-hungry"}).json()
+    player_id = register["data"]["id"]
+    headers = {"X-Player-Token": register["data"]["auth_token"]}
+
+    player = db.query(Player).filter(Player.id == player_id).first()
+    player.hunger = 80
+    db.commit()
+
+    eat_headers = {**headers, "Idempotency-Key": "api-eat-1"}
+    eat_res = test_client.post(f"/api/needs/eat/{player_id}", headers=eat_headers)
+    assert eat_res.status_code == 200
+    eat_body = eat_res.json()
+    assert eat_body["success"] is True
+    assert eat_body["data"]["balance"] == 475.0
+    assert eat_body["data"]["hunger"] == 45
+    transactions_after_eat = db.query(TransactionModelLog).count()
+
+    repeat_eat = test_client.post(f"/api/needs/eat/{player_id}", headers=eat_headers)
+    assert repeat_eat.status_code == 200
+    assert repeat_eat.json() == eat_body
+    assert db.query(TransactionModelLog).count() == transactions_after_eat
+
+    malformed_eat = test_client.post("/api/needs/eat/not-a-uuid", headers=headers)
+    assert malformed_eat.status_code == 200
+    assert malformed_eat.json()["success"] is False
+    assert malformed_eat.json()["message"] == INVALID_PLAYER_SESSION_MESSAGE
 
 
 def test_idempotency_key_is_scoped_by_action_and_player(client):

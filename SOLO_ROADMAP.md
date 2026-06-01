@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Godot UX polish після стабілізації MVP loop.**
+**Sprint 9: Food/basic needs.**
 
-Мета: core loop `register -> apply -> work -> sleep -> exam -> better job` має бути стабільним, зрозумілим і не ламатися від поганих input/state.
+Мета: додати першу нову gameplay door після стабільного MVP loop без розморожування великих систем.
 
 ---
 
@@ -143,16 +143,23 @@ DoD:
 
 ---
 
-## Sprint 9 — Next Gameplay Door (після стабільного MVP)
+## Sprint 9 — Food / Basic Needs
 
-Розморожувати тільки одну систему за раз.
+Ціль: додати просту потребу, яка впливає на щоденний цикл, не ламаючи `work -> sleep -> exam -> better job`.
 
-Кандидати:
+Порядок:
 
-1. Food/basic needs.
-2. Simple business ownership.
-3. City events/news.
-4. Sports as lightweight side progression.
+1. ✅ Backend: `Player.hunger`, Alembic migration, зростання голоду від work/sleep/day tick.
+2. ✅ Backend: `eat` action, ledger `food`, idempotent API endpoint.
+3. ✅ Tests: service/API/player progress coverage для hunger/eat.
+4. ✅ Client: HungerBar + кнопка “Поїсти” у dashboard.
+5. ⏳ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
+
+Наступні кандидати після закриття Sprint 9:
+
+1. Simple business ownership.
+2. City events/news.
+3. Sports as lightweight side progression.
 
 Поки не чіпати:
 
