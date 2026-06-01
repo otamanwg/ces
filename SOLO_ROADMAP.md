@@ -22,7 +22,7 @@
 
 ### Поточний Фокус
 
-**MVP hardening перед розширенням гри.**
+**Godot UX polish після стабілізації MVP loop.**
 
 Мета: core loop `register -> apply -> work -> sleep -> exam -> better job` має бути стабільним, зрозумілим і не ламатися від поганих input/state.
 
@@ -99,7 +99,7 @@
 
 Порядок:
 
-1. Status/effects history: останні 3-5 подій після дій гравця.
+1. ✅ Status/effects history: останні 3-5 подій після дій гравця.
 2. Чіткі loading/busy стани для кнопок під час API-запиту.
 3. Error states: backend unavailable, invalid session, no vacancies, insufficient energy.
 4. Mobile layout pass: 360x640 і 720x1280 без обрізання тексту.

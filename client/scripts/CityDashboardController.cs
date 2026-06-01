@@ -13,6 +13,7 @@ public partial class CityDashboardController : Control
 	[Export] public Label CurrentHostelLabel;
 	[Export] public Label StatusLabel;
 	[Export] public Label EffectsLabel;
+	[Export] public Label EventHistoryLabel;
 	[Export] public Label GoalLabel;
 	[Export] public Label NextActionLabel;
 	[Export] public ProgressBar GoalProgressBar;
@@ -43,6 +44,8 @@ public partial class CityDashboardController : Control
 	private string _pendingWorkKey = "";
 	private string _pendingSleepKey = "";
 	private string _pendingExamKey = "";
+	private string _lastHistoryMessage = "";
+	private readonly Queue<string> _eventHistory = new();
 
 	public override void _Ready()
 	{
@@ -93,6 +96,7 @@ public partial class CityDashboardController : Control
 		CurrentHostelLabel ??= GetNodeOrNull<Label>("%CurrentHostelLabel");
 		StatusLabel ??= GetNodeOrNull<Label>("%StatusLabel");
 		EffectsLabel ??= GetNodeOrNull<Label>("%EffectsLabel");
+		EventHistoryLabel ??= GetNodeOrNull<Label>("%EventHistoryLabel");
 		GoalLabel ??= GetNodeOrNull<Label>("%GoalLabel");
 		NextActionLabel ??= GetNodeOrNull<Label>("%NextActionLabel");
 		GoalProgressBar ??= GetNodeOrNull<ProgressBar>("%GoalProgressBar");
@@ -154,7 +158,7 @@ public partial class CityDashboardController : Control
 			}
 			else
 			{
-				SetStatus(message);
+				SetStatus(message, true);
 			}
 
 			ClearPendingAction(endpoint);
@@ -168,7 +172,7 @@ public partial class CityDashboardController : Control
 			_bootstrapPending = false;
 		}
 
-		SetStatus(message);
+		SetStatus(message, true);
 		UpdateEffectsUI(root["effects"]);
 
 		if (data != null && data["username"] != null)
@@ -192,7 +196,7 @@ public partial class CityDashboardController : Control
 			_examPanel?.HidePanel();
 			if (data?["passed"]?.GetValue<bool>() == true)
 			{
-				SetStatus($"Іспит здано! {data["score"]}. Тепер доступні кращі вакансії.");
+				SetStatus($"Іспит здано! {data["score"]}. Тепер доступні кращі вакансії.", true);
 			}
 		}
 
@@ -216,7 +220,7 @@ public partial class CityDashboardController : Control
 				string message = root?["message"]?.ToString() ?? "";
 				if (!string.IsNullOrEmpty(message))
 				{
-					SetStatus(message);
+					SetStatus(message, true);
 					UpdateActionButtons();
 					return;
 				}
@@ -227,7 +231,7 @@ public partial class CityDashboardController : Control
 			}
 		}
 
-		SetStatus("Backend недоступний. Запусти: .\\scripts\\play.ps1");
+		SetStatus("Backend недоступний. Запусти: .\\scripts\\play.ps1", true);
 		UpdateActionButtons();
 	}
 
@@ -245,7 +249,7 @@ public partial class CityDashboardController : Control
 		_canWork = false;
 		_canSleep = false;
 		_canTakeExam = false;
-		SetStatus($"{message} Створюємо нового гравця...");
+		SetStatus($"{message} Створюємо нового гравця...", true);
 		UpdateActionButtons();
 		RegisterNewPlayer();
 	}
@@ -254,7 +258,7 @@ public partial class CityDashboardController : Control
 	{
 		if (root["success"]?.GetValue<bool>() != true)
 		{
-			SetStatus("Місто недоступне.");
+			SetStatus("Місто недоступне.", true);
 			UpdateActionButtons();
 			return;
 		}
@@ -293,7 +297,7 @@ public partial class CityDashboardController : Control
 		if (root["success"]?.GetValue<bool>() != true)
 		{
 			_pendingApply = false;
-			SetStatus("Не вдалось отримати вакансії.");
+			SetStatus("Не вдалось отримати вакансії.", true);
 			UpdateActionButtons();
 			return;
 		}
@@ -302,7 +306,7 @@ public partial class CityDashboardController : Control
 		if (vacancies == null || vacancies.Count == 0)
 		{
 			_pendingApply = false;
-			SetStatus("Немає вільних вакансій.");
+			SetStatus("Немає вільних вакансій.", true);
 			UpdateActionButtons();
 			return;
 		}
@@ -334,7 +338,7 @@ public partial class CityDashboardController : Control
 	{
 		if (root["success"]?.GetValue<bool>() != true)
 		{
-			SetStatus("Не вдалось завантажити іспит.");
+			SetStatus("Не вдалось завантажити іспит.", true);
 			return;
 		}
 
@@ -370,7 +374,7 @@ public partial class CityDashboardController : Control
 			var node = JsonNode.Parse(jsonMessage);
 			if (node?["type"]?.ToString() == "system")
 			{
-				SetStatus(node["content"]?.ToString() ?? "WS підключено.");
+				SetStatus(node["content"]?.ToString() ?? "WS підключено.", true);
 			}
 		}
 		catch (Exception e)
@@ -583,11 +587,36 @@ public partial class CityDashboardController : Control
 		}
 	}
 
-	private void SetStatus(string message)
+	private void SetStatus(string message, bool addToHistory = false)
 	{
 		if (StatusLabel != null)
 		{
 			StatusLabel.Text = message;
+		}
+
+		if (addToHistory && !string.IsNullOrWhiteSpace(message))
+		{
+			AddEventHistory(message);
+		}
+	}
+
+	private void AddEventHistory(string message)
+	{
+		if (_lastHistoryMessage == message)
+		{
+			return;
+		}
+
+		_lastHistoryMessage = message;
+		_eventHistory.Enqueue(message);
+		while (_eventHistory.Count > 5)
+		{
+			_eventHistory.Dequeue();
+		}
+
+		if (EventHistoryLabel != null)
+		{
+			EventHistoryLabel.Text = "Події:\n" + string.Join("\n", _eventHistory);
 		}
 	}
 
