@@ -6,13 +6,14 @@ from sqlalchemy.orm import Session
 
 from backend.app.core.config import settings
 from backend.app.database import get_db
-from backend.app.models import City, Hostel, Job, Player
+from backend.app.models import City, Hostel, Player
 from backend.app.schemas.response import api_error, api_success
 from backend.app.services.auth import get_authorized_player, new_player_token
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work, update_inflation_rate
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.ids import to_uuid, try_uuid
 from backend.app.services.idempotency import get_idempotent_response, save_idempotent_response
+from backend.app.services.job_queries import education_rank, get_active_job, get_job, get_vacant_jobs
 from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
 from backend.app.services.player_profile import build_player_snapshot, get_player_snapshot
 from backend.app.services.player_progress import build_goal_effects
@@ -131,7 +132,7 @@ def get_player_status(
 
 @router.get("/jobs/vacancies")
 def get_vacancies(db: Session = Depends(get_db)):
-    vacancies = db.query(Job).filter(Job.filled_by_player_id.is_(None)).all()
+    vacancies = get_vacant_jobs(db)
     data = {
         "vacancies": [
             {
@@ -162,7 +163,7 @@ def apply_for_job(
     if job_uuid is None:
         return api_error(JOB_NOT_FOUND_MESSAGE)
 
-    job = db.query(Job).filter(Job.id == job_uuid).first()
+    job = get_job(db, job_uuid)
 
     if not job:
         return api_error(JOB_NOT_FOUND_MESSAGE)
@@ -170,9 +171,8 @@ def apply_for_job(
     if job.filled_by_player_id is not None:
         return api_error("Ця вакансія вже зайнята.")
 
-    education_levels = {"High School": 1, "College": 2, "University": 3}
-    player_rank = education_levels.get(player.education_level, 1)
-    required_rank = education_levels.get(job.min_education, 1)
+    player_rank = education_rank(player.education_level)
+    required_rank = education_rank(job.min_education)
 
     if player_rank < required_rank:
         return api_error(
@@ -180,7 +180,7 @@ def apply_for_job(
             {"required_education": job.min_education},
         )
 
-    old_job = db.query(Job).filter(Job.filled_by_player_id == player.id).first()
+    old_job = get_active_job(db, player.id)
     if old_job:
         old_job.filled_by_player_id = None
         db.flush()

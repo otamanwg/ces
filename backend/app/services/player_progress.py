@@ -2,23 +2,20 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from backend.app.models import Job, Player
+from backend.app.models import Player
 from backend.app.schemas.response import GameEffect
 from backend.app.services.education import load_manager_exam
+from backend.app.services.job_queries import get_active_job, get_first_vacant_job_by_min_education
 from backend.app.services.money import money
 
 
 def build_next_action_hint(db: Session, player: Player) -> dict:
     """Підказка наступної дії для MVP loop (work → sleep → exam → краща робота)."""
-    job = db.query(Job).filter(Job.filled_by_player_id == player.id).first()
+    job = get_active_job(db, player.id)
 
     if not job:
         if player.education_level == "College":
-            college_job = (
-                db.query(Job)
-                .filter(Job.min_education == "College", Job.filled_by_player_id.is_(None))
-                .first()
-            )
+            college_job = get_first_vacant_job_by_min_education(db, "College")
             if college_job:
                 return GameEffect(
                     key="next_action",
@@ -34,11 +31,7 @@ def build_next_action_hint(db: Session, player: Player) -> dict:
         ).model_dump()
 
     if player.education_level == "College" and job.min_education == "High School":
-        college_job = (
-            db.query(Job)
-            .filter(Job.min_education == "College", Job.filled_by_player_id.is_(None))
-            .first()
-        )
+        college_job = get_first_vacant_job_by_min_education(db, "College")
         if college_job:
             return GameEffect(
                 key="next_action",
@@ -91,11 +84,7 @@ def build_goal_effects(db: Session, player: Player) -> list[dict]:
             ).model_dump()
         )
     elif player.education_level == "College":
-        manager_job = (
-            db.query(Job)
-            .filter(Job.min_education == "College", Job.filled_by_player_id.is_(None))
-            .first()
-        )
+        manager_job = get_first_vacant_job_by_min_education(db, "College")
         if manager_job:
             effects.append(
                 GameEffect(

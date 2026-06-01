@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.models import Player, City, Job, Hostel, TransactionModelLog, Business
 from backend.app.services.ids import to_uuid
+from backend.app.services.job_queries import get_active_job
 from backend.app.services.ledger import log_transaction
 from backend.app.services.money import money
 
@@ -27,7 +28,7 @@ def process_shift_work(db: Session, player_id: str) -> dict:
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
 
-    job = db.query(Job).filter(Job.filled_by_player_id == player_uuid).first()
+    job = get_active_job(db, player_uuid)
     if not job:
         return {"success": False, "message": "Ви не працевлаштовані. Знайдіть роботу в Центрі Зайнятості."}
 
