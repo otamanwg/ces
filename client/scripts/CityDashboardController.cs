@@ -170,6 +170,11 @@ public partial class CityDashboardController : Control
 				SetErrorState(BuildActionErrorMessage(endpoint, message));
 			}
 
+			if (endpoint == "/api/education/exam/submit")
+			{
+				_examPanel?.SetSubmitEnabled(true);
+			}
+
 			ClearPendingAction(endpoint);
 			return;
 		}
@@ -202,12 +207,14 @@ public partial class CityDashboardController : Control
 
 		if (endpoint == "/api/education/exam/submit")
 		{
-			_examPanel?.SetSubmitEnabled(true);
-			_examPanel?.HidePanel();
+			string resultMessage = message;
 			if (data?["passed"]?.GetValue<bool>() == true)
 			{
-				SetStatus($"Іспит здано! {data["score"]}. Тепер доступні кращі вакансії.", true);
+				resultMessage = $"Іспит здано! {data["score"]}. Тепер доступні кращі вакансії.";
 			}
+
+			_examPanel?.ShowResult(resultMessage);
+			SetStatus(resultMessage, true);
 		}
 
 		UpdateNextActionHint(root["effects"]);

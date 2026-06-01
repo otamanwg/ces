@@ -6,6 +6,7 @@ public partial class ExamPanelController : Control
 {
     [Export] public Label TitleLabel;
     [Export] public Label DescriptionLabel;
+    [Export] public Label ResultLabel;
     [Export] public VBoxContainer QuestionsContainer;
     [Export] public Button SubmitButton;
     [Export] public Button CloseButton;
@@ -17,6 +18,7 @@ public partial class ExamPanelController : Control
     {
         TitleLabel ??= GetNodeOrNull<Label>("%ExamTitleLabel");
         DescriptionLabel ??= GetNodeOrNull<Label>("%ExamDescriptionLabel");
+        ResultLabel ??= GetNodeOrNull<Label>("%ExamResultLabel");
         QuestionsContainer ??= GetNodeOrNull<VBoxContainer>("%QuestionsContainer");
         SubmitButton ??= GetNodeOrNull<Button>("%SubmitExamButton");
         CloseButton ??= GetNodeOrNull<Button>("%CloseExamButton");
@@ -44,6 +46,11 @@ public partial class ExamPanelController : Control
         if (QuestionsContainer == null)
         {
             return;
+        }
+
+        if (ResultLabel != null)
+        {
+            ResultLabel.Text = "";
         }
 
         foreach (Node child in QuestionsContainer.GetChildren())
@@ -84,6 +91,7 @@ public partial class ExamPanelController : Control
             block.AddChild(qLabel);
 
             var optionButton = new OptionButton();
+            optionButton.AddItem("Оберіть відповідь...", -1);
             var options = question["options"]?.AsArray();
             if (options != null)
             {
@@ -92,12 +100,15 @@ public partial class ExamPanelController : Control
                     optionButton.AddItem(options[i]?.ToString() ?? $"Варіант {i + 1}", i);
                 }
             }
+            optionButton.Select(0);
+            optionButton.ItemSelected += _ => UpdateSubmitState();
 
             block.AddChild(optionButton);
             QuestionsContainer.AddChild(block);
             _answerControls[qId] = optionButton;
         }
 
+        UpdateSubmitState();
         Visible = true;
     }
 
@@ -106,7 +117,7 @@ public partial class ExamPanelController : Control
         var answers = new Dictionary<string, int>();
         foreach (var pair in _answerControls)
         {
-            answers[pair.Key.ToString()] = pair.Value.Selected;
+            answers[pair.Key.ToString()] = pair.Value.GetSelectedId();
         }
 
         return answers;
@@ -123,13 +134,55 @@ public partial class ExamPanelController : Control
     {
         if (SubmitButton != null)
         {
-            SubmitButton.Disabled = !enabled;
+            SubmitButton.Disabled = !enabled || !AllQuestionsAnswered();
         }
+    }
+
+    public void ShowResult(string message)
+    {
+        if (ResultLabel != null)
+        {
+            ResultLabel.Text = message;
+        }
+
+        SetSubmitEnabled(false);
     }
 
     private void OnSubmitPressed()
     {
+        if (!AllQuestionsAnswered())
+        {
+            UpdateSubmitState();
+            return;
+        }
+
         EmitSignal(SignalName.SubmitRequested, JsonSerializerHelper.ToJson(CollectAnswers()));
+    }
+
+    private bool AllQuestionsAnswered()
+    {
+        if (_answerControls.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (var pair in _answerControls)
+        {
+            if (pair.Value.GetSelectedId() < 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void UpdateSubmitState()
+    {
+        if (SubmitButton != null)
+        {
+            SubmitButton.Disabled = !AllQuestionsAnswered();
+        }
     }
 
     private void OnClosePressed()

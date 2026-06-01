@@ -232,6 +232,11 @@ unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 3
 
+[node name="ExamResultLabel" type="Label" parent="ExamOverlay/ExamMargin/ExamVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+
 [node name="ExamScroll" type="ScrollContainer" parent="ExamOverlay/ExamMargin/ExamVBox"]
 layout_mode = 2
 size_flags_vertical = 3
