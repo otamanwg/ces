@@ -5,6 +5,8 @@ import pytest
 
 from backend.app.models import City, Hostel, Job, Player
 from backend.app.seed import seed_initial_data
+from backend.app.services.economy import process_rent_payment, process_shift_work
+from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.player_profile import build_player_snapshot
 from backend.app.services.player_progress import build_goal_effects
 from backend.tests.db import make_test_session
@@ -194,5 +196,62 @@ def test_player_snapshot_actions_follow_current_state():
         assert snapshot["actions"]["can_work"] is False
         assert snapshot["actions"]["can_sleep"] is True
         assert snapshot["actions"]["can_take_exam"] is True
+    finally:
+        db.close()
+
+
+def test_next_action_guides_complete_starter_loop():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="guided-starter-loop",
+            balance=Decimal("500.00"),
+            energy=100,
+            mood=100,
+            education_level="High School",
+        )
+        db.add(player)
+        db.flush()
+
+        room = db.query(Hostel).first()
+        room.tenant_player_id = player.id
+        db.commit()
+
+        hint = _next_action(build_goal_effects(db, player))
+        assert hint["value"] == "Влаштуйтесь на роботу"
+
+        job = db.query(Job).filter(Job.min_education == "High School").order_by(Job.salary_per_hour).first()
+        job.filled_by_player_id = player.id
+        db.commit()
+
+        hint = _next_action(build_goal_effects(db, player))
+        assert hint["value"] == "Відпрацюйте зміну"
+        assert hint["delta"] == job.title
+
+        assert process_shift_work(db, str(player.id))["success"] is True
+        db.refresh(player)
+        hint = _next_action(build_goal_effects(db, player))
+        assert hint["value"] == "Складіть іспит у коледж"
+
+        player.energy = 20
+        db.commit()
+        hint = _next_action(build_goal_effects(db, player))
+        assert hint["value"] == "Спати (оренда + відновлення)"
+
+        assert process_rent_payment(db, str(player.id))["success"] is True
+        db.refresh(player)
+        hint = _next_action(build_goal_effects(db, player))
+        assert hint["value"] == "Складіть іспит у коледж"
+
+        exam = load_manager_exam()
+        answers = {str(q["id"]): q["correct_option_index"] for q in exam["questions"]}
+        assert process_exam_submission(db, str(player.id), answers)["success"] is True
+        db.refresh(player)
+        hint = _next_action(build_goal_effects(db, player))
+        assert hint["value"] == "Влаштуйтесь на кращу посаду"
+        assert "Диспетчер" in (hint.get("delta") or "")
     finally:
         db.close()
