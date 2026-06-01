@@ -6,7 +6,7 @@
 
 Goal: проєкт має запускатися, тестуватися і бути зрозумілим з першого відкриття.
 
-- Зафіксувати локальний стек: Python 3.12+, Godot 4.2+ .NET, .NET SDK 8 або SDK, який вимагає обрана версія Godot.
+- Зафіксувати локальний стек: Python 3.12+, Godot 4.3 .NET, .NET SDK 8.
 - Додати `.env.example` і читати `CITY_DATABASE_URL`, `CITY_CORS_ORIGINS`, `CITY_DEBUG`.
 - Використовувати PostgreSQL одразу; SQLite не підтримується навіть локально.
 - Винести стартовий seed міста з `main.py` в окремий модуль.
@@ -81,7 +81,7 @@ Goal: підготувати перехід від локального MVP до
 Required:
 
 - Python 3.12+.
-- Godot 4.2+ .NET edition.
+- Godot 4.3 .NET edition.
 - .NET SDK compatible with the Godot version.
 - PostgreSQL 16+ або Docker Desktop для Postgres контейнера.
 - Git.

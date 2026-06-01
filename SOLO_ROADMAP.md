@@ -1,169 +1,165 @@
-# Solo Roadmap — City Economic Simulator
+# Solo Working Roadmap — City Economic Simulator
 
-Проєкт веде **один розробник без команди**. Кожен sprint = одна перевірена ціль.  
-Advanced-системи (спорт, картелі, тіньовий сектор) **заморожені** до стабільного MVP.
+Цей файл — робочий план для щоденного руху. Він важливіший за великий vision-roadmap, коли треба вибрати наступну задачу.
 
----
-
-## Як будуємо надійно (головне правило)
-
-> **Повільно, але без оглядки назад.** Краще один маленький шматок, який працює і покритий тестами, ніж п'ять фіч, які потім переробляти.
-
-### Ритм роботи
-
-| Крок | Що робимо |
-|------|-----------|
-| 1 | Обрати **одну** задачу з поточного sprint |
-| 2 | Backend + Alembic (якщо БД) + pytest |
-| 3 | Smoke / API loop (`scripts/smoke_mvp.py`) |
-| 4 | Godot (якщо стосується UI) + F5 |
-| 5 | Оновити roadmap, **commit** — лише коли все зелене |
-| 6 | Наступна задача |
-
-### Definition of Done (кожна задача)
-
-- [ ] `pytest` проходить
-- [ ] `scripts/check.ps1` проходить (або обґрунтовано `-SkipClient`)
-- [ ] Core loop не зламаний (register → work → sleep → exam)
-- [ ] Немає «TODO потім» для критичної логіки цієї задачі
-- [ ] Зміни закомічені з зрозумілим message
-
-### Зараз НЕ робимо (поки не закриємо борг)
-
-- Нові gameplay-системи (спорт, тінь, картелі)
-- Великі рефакторинги «про запас»
-- Паралельні sprint-и
-- Mobile export до стабільного Godot loop
-
-### Відомий борг (виправити перед новими фічами)
-
-| # | Проблема | План |
-|---|----------|------|
-| 1 | Подвійна оренда: `sleep` + `game_day_tick` | ✅ Sleep = оренда; tick-day = втома + інфляція |
-| 2 | Незакомічені зміни в working tree | Закомітити або відкотити |
-| 3 | Checkpoint 2 (5 хв гри в Godot) | Ти граєш, даєш feedback |
-| 4 | `sleep` vs `tick-day` не видно в UI | Кнопка «Спати (оренда + відновлення)»; tick — dev-only |
+Проект ведеться малими перевіреними шматками. Якщо наступний крок очевидний, Codex продовжує сам: backend + tests first, потім Godot/client, `scripts/check.ps1` перед завершенням. Питати користувача тільки при архітектурному конфлікті або якщо тести падають після 2 спроб.
 
 ---
 
-## Принципи
+## Поточний Стан
 
-1. **Playable > Perfect** — але playable має лишатись playable після кожного commit.
-2. **Один sprint — одна перемога** — не розпилюватись.
-3. **Тест перед UI** — backend перевіряємо pytest, потім Godot.
-4. **Ти потрібен** лише на checkpoint-ах (нижче).
+### Готово
 
----
+- PostgreSQL-only backend з Alembic.
+- FastAPI MVP routes: city, player, jobs, work, sleep, exam.
+- Єдиний API envelope: `success`, `message`, `data`, `effects`.
+- Player auth token для state-changing player routes.
+- Idempotency для `work`, `sleep`, `exam`.
+- Godot 4.3 .NET client, C# build зелений.
+- Godot MCP addon + локальний Python bridge для Codex/Cursor.
+- Dashboard scroll-wrapper для мобільного viewport.
+- `scripts/check.ps1` як головний checkpoint.
 
-## Sprint 1 — Playable Loop ✅
+### Поточний Фокус
 
-**Ціль:** Godot → register → apply job → work → sleep → exam → краща вакансія.
+**MVP hardening перед розширенням гри.**
 
-| Задача | Статус |
-|--------|--------|
-| Єдиний API envelope `{success, message, data, effects}` | ✅ |
-| Ledger + progress до цілі | ✅ |
-| MVP routes винесені з monolith | ✅ |
-| HTTP-тести повного циклу (pytest) | ✅ |
-| Godot `ApiClient` + REST | ✅ |
-| Кнопки: apply, work, sleep | ✅ |
-| WS лише для city news | ✅ |
-
-### Checkpoint 1 — пропущено (автоперевірка)
-- `pytest` — 3/3 passed
-- `python scripts/smoke_mvp.py` — повний HTTP-цикл без Godot
+Мета: core loop `register -> apply -> work -> sleep -> exam -> better job` має бути стабільним, зрозумілим і не ламатися від поганих input/state.
 
 ---
 
-## Sprint 2 — Feel Like a Game ✅
+## Definition Of Done
 
-**Ціль:** гра відчувається, а не як API-demo.
+Кожна задача вважається завершеною тільки якщо:
 
-| Задача | Статус |
-|--------|--------|
-| Прогрес-бар до цілі | ✅ `GoalProgressBar` |
-| Екран іспиту (5 питань) | ✅ `ExamPanelController` |
-| Кнопка «Скласти іспит» | ✅ |
-| Повідомлення `effects` після дій | ✅ `EffectsLabel` |
-| Smoke test без Godot | ✅ `scripts/smoke_mvp.py` |
-| Dev script | ✅ `scripts/dev.ps1` |
-
-### Checkpoint 2 — **ТИ ПОТРІБЕН** (коли зручно)
-- Godot F5 → програти 5 хв → «цікаво / нудно / незрозуміло»
+- Backend tests проходять.
+- `scripts/check.ps1` проходить.
+- Якщо змінювалась сцена або Godot code: `get_errors` через MCP повертає `0 error(s)`.
+- Зміни закомічені окремим зрозумілим commit message.
+- Немає критичних TODO для цієї ж задачі.
 
 ---
 
-## Sprint 3 — Architecture & Balance (майже ✅, **стабілізація**)
+## Правила Руху
 
-**Ціль:** код готовий до росту без переписування.
-
-- Розбити `main.py` (advanced → `routes/frozen.py`) ✅
-- Alembic — перша міграція ✅
-- Reset script для локальної dev-бази ✅
-- FastAPI lifespan замість deprecated startup hook ✅
-- `game_day_tick` + формули з `economic_formulas.md` (спрощено) ✅
-- Баланс-тест: 30 ігрових днів без infinite money ✅
-- Dev endpoint `POST /api/city/tick-day` + smoke coverage ✅
-- Idempotency для `work/sleep/exam` ✅
-- **→ Наступний крок:** узгодити модель дня (sleep vs tick), не додавати нове
-
-### Checkpoint 3 — **ТИ ПОТРІБЕН**
-- Програти 5 хв після auth/idempotency
-- Рішення: чи розморожувати спорт/тіньовий сектор (**рекомендація: ні, поки не стабільно**)
+1. Один commit = одна причина.
+2. Backend contract + tests перед UI.
+3. Не додавати нові системи, поки MVP loop не відчувається стабільним.
+4. Не перетирати зміни користувача/Cursor: перед роботою `git status`.
+5. Якщо Codex бачить очевидний наступний крок, він бере його сам.
+6. Якщо задача зачіпає сцени, використовувати Godot MCP.
+7. Перед фінальним повідомленням запускати `scripts/check.ps1`.
 
 ---
 
-## Sprint 4 — Polish (поточний, **повільно**)
+## Sprint 5 — MVP Hardening (поточний)
 
-Порядок — **строго по одному пункту**:
+Ціль: прибрати неочевидні поломки core loop, вирівняти API-помилки, зробити клієнт стійким до поганого стану.
 
-1. ✅ Узгодити «день/ніч» (оренда, енергія) — backend + тест + UI
-2. ✅ Godot UI polish (feedback, disabled buttons, помилки сесії)
-2b. ✅ Підказка «Наступний крок» (backend `next_action` + UI)
-2c. ✅ Backend-driven action availability для кнопок Godot
-3. ✅ Playtest launch path: `.\scripts\play.ps1 -ResetDb -RunCheck`
-4. ⬜ Checkpoint 2 — твій feedback «цікаво / нудно»
-5. ⬜ Mobile export (останнім)
+| # | Задача | Статус | Перевірка |
+|---|--------|--------|-----------|
+| 5.1 | Invalid session на `jobs/apply` повертає session error | ✅ | `test_api_mvp_loop.py` |
+| 5.2 | Malformed IDs не дають 500 у auth/apply flow | ✅ | `test_api_mvp_loop.py` |
+| 5.3 | Повторний college exam не списує гроші вдруге | ✅ | `test_api_mvp_loop.py` |
+| 5.4 | Перевірити malformed IDs для `work/sleep/exam` routes | ⬜ | API regression tests |
+| 5.5 | Уніфікувати user-facing error messages для core actions | ⬜ | API tests + client status |
+| 5.6 | Перевірити idempotency edge cases: same key, wrong player/action | ⬜ | service/API tests |
+| 5.7 | Перевірити money/ledger consistency після work/sleep/exam | ⬜ | transaction tests |
 
-Вже зроблено:
-- Auth (простий token) ✅
-- Idempotency для work/sleep/exam ✅
-- CI: backend pytest + Godot C# build on push ✅
-
----
-
-## Заморожено (не чіпати до Sprint 3+)
-
-```
-POST /api/shadow/*
-POST /api/sports/*
-POST /api/advanced/*
-POST /api/police/*
-```
-
-Код залишається, але не розвивається.
+Після кожного пункту: `scripts/check.ps1`, commit.
 
 ---
 
-## Швидкий старт (dev)
+## Sprint 6 — Godot UX Polish
+
+Ціль: перша 5-хвилинна петля має читатися як гра, не як debug dashboard.
+
+Порядок:
+
+1. Status/effects history: останні 3-5 подій після дій гравця.
+2. Чіткі loading/busy стани для кнопок під час API-запиту.
+3. Error states: backend unavailable, invalid session, no vacancies, insufficient energy.
+4. Mobile layout pass: 360x640 і 720x1280 без обрізання тексту.
+5. Exam panel polish: варіанти відповідей, disabled submit без відповіді, результат після складання.
+6. Playtest через `scripts/play.ps1 -ResetDb -RunCheck`.
+
+DoD:
+
+- Godot MCP `get_errors` = 0.
+- Client build проходить.
+- Візуальний smoke screenshot після зміни сцени.
+
+---
+
+## Sprint 7 — Balance & 5-Minute Feel
+
+Ціль: MVP loop має бути не тільки правильним, а й відчутно нормальним по темпу.
+
+Порядок:
+
+1. Зафіксувати target loop: скільки змін роботи потрібно до іспиту.
+2. Налаштувати зарплату, оренду, exam cost.
+3. Додати balance tests: гравець може пройти loop без grind і без infinite money.
+4. Перевірити `next_action` після кожного кроку.
+5. Оновити README з очікуваним dev playtest сценарієм.
+
+---
+
+## Sprint 8 — Architecture Cleanup
+
+Ціль: підготувати код до наступних систем без великого переписування.
+
+Порядок:
+
+1. Винести повторювані player/job/city queries у repositories або focused service helpers.
+2. Переглянути прямі money mutations, де потрібен ledger/debit/credit helper.
+3. Додати route-level DTO там, де зараз сирі dict-структури.
+4. Зменшити відповідальність `CityDashboardController.cs`, якщо UI стане важким.
+
+Не робити це наперед: тільки після Sprint 5-7 або коли зміна реально спрощує наступний крок.
+
+---
+
+## Sprint 9 — Next Gameplay Door (після стабільного MVP)
+
+Розморожувати тільки одну систему за раз.
+
+Кандидати:
+
+1. Food/basic needs.
+2. Simple business ownership.
+3. City events/news.
+4. Sports as lightweight side progression.
+
+Поки не чіпати:
+
+- Cartels.
+- Shadow economy як основний loop.
+- Full politics.
+- Full insurance/unions.
+- Mobile export/release.
+
+---
+
+## Checkpoints Де Потрібен Користувач
+
+| Checkpoint | Коли | Що потрібно |
+|------------|------|-------------|
+| Playtest A | Після Sprint 5 | 5 хв гри: що незрозуміло або ламається |
+| Playtest B | Після Sprint 6 | Чи UI відчувається як гра |
+| Scope Gate | Перед Sprint 9 | Яку одну gameplay door відкриваємо |
+
+---
+
+## Швидкі Команди
 
 ```powershell
-docker compose up -d postgres
-copy .env.example .env
-pip install -r backend/requirements-dev.txt
-python -m uvicorn backend.main:app --reload
-pytest
+.\scripts\pwsh7.ps1 -NoProfile -File .\scripts\check.ps1
+.\scripts\play.ps1 -ResetDb -RunCheck
+.\scripts\start_godot_mcp_bridge.ps1
+.\scripts\invoke_godot_mcp.ps1 -Tool get_errors -ArgsJson '{"include_warnings":true}'
 ```
 
-Godot 4.3 .NET → відкрити `client/` → F5.
+Godot: `C:\Tools\Godot\Godot_v4.3-stable_mono_win64\Godot_v4.3-stable_mono_win64.exe`
 
----
-
-## Коли писати мені
-
-| Ситуація | Дія |
-|----------|-----|
-| Backend не стартує | Скинь помилку з термінала |
-| Godot не підключається | Перевір backend + CORS |
-| Checkpoint sprint | Програй і дай feedback |
-| Нова велика фіча | Спочатку обговоримо scope |
+PowerShell: `C:\Tools\PowerShell\7.6.2\pwsh.exe`
