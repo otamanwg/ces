@@ -10,8 +10,8 @@ alwaysApply: true
 - **Ukrainian** for user-facing docs and game text; code/comments may mix EN/UK as existing files do.
 - **Priority:** 5-minute core loop must stay playable after every change.
 - **Frozen until MVP is stable:** sports, shadow economy, cartels, unions, insurance, advanced routes.
-- Stack: Godot 4.2 C# client, FastAPI + SQLAlchemy, PostgreSQL, Alembic.
-- Godot MCP: `.cursor/mcp.json` + `client/addons/godot_mcp` (setup: `.\scripts\setup_godot_mcp.ps1`). Godot editor must be open with **MCP Connected** when editing scenes via AI.
+- Stack: Godot 4.3 C# client, FastAPI + SQLAlchemy, PostgreSQL, Alembic.
+- Godot MCP: `.cursor/mcp.json` + `client/addons/godot_mcp` + local Python bridge scripts. Godot editor must be open with **MCP Connected** when editing scenes via AI.
 - Follow `SOLO_ROADMAP.md` for sprint order. Do not scope-creep.
 - Minimize diff scope; match existing conventions in `backend/app/services/`.
 
