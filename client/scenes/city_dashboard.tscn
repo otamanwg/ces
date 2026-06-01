@@ -49,6 +49,11 @@ unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 3
 
+[node name="ErrorStateLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+
 [node name="EventHistoryLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2

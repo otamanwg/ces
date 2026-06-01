@@ -13,6 +13,7 @@ public partial class CityDashboardController : Control
 	[Export] public Label CurrentHostelLabel;
 	[Export] public Label StatusLabel;
 	[Export] public Label EffectsLabel;
+	[Export] public Label ErrorStateLabel;
 	[Export] public Label EventHistoryLabel;
 	[Export] public Label GoalLabel;
 	[Export] public Label NextActionLabel;
@@ -103,6 +104,7 @@ public partial class CityDashboardController : Control
 		CurrentHostelLabel ??= GetNodeOrNull<Label>("%CurrentHostelLabel");
 		StatusLabel ??= GetNodeOrNull<Label>("%StatusLabel");
 		EffectsLabel ??= GetNodeOrNull<Label>("%EffectsLabel");
+		ErrorStateLabel ??= GetNodeOrNull<Label>("%ErrorStateLabel");
 		EventHistoryLabel ??= GetNodeOrNull<Label>("%EventHistoryLabel");
 		GoalLabel ??= GetNodeOrNull<Label>("%GoalLabel");
 		NextActionLabel ??= GetNodeOrNull<Label>("%NextActionLabel");
@@ -130,7 +132,7 @@ public partial class CityDashboardController : Control
 		var root = JsonNode.Parse(jsonBody);
 		if (root == null)
 		{
-			SetStatus("Порожня відповідь сервера.");
+			SetErrorState("Порожня відповідь сервера.");
 			ClearPendingAction(endpoint);
 			return;
 		}
@@ -165,7 +167,7 @@ public partial class CityDashboardController : Control
 			}
 			else
 			{
-				SetStatus(message, true);
+				SetErrorState(BuildActionErrorMessage(endpoint, message));
 			}
 
 			ClearPendingAction(endpoint);
@@ -179,6 +181,7 @@ public partial class CityDashboardController : Control
 			_bootstrapPending = false;
 		}
 
+		ClearErrorState();
 		SetStatus(message, true);
 		UpdateEffectsUI(root["effects"]);
 
@@ -229,7 +232,7 @@ public partial class CityDashboardController : Control
 				string message = root?["message"]?.ToString() ?? "";
 				if (!string.IsNullOrEmpty(message))
 				{
-					SetStatus(message, true);
+					SetErrorState(BuildActionErrorMessage(endpoint, message));
 					UpdateActionButtons();
 					return;
 				}
@@ -240,7 +243,7 @@ public partial class CityDashboardController : Control
 			}
 		}
 
-		SetStatus("Backend недоступний. Запусти: .\\scripts\\play.ps1", true);
+		SetErrorState("Backend недоступний. Запусти: .\\scripts\\play.ps1");
 		UpdateActionButtons();
 	}
 
@@ -258,7 +261,7 @@ public partial class CityDashboardController : Control
 		_canWork = false;
 		_canSleep = false;
 		_canTakeExam = false;
-		SetStatus($"{message} Створюємо нового гравця...", true);
+		SetErrorState($"{message} Створюємо нового гравця...");
 		UpdateActionButtons();
 		RegisterNewPlayer();
 	}
@@ -268,7 +271,7 @@ public partial class CityDashboardController : Control
 		if (root["success"]?.GetValue<bool>() != true)
 		{
 			_pendingRefresh = false;
-			SetStatus("Місто недоступне.", true);
+			SetErrorState("Місто недоступне.");
 			UpdateActionButtons();
 			return;
 		}
@@ -308,7 +311,7 @@ public partial class CityDashboardController : Control
 		if (root["success"]?.GetValue<bool>() != true)
 		{
 			_pendingApply = false;
-			SetStatus("Не вдалось отримати вакансії.", true);
+			SetErrorState("Не вдалось отримати вакансії.");
 			UpdateActionButtons();
 			return;
 		}
@@ -317,7 +320,7 @@ public partial class CityDashboardController : Control
 		if (vacancies == null || vacancies.Count == 0)
 		{
 			_pendingApply = false;
-			SetStatus("Немає вільних вакансій.", true);
+			SetErrorState("Немає вільних вакансій. Спробуйте оновити статус міста або повернутися пізніше.");
 			UpdateActionButtons();
 			return;
 		}
@@ -350,11 +353,12 @@ public partial class CityDashboardController : Control
 		_pendingExamInfo = false;
 		if (root["success"]?.GetValue<bool>() != true)
 		{
-			SetStatus("Не вдалось завантажити іспит.", true);
+			SetErrorState("Не вдалось завантажити іспит.");
 			UpdateActionButtons();
 			return;
 		}
 
+		ClearErrorState();
 		_examPanel?.LoadExam(root["data"]);
 		UpdateActionButtons();
 	}
@@ -620,6 +624,23 @@ public partial class CityDashboardController : Control
 		}
 	}
 
+	private void SetErrorState(string message)
+	{
+		SetStatus(message, true);
+		if (ErrorStateLabel != null)
+		{
+			ErrorStateLabel.Text = message;
+		}
+	}
+
+	private void ClearErrorState()
+	{
+		if (ErrorStateLabel != null)
+		{
+			ErrorStateLabel.Text = "";
+		}
+	}
+
 	private void AddEventHistory(string message)
 	{
 		if (_lastHistoryMessage == message)
@@ -638,6 +659,21 @@ public partial class CityDashboardController : Control
 		{
 			EventHistoryLabel.Text = "Події:\n" + string.Join("\n", _eventHistory);
 		}
+	}
+
+	private static string BuildActionErrorMessage(string endpoint, string message)
+	{
+		if (message.Contains("Недостатньо енергії", StringComparison.Ordinal))
+		{
+			return $"{message} Натисніть «Спати», щоб відновитись.";
+		}
+
+		if (endpoint == "/api/jobs/vacancies")
+		{
+			return string.IsNullOrWhiteSpace(message) ? "Немає доступних вакансій." : message;
+		}
+
+		return string.IsNullOrWhiteSpace(message) ? "Дія не виконана. Спробуйте ще раз." : message;
 	}
 
 	private static string BuildActionKey(string action)
@@ -692,6 +728,7 @@ public partial class CityDashboardController : Control
 		_pendingApply = true;
 		_applyFirstVacancy = true;
 		UpdateActionButtons();
+		ClearErrorState();
 		SetStatus("Шукаємо вакансію...");
 		_apiClient?.Get("/api/jobs/vacancies");
 	}
@@ -718,6 +755,7 @@ public partial class CityDashboardController : Control
 
 		_pendingWorkKey = BuildActionKey("work");
 		UpdateActionButtons();
+		ClearErrorState();
 		SetStatus("Відпрацьовуємо зміну...");
 		_apiClient?.PostAuthorizedIdempotent($"/api/jobs/work/{_session.PlayerId}", _session.AuthToken, _pendingWorkKey);
 	}
@@ -738,6 +776,7 @@ public partial class CityDashboardController : Control
 
 		_pendingSleepKey = BuildActionKey("sleep");
 		UpdateActionButtons();
+		ClearErrorState();
 		SetStatus("Спимо та сплачуємо оренду...");
 		_apiClient?.PostAuthorizedIdempotent($"/api/hostels/sleep/{_session.PlayerId}", _session.AuthToken, _pendingSleepKey);
 	}
@@ -758,6 +797,7 @@ public partial class CityDashboardController : Control
 
 		SetStatus("Завантажуємо іспит...");
 		_pendingExamInfo = true;
+		ClearErrorState();
 		UpdateActionButtons();
 		_apiClient?.Get("/api/education/exam/info");
 	}
@@ -766,6 +806,7 @@ public partial class CityDashboardController : Control
 	{
 		SetStatus("Оновлюємо статус...");
 		_pendingRefresh = true;
+		ClearErrorState();
 		UpdateActionButtons();
 		_apiClient?.Get("/api/city/status");
 		if (_session != null && _session.HasAuthenticatedPlayer)
