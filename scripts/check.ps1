@@ -28,9 +28,11 @@ if (-not (Test-Path $python)) {
 
 Write-Host "== Alembic upgrade =="
 & $python -m alembic upgrade head
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "== Backend tests =="
 & $python -m pytest backend\tests -q
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 if (-not $SkipClient) {
     $dotnet = "C:\Tools\dotnet\dotnet.exe"
@@ -40,6 +42,7 @@ if (-not $SkipClient) {
 
     Write-Host "== Client build =="
     & $dotnet build client\city_economic_simulator.csproj -c Debug -v minimal
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 
 Write-Host "All checks passed."

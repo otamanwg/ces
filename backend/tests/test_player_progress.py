@@ -109,7 +109,7 @@ def test_next_action_suggests_exam_when_affordable():
         player = Player(
             city_id=city.id,
             username="hint-exam",
-            balance=Decimal("150.00"),
+            balance=Decimal("700.00"),
             energy=100,
             mood=100,
             education_level="High School",
@@ -187,7 +187,7 @@ def test_player_snapshot_actions_follow_current_state():
         }
 
         player.energy = 10
-        player.balance = Decimal("150.00")
+        player.balance = Decimal("700.00")
         db.commit()
 
         snapshot = build_player_snapshot(db, player)

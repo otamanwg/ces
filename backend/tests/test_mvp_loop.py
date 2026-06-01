@@ -160,7 +160,7 @@ def test_exam_payment_updates_treasury_and_logs_fee():
         player = Player(
             city_id=city.id,
             username="exam-ledger-player",
-            balance=Decimal("500.00"),
+            balance=Decimal("700.00"),
             energy=100,
             mood=100,
             education_level="High School",

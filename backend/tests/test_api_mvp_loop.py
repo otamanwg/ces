@@ -55,6 +55,7 @@ def test_full_mvp_api_loop(client):
     player_token = register_body["data"]["auth_token"]
     auth_headers = {"X-Player-Token": player_token}
     assert register_body["data"]["balance"] == 500.0
+    assert register_body["data"]["actions"]["can_take_exam"] is False
     register_effects = register_body["effects"]
     next_action = next(e for e in register_effects if e["key"] == "next_action")
     assert next_action["value"] == "Влаштуйтесь на роботу"
@@ -162,9 +163,9 @@ def test_full_mvp_api_loop(client):
     assert exam_info.status_code == 200
     assert len(exam_info.json()["data"]["questions"]) == 5
 
-    # Earn enough for exam: work/sleep cycles
+    # Earn enough for exam: target MVP loop is one work/sleep cycle from the starter state.
     player = db.query(Player).filter(Player.id == player_id).first()
-    while float(player.balance) < 100:
+    while float(player.balance) < exam_info.json()["data"]["cost_to_take"]:
         test_client.post(f"/api/jobs/work/{player_id}", headers=auth_headers)
         test_client.post(f"/api/hostels/sleep/{player_id}", headers=auth_headers)
         db.refresh(player)
