@@ -49,14 +49,22 @@ public partial class GameSession : Node
         Username = "";
         AuthToken = "";
         LastJobId = "";
-        if (File.Exists(SessionPath))
+        string sessionPath = ResolveSessionPath();
+        if (File.Exists(sessionPath))
         {
-            File.Delete(SessionPath);
+            File.Delete(sessionPath);
         }
     }
 
     private void SaveSession()
     {
+        string sessionPath = ResolveSessionPath();
+        string sessionDir = Path.GetDirectoryName(sessionPath) ?? "";
+        if (!string.IsNullOrEmpty(sessionDir))
+        {
+            Directory.CreateDirectory(sessionDir);
+        }
+
         var data = new SessionData
         {
             PlayerId = PlayerId,
@@ -64,19 +72,20 @@ public partial class GameSession : Node
             AuthToken = AuthToken,
             CityId = CityId,
         };
-        File.WriteAllText(SessionPath, JsonSerializer.Serialize(data));
+        File.WriteAllText(sessionPath, JsonSerializer.Serialize(data));
     }
 
     private void LoadSession()
     {
-        if (!File.Exists(SessionPath))
+        string sessionPath = ResolveSessionPath();
+        if (!File.Exists(sessionPath))
         {
             return;
         }
 
         try
         {
-            var data = JsonSerializer.Deserialize<SessionData>(File.ReadAllText(SessionPath));
+            var data = JsonSerializer.Deserialize<SessionData>(File.ReadAllText(sessionPath));
             if (data == null)
             {
                 return;
@@ -91,6 +100,11 @@ public partial class GameSession : Node
         {
             GD.PrintErr($"GameSession: не вдалось завантажити сесію: {e.Message}");
         }
+    }
+
+    private static string ResolveSessionPath()
+    {
+        return ProjectSettings.GlobalizePath(SessionPath);
     }
 
     private class SessionData
