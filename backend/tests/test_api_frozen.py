@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.app.database import get_db
-from backend.app.schemas.frozen import FrozenSportsMatchesResponse
+from backend.app.schemas.frozen import FrozenSportsClubsResponse, FrozenSportsMatchesResponse
 from backend.app.seed import seed_initial_data
 from backend.main import app
 from backend.tests.db import make_test_session
@@ -45,6 +45,16 @@ def test_frozen_sports_simulate_matches_contract(client):
     assert body["success"] is True
     assert len(body["matches"]) == 3
     FrozenSportsMatchesResponse.model_validate(body)
+
+
+def test_frozen_sports_clubs_contract(client):
+    response = client.get("/api/frozen/sports/clubs")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["clubs"]) == 3
+    assert body["clubs"][0]["owner"] == "ШІ-Управління"
+    FrozenSportsClubsResponse.model_validate(body)
 
 
 def test_mvp_sports_clubs_route_keeps_api_envelope(client):

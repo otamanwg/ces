@@ -295,6 +295,7 @@ DoD:
 17. ✅ Backend/tests: frozen sports simulate route response DTO.
 18. ✅ Client/Godot smoke: dashboard scene запускається, city status API 200, MCP errors 0.
 19. ✅ Backend/API: frozen routes винесено в `/api/frozen`, MVP `/api` перевірено проти колізій.
+20. ✅ Backend/tests: frozen sports clubs route response DTO.
 
 ---
 

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.database import get_db
 from backend.app.models import City, Player, SportsClub
-from backend.app.schemas.frozen import FrozenSportsMatchesResponse
+from backend.app.schemas.frozen import FrozenSportsClubsResponse, FrozenSportsMatchesResponse
 from backend.app.services.advanced import (
     buy_insurance_policy,
     donate_to_lobby_fund,
@@ -64,21 +64,23 @@ def police_audit(player_id: str, db: Session = Depends(get_db)):
 @router.get("/sports/clubs")
 def get_sports_clubs(db: Session = Depends(get_db)):
     clubs = db.query(SportsClub).all()
-    return [
-        {
-            "id": str(c.id),
-            "name": c.name,
-            "sport_type": c.sport_type,
-            "owner": db.query(Player).filter(Player.id == c.owner_player_id).first().username
-            if c.owner_player_id
-            else "ШІ-Управління",
-            "cash_balance": float(c.cash_balance),
-            "stadium_capacity": c.stadium_capacity,
-            "ticket_price": float(c.ticket_price),
-            "league_points": c.league_points,
-        }
-        for c in clubs
-    ]
+    return FrozenSportsClubsResponse(
+        clubs=[
+            {
+                "id": str(c.id),
+                "name": c.name,
+                "sport_type": c.sport_type,
+                "owner": db.query(Player).filter(Player.id == c.owner_player_id).first().username
+                if c.owner_player_id
+                else "ШІ-Управління",
+                "cash_balance": float(c.cash_balance),
+                "stadium_capacity": c.stadium_capacity,
+                "ticket_price": float(c.ticket_price),
+                "league_points": c.league_points,
+            }
+            for c in clubs
+        ]
+    ).model_dump()
 
 
 @router.post("/sports/train")
