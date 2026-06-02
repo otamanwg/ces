@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 14: Client controller hardening.**
+**Sprint 15: API contract hardening.**
 
-Мета: зменшити відповідальність `CityDashboardController.cs`, не змінюючи core loop.
+Мета: зафіксувати backend response contracts DTO-моделями, щоб клієнтські parser-и мали стабільну форму даних.
 
 ---
 
@@ -259,14 +259,28 @@ DoD:
 
 1. ✅ Client: винести action button state у `DashboardActionPresenter`.
 2. ✅ Client: винести parsing/formatting player snapshot у focused presenter/model.
-3. ⏳ Client: додати lightweight smoke для status/history formatting, якщо з'явиться тестова інфраструктура C#.
-4. ⏳ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
+3. ⏭️ Client: lightweight smoke для status/history formatting відкласти до появи C# test runner.
+4. ✅ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
 
 Наступний вузький крок після Sprint 14:
 
-1. Backend/API contract pass для player snapshot DTO.
-2. Client player snapshot presenter.
-3. Manual playtest pass через `scripts/play.ps1 -ResetDb -RunCheck`.
+1. ✅ Backend/API contract pass для player snapshot DTO.
+2. Manual playtest pass через `scripts/play.ps1 -ResetDb -RunCheck`.
+3. Route envelope DTO pass для city status/news.
+
+---
+
+## Sprint 15 — API Contract Hardening
+
+Ціль: основні відповіді MVP мають проходити через Pydantic DTO перед тим, як їх споживає Godot client.
+
+Порядок:
+
+1. ✅ Backend: `PlayerSnapshotData`, `PlayerActionsData`, business/sports snapshot DTO.
+2. ✅ Tests: validated player snapshot contract із job/hostel/business/sports/actions.
+3. ⏳ Backend: city status/news DTO.
+4. ⏳ Tests: API contract coverage для city status/news.
+5. ⏳ Перевірка: `scripts/check.ps1`, commit.
 
 ---
 

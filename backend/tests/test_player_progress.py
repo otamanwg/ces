@@ -3,12 +3,14 @@ from decimal import Decimal
 
 import pytest
 
-from backend.app.models import City, Hostel, Job, Player
+from backend.app.models import Business, City, Hostel, Job, Player, SportsClub
+from backend.app.schemas.mvp import PlayerSnapshotData
 from backend.app.seed import seed_initial_data
 from backend.app.services.economy import process_rent_payment, process_shift_work
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.player_profile import build_player_snapshot
 from backend.app.services.player_progress import build_goal_effects
+from backend.app.services.sports import sign_athlete_contract
 from backend.tests.db import make_test_session
 
 
@@ -207,6 +209,55 @@ def test_player_snapshot_actions_follow_current_state():
         assert snapshot["actions"]["can_join_sports"] is True
         assert snapshot["actions"]["can_train_sports"] is False
         assert snapshot["actions"]["can_take_exam"] is True
+    finally:
+        db.close()
+
+
+def test_player_snapshot_matches_contract_with_business_and_sports_data():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="snapshot-contract",
+            balance=Decimal("1500.00"),
+            energy=100,
+            mood=100,
+            hunger=20,
+            education_level="High School",
+        )
+        db.add(player)
+        db.flush()
+
+        room = db.query(Hostel).first()
+        room.tenant_player_id = player.id
+        job = db.query(Job).filter(Job.min_education == "High School").first()
+        job.filled_by_player_id = player.id
+        business = db.query(Business).filter(Business.type == "shop").one()
+        business.owner_player_id = player.id
+        club = db.query(SportsClub).first()
+        db.commit()
+
+        assert sign_athlete_contract(db, str(player.id), str(club.id), 120.0)["success"] is True
+        db.refresh(player)
+
+        snapshot = build_player_snapshot(db, player)
+        validated = PlayerSnapshotData.model_validate(snapshot)
+
+        assert validated.id == str(player.id)
+        assert validated.username == "snapshot-contract"
+        assert validated.job_id == str(job.id)
+        assert validated.hostel == f"Кімната №{room.room_number} (Хостел)"
+        assert validated.owned_businesses[0].id == str(business.id)
+        assert validated.owned_businesses[0].name == business.name
+        assert validated.sports_contract is not None
+        assert validated.sports_contract.club == club.name
+        assert validated.sports_contract.salary_per_match == 120.0
+        assert validated.actions.can_collect_dividend is True
+        assert validated.actions.can_join_sports is False
+        assert validated.actions.can_train_sports is True
+        assert _next_action(snapshot["goal_effects"]) is not None
     finally:
         db.close()
 
