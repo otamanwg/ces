@@ -332,7 +332,7 @@ DoD:
 Порядок:
 
 1. ✅ Docs/scripts: playtest checklist для `work -> sleep -> exam -> sports/business`.
-2. ⏭️ Scripts: за потреби smoke summary file або console output для playtest старту.
+2. ✅ Scripts: console output для playtest старту в `play.ps1`.
 3. ⏭️ Client: якщо smoke/playtest покаже неясний next action, полірнути текст без зміни backend.
 4. ⏭️ Перевірка: `check.ps1`, `smoke_godot_dashboard.ps1`, commit.
 

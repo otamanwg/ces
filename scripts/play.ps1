@@ -50,4 +50,10 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Write-Host "Opening Godot project..."
 Write-Host "Godot MCP: keep editor open for Cursor AI (MCP Connected top-right)."
 Write-Host "Press F5 in Godot to play."
+Write-Host ""
+Write-Host "5-minute playtest:"
+Write-Host "  1. Register -> Find job -> Work -> Sleep."
+Write-Host "  2. Take exam after enough balance, then find a College job."
+Write-Host "  3. Optional: join sports/train, save 1200 ₴ for first business."
+Write-Host "Smoke command: .\scripts\smoke_godot_dashboard.ps1"
 Start-Process $godot -ArgumentList @("--editor", "--path", "$Root\client")
