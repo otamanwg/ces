@@ -1,12 +1,17 @@
 # Логіка додаткових ігрових механік: Профспілки (Страйки), Кредити (Колектори), Страхування та Картелі
 # Файл: backend/app/services/advanced.py
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
 from backend.app.models import Player, Business, LaborUnion, BankLoan, InsurancePolicy, Cartel, City
-from backend.app.schemas.service_results import InsurancePolicyPurchaseServiceResult, LoanDailyServiceResult
+from backend.app.schemas.service_results import (
+    InsurancePolicyPurchaseServiceResult,
+    LaborUnionStrikeServiceResult,
+    LoanDailyServiceResult,
+    LobbyFundDonationServiceResult,
+)
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.ids import to_uuid
 from backend.app.services.money import money
@@ -33,14 +38,18 @@ def toggle_labor_union_strike(db: Session, business_id: str, union_name: str) ->
     union.strike_active = not union.strike_active
     
     if union.strike_active:
-        union.strike_ends_at = datetime.utcnow() + timedelta(days=1) # страйк на 1 день
+        union.strike_ends_at = datetime.now(timezone.utc) + timedelta(days=1) # страйк на 1 день
         message = f"✊ УВАГА! Робітники компанії '{business.name}' оголосили СТРАЙК! Робочі зміни заблоковано на 24 години."
     else:
         union.strike_ends_at = None
         message = f"🤝 Профспілка припинила страйк на '{business.name}'. Виробництво відновлено."
 
     db.commit()
-    return {"success": True, "strike_active": union.strike_active, "message": message}
+    return LaborUnionStrikeServiceResult(
+        success=True,
+        strike_active=union.strike_active,
+        message=message,
+    ).model_dump()
 
 def buy_insurance_policy(db: Session, player_id: str, business_id: str, 
                            provider_business_id: str, coverage: float, premium: float) -> dict:
@@ -208,4 +217,8 @@ def donate_to_lobby_fund(db: Session, cartel_name: str, city_id: str, industry: 
         message = f"Внесок у сумі {amount:.2f} ₴ успішно перераховано до фонду лобіювання Картелю '{cartel.name}'."
 
     db.commit()
-    return {"success": True, "message": message, "lobby_action": action_triggered}
+    return LobbyFundDonationServiceResult(
+        success=True,
+        message=message,
+        lobby_action=action_triggered,
+    ).model_dump()

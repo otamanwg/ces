@@ -3,15 +3,34 @@ from decimal import Decimal
 
 import pytest
 
-from backend.app.models import BankLoan, Business, City, InsurancePolicy, Player, PoliceRecord, TransactionModelLog
+from backend.app.models import (
+    BankLoan,
+    Business,
+    Cartel,
+    City,
+    InsurancePolicy,
+    Job,
+    LaborUnion,
+    Player,
+    PoliceRecord,
+    TransactionModelLog,
+)
 from backend.app.schemas.service_results import (
     FakeDiplomaPurchaseServiceResult,
     InsurancePolicyPurchaseServiceResult,
+    LaborUnionStrikeServiceResult,
     LoanDailyServiceResult,
+    LobbyFundDonationServiceResult,
     PoliceAuditBustedServiceResult,
 )
 from backend.app.seed import seed_initial_data
-from backend.app.services.advanced import buy_insurance_policy, process_daily_loan_installments_and_collectors
+from backend.app.services.advanced import (
+    buy_insurance_policy,
+    donate_to_lobby_fund,
+    process_daily_loan_installments_and_collectors,
+    toggle_labor_union_strike,
+)
+from backend.app.services.economy import process_shift_work
 from backend.app.services.education import purchase_fake_diploma, run_police_audit
 from backend.tests.db import make_test_session
 
@@ -188,5 +207,84 @@ def test_loan_installments_and_collector_seizure_transfer_available_money_to_tre
         assert repayment_log.amount == Decimal("80.00")
         seizure_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "collector_debt_seizure").one()
         assert seizure_log.amount == Decimal("20.00")
+    finally:
+        db.close()
+
+
+def test_labor_union_strike_blocks_worker_shift():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+
+        city = db.query(City).first()
+        job = db.query(Job).filter(Job.min_education == "High School").order_by(Job.salary_per_hour).first()
+        business = db.query(Business).filter(Business.id == job.business_id).one()
+        player = Player(
+            city_id=city.id,
+            username="strike-worker",
+            balance=Decimal("100.00"),
+            energy=100,
+            mood=100,
+            education_level="High School",
+        )
+        db.add(player)
+        db.flush()
+        job.filled_by_player_id = player.id
+        db.commit()
+
+        strike_result = toggle_labor_union_strike(db, str(business.id), "Працівники MVP")
+
+        assert strike_result["success"] is True
+        LaborUnionStrikeServiceResult.model_validate(strike_result)
+        assert strike_result["strike_active"] is True
+
+        union = db.query(LaborUnion).filter(LaborUnion.business_id == business.id).one()
+        assert union.strike_active is True
+        assert union.strike_ends_at is not None
+
+        work_result = process_shift_work(db, str(player.id))
+        assert work_result["success"] is False
+        assert "СТРАЙК" in work_result["message"]
+    finally:
+        db.close()
+
+
+def test_lobby_fund_donation_triggers_property_tax_cut_and_logs_transfer():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="lobby-donor",
+            balance=Decimal("6000.00"),
+            energy=100,
+            mood=100,
+            education_level="High School",
+        )
+        db.add(player)
+        db.commit()
+
+        starting_tax_rate = Decimal(str(city.tax_rate_property))
+        result = donate_to_lobby_fund(db, "Ритейл Картель", str(city.id), "retail", str(player.id), 5000.0)
+
+        assert result["success"] is True
+        LobbyFundDonationServiceResult.model_validate(result)
+        assert result["lobby_action"] is True
+
+        db.refresh(player)
+        db.refresh(city)
+        cartel = db.query(Cartel).filter(Cartel.city_id == city.id, Cartel.industry_type == "retail").one()
+        assert Decimal(str(player.balance)) == Decimal("1000.00")
+        assert Decimal(str(cartel.lobby_fund)) == Decimal("0.00")
+        assert Decimal(str(city.tax_rate_property)) == max(Decimal("0.50"), starting_tax_rate - Decimal("2.00"))
+
+        donation_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "lobby_fund_donation").one()
+        assert donation_log.sender_id == player.id
+        assert donation_log.sender_type == "player"
+        assert donation_log.receiver_id == cartel.id
+        assert donation_log.receiver_type == "business"
+        assert donation_log.amount == Decimal("5000.00")
     finally:
         db.close()

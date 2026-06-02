@@ -164,3 +164,15 @@ class InsurancePolicyPurchaseServiceResult(BaseModel):
 class LoanDailyServiceResult(BaseModel):
     success: bool
     details: list[str]
+
+
+class LaborUnionStrikeServiceResult(BaseModel):
+    success: bool
+    strike_active: bool
+    message: str
+
+
+class LobbyFundDonationServiceResult(BaseModel):
+    success: bool
+    message: str
+    lobby_action: bool
