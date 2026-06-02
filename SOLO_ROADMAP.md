@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 13: Frozen economy audit.**
+**Sprint 14: Client controller hardening.**
 
-Мета: прибрати прямі грошові мутації у старих side-системах і закрити ризики money creation regression-тестами.
+Мета: зменшити відповідальність `CityDashboardController.cs`, не змінюючи core loop.
 
 ---
 
@@ -247,7 +247,26 @@ DoD:
 
 1. ✅ News polish/filtering, якщо feed стане шумним.
 2. ✅ API/client presentation pass для sports/news.
-3. Ще один ledger audit, якщо знайдуться прямі money mutations поза services.
+3. ✅ Ще один ledger audit, якщо знайдуться прямі money mutations поза services.
+
+---
+
+## Sprint 14 — Client Controller Hardening
+
+Ціль: dashboard controller має лишатися керованим, поки MVP обростає кнопками й панелями.
+
+Порядок:
+
+1. ✅ Client: винести action button state у `DashboardActionPresenter`.
+2. ⏳ Client: винести parsing/formatting player snapshot у focused presenter/model.
+3. ⏳ Client: додати lightweight smoke для status/history formatting, якщо з'явиться тестова інфраструктура C#.
+4. ⏳ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
+
+Наступний вузький крок після Sprint 14:
+
+1. Backend/API contract pass для player snapshot DTO.
+2. Client player snapshot presenter.
+3. Manual playtest pass через `scripts/play.ps1 -ResetDb -RunCheck`.
 
 ---
 

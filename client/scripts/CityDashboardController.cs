@@ -42,6 +42,7 @@ public partial class CityDashboardController : Control
 	private Button _examButton;
 	private Button _refreshButton;
 	private DashboardStatusPresenter _statusPresenter;
+	private DashboardActionPresenter _actionPresenter;
 	private bool _applyFirstVacancy;
 	private bool _buyFirstBusiness;
 	private bool _joinFirstSportsClub;
@@ -71,21 +72,22 @@ public partial class CityDashboardController : Control
 	private string _pendingSportsJoinKey = "";
 	private string _pendingSportsTrainKey = "";
 	private string _pendingExamKey = "";
-	private const string ApplyJobText = "Знайти роботу";
-	private const string WorkText = "Працювати";
-	private const string SleepText = "Спати";
-	private const string EatText = "Поїсти";
-	private const string BuyBusinessText = "Купити бізнес";
-	private const string CollectDividendText = "Зібрати дивіденд";
-	private const string JoinSportsText = "У спорт";
-	private const string TrainSportsText = "Тренуватись";
-	private const string ExamText = "Іспит";
-	private const string RefreshText = "Оновити";
 
 	public override void _Ready()
 	{
 		BindUiNodes();
 		_statusPresenter = new DashboardStatusPresenter(StatusLabel, ErrorStateLabel, EventHistoryLabel);
+		_actionPresenter = new DashboardActionPresenter(
+			_applyJobButton,
+			_workButton,
+			_sleepButton,
+			_eatButton,
+			_buyBusinessButton,
+			_collectDividendButton,
+			_joinSportsButton,
+			_trainSportsButton,
+			_examButton,
+			_refreshButton);
 
 		_apiClient = GetNodeOrNull<ApiClient>("/root/ApiClient");
 		_session = GetNodeOrNull<GameSession>("/root/GameSession");
@@ -817,42 +819,33 @@ public partial class CityDashboardController : Control
 	private void UpdateActionButtons()
 	{
 		bool hasPlayer = _session != null && _session.HasAuthenticatedPlayer;
-		bool actionBusy = _bootstrapPending
-			|| _pendingApply
-			|| _pendingBusinessMarket
-			|| _pendingSportsClubs
-			|| _pendingExamInfo
-			|| _pendingRefresh
-			|| !string.IsNullOrEmpty(_pendingWorkKey)
-			|| !string.IsNullOrEmpty(_pendingSleepKey)
-			|| !string.IsNullOrEmpty(_pendingEatKey)
-			|| !string.IsNullOrEmpty(_pendingBusinessBuyKey)
-			|| !string.IsNullOrEmpty(_pendingDividendKey)
-			|| !string.IsNullOrEmpty(_pendingSportsJoinKey)
-			|| !string.IsNullOrEmpty(_pendingSportsTrainKey)
-			|| !string.IsNullOrEmpty(_pendingExamKey);
-		SetButtonState(_applyJobButton, !hasPlayer || !_canApplyJob || actionBusy, _pendingApply ? "Шукаємо..." : ApplyJobText);
-		SetButtonState(_workButton, !hasPlayer || !_canWork || actionBusy, !string.IsNullOrEmpty(_pendingWorkKey) ? "Працюємо..." : WorkText);
-		SetButtonState(_sleepButton, !hasPlayer || !_canSleep || actionBusy, !string.IsNullOrEmpty(_pendingSleepKey) ? "Спимо..." : SleepText);
-		SetButtonState(_eatButton, !hasPlayer || !_canEat || actionBusy, !string.IsNullOrEmpty(_pendingEatKey) ? "Їмо..." : EatText);
-		SetButtonState(_buyBusinessButton, !hasPlayer || !_canBuyBusiness || actionBusy, !string.IsNullOrEmpty(_pendingBusinessBuyKey) ? "Купуємо..." : _pendingBusinessMarket ? "Шукаємо..." : BuyBusinessText);
-		SetButtonState(_collectDividendButton, !hasPlayer || !_canCollectDividend || string.IsNullOrEmpty(_ownedBusinessId) || actionBusy, !string.IsNullOrEmpty(_pendingDividendKey) ? "Збираємо..." : CollectDividendText);
-		SetButtonState(_joinSportsButton, !hasPlayer || !_canJoinSports || actionBusy, !string.IsNullOrEmpty(_pendingSportsJoinKey) ? "Підписуємо..." : _pendingSportsClubs ? "Шукаємо..." : JoinSportsText);
-		SetButtonState(_trainSportsButton, !hasPlayer || !_canTrainSports || actionBusy, !string.IsNullOrEmpty(_pendingSportsTrainKey) ? "Тренуємось..." : TrainSportsText);
-		string examButtonText = !string.IsNullOrEmpty(_pendingExamKey)
-			? "Надсилаємо..."
-			: _pendingExamInfo ? "Завантаження..." : ExamText;
-		SetButtonState(_examButton, !hasPlayer || !_canTakeExam || actionBusy, examButtonText);
-		SetButtonState(_refreshButton, _bootstrapPending || _pendingRefresh, _pendingRefresh ? "Оновлюємо..." : RefreshText);
-	}
-
-	private static void SetButtonState(Button button, bool disabled, string text)
-	{
-		if (button != null)
-		{
-			button.Disabled = disabled;
-			button.Text = text;
-		}
+		_actionPresenter?.Update(
+			new DashboardActionState(
+				hasPlayer,
+				_bootstrapPending,
+				_pendingApply,
+				_pendingBusinessMarket,
+				_pendingSportsClubs,
+				_pendingExamInfo,
+				_pendingRefresh,
+				!string.IsNullOrEmpty(_pendingWorkKey),
+				!string.IsNullOrEmpty(_pendingSleepKey),
+				!string.IsNullOrEmpty(_pendingEatKey),
+				!string.IsNullOrEmpty(_pendingBusinessBuyKey),
+				!string.IsNullOrEmpty(_pendingDividendKey),
+				!string.IsNullOrEmpty(_pendingSportsJoinKey),
+				!string.IsNullOrEmpty(_pendingSportsTrainKey),
+				!string.IsNullOrEmpty(_pendingExamKey),
+				_canApplyJob,
+				_canWork,
+				_canSleep,
+				_canEat,
+				_canBuyBusiness,
+				_canCollectDividend,
+				_canJoinSports,
+				_canTrainSports,
+				_canTakeExam,
+				!string.IsNullOrEmpty(_ownedBusinessId)));
 	}
 
 	private void SetStatus(string message, bool addToHistory = false)
