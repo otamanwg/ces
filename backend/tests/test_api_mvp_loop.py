@@ -8,11 +8,17 @@ from backend.app.database import get_db
 from backend.app.models import IdempotencyRecord, Player, TransactionModelLog
 from backend.app.schemas.mvp import (
     BusinessMarketData,
+    BusinessBuyActionData,
+    BusinessDividendActionData,
     CityStatusData,
     DayTickData,
+    ExamSubmitActionData,
     ExamInfoData,
+    PlayerSnapshotData,
     SportsClubsData,
+    SportsTrainActionData,
     VacanciesData,
+    WorkActionData,
 )
 from backend.app.seed import seed_initial_data
 from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
@@ -126,6 +132,7 @@ def test_full_mvp_api_loop(client):
     assert work_res.status_code == 200
     work_body = work_res.json()
     assert work_body["success"] is True
+    WorkActionData.model_validate(work_body["data"])
     assert work_body["data"]["energy"] == 70
     assert work_body["data"]["hunger"] == 20
     assert work_body["data"]["balance"] > 500
@@ -147,6 +154,7 @@ def test_full_mvp_api_loop(client):
     assert sleep_res.status_code == 200
     sleep_body = sleep_res.json()
     assert sleep_body["success"] is True
+    PlayerSnapshotData.model_validate(sleep_body["data"])
     assert sleep_body["data"]["energy"] == 100
     assert sleep_body["data"]["hunger"] == 30
     transactions_after_sleep = db.query(TransactionModelLog).count()
@@ -203,6 +211,7 @@ def test_full_mvp_api_loop(client):
     assert submit_res.status_code == 200
     submit_body = submit_res.json()
     assert submit_body["success"] is True
+    ExamSubmitActionData.model_validate(submit_body["data"])
     assert submit_body["data"]["passed"] is True
     balance_after_exam = submit_body["data"]["balance"]
 
@@ -284,6 +293,7 @@ def test_business_market_and_buy_endpoint_are_idempotent(client):
     assert buy_res.status_code == 200
     buy_body = buy_res.json()
     assert buy_body["success"] is True
+    BusinessBuyActionData.model_validate(buy_body["data"])
     assert buy_body["data"]["balance"] == 300.0
     assert buy_body["data"]["owned_businesses"][0]["name"] == business["name"]
     transactions_after_buy = db.query(TransactionModelLog).count()
@@ -327,6 +337,7 @@ def test_business_dividend_endpoint_is_idempotent(client):
     assert dividend_res.status_code == 200
     dividend_body = dividend_res.json()
     assert dividend_body["success"] is True
+    BusinessDividendActionData.model_validate(dividend_body["data"])
     assert dividend_body["data"]["balance"] == 400.0
     assert dividend_body["data"]["dividend"] == 100.0
     assert dividend_body["data"]["business"]["cash_balance"] == 900.0
@@ -368,6 +379,7 @@ def test_sports_join_and_train_are_idempotent(client):
     assert join_res.status_code == 200
     join_body = join_res.json()
     assert join_body["success"] is True
+    PlayerSnapshotData.model_validate(join_body["data"])
     assert join_body["data"]["sports_contract"]["strength"] == 10
 
     repeat_join = test_client.post("/api/sports/join", json=join_payload, headers=join_headers)
@@ -380,6 +392,7 @@ def test_sports_join_and_train_are_idempotent(client):
     assert train_res.status_code == 200
     train_body = train_res.json()
     assert train_body["success"] is True
+    SportsTrainActionData.model_validate(train_body["data"])
     assert train_body["data"]["balance"] == 460.0
     assert train_body["data"]["energy"] == 60
     assert train_body["data"]["sports_contract"]["strength"] >= 12
@@ -416,6 +429,7 @@ def test_eat_endpoint_is_idempotent_and_logs_food(client):
     assert eat_res.status_code == 200
     eat_body = eat_res.json()
     assert eat_body["success"] is True
+    PlayerSnapshotData.model_validate(eat_body["data"])
     assert eat_body["data"]["balance"] == 475.0
     assert eat_body["data"]["hunger"] == 45
     transactions_after_eat = db.query(TransactionModelLog).count()

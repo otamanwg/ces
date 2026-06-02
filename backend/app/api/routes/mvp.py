@@ -10,14 +10,19 @@ from backend.app.models import City, Hostel, Player, SportsClub
 from backend.app.schemas.mvp import (
     BusinessMarketData,
     BusinessMarketItem,
+    BusinessBuyActionData,
+    BusinessDividendActionData,
     CityStatusData,
     DayTickData,
+    ExamSubmitActionData,
     ExamInfoData,
     ExamQuestionData,
     SportsClubItem,
     SportsClubsData,
+    SportsTrainActionData,
     VacanciesData,
     VacancyItem,
+    WorkActionData,
 )
 from backend.app.schemas.response import api_error, api_success
 from backend.app.services.auth import get_authorized_player, new_player_token
@@ -236,7 +241,8 @@ def buy_business(
 
     db.refresh(player)
     snapshot = build_player_snapshot(db, player)
-    response = api_success(res["message"], {**snapshot, "business": res["business"]}, build_goal_effects(db, player))
+    data_out = BusinessBuyActionData(**snapshot, business=res["business"]).model_dump()
+    response = api_success(res["message"], data_out, build_goal_effects(db, player))
     return save_idempotent_response(db, "business_buy", idempotency_key, data.player_id, response)
 
 
@@ -265,9 +271,10 @@ def collect_business_dividend(
 
     db.refresh(player)
     snapshot = build_player_snapshot(db, player)
+    data_out = BusinessDividendActionData(**snapshot, business=res["business"], dividend=res["dividend"]).model_dump()
     response = api_success(
         res["message"],
-        {**snapshot, "business": res["business"], "dividend": res["dividend"]},
+        data_out,
         build_goal_effects(db, player),
     )
     return save_idempotent_response(db, "business_dividend", idempotency_key, data.player_id, response)
@@ -341,7 +348,8 @@ def train_sports(
 
     db.refresh(player)
     snapshot = build_player_snapshot(db, player)
-    response = api_success(res["message"], {**snapshot, "sports_stats": res["stats"]}, build_goal_effects(db, player))
+    data_out = SportsTrainActionData(**snapshot, sports_stats=res["stats"]).model_dump()
+    response = api_success(res["message"], data_out, build_goal_effects(db, player))
     return save_idempotent_response(db, "sports_train", idempotency_key, data.player_id, response)
 
 
@@ -413,7 +421,7 @@ def do_work_shift(
     player = db.query(Player).filter(Player.id == to_uuid(player_id)).first()
     snapshot = build_player_snapshot(db, player)
     effects = build_goal_effects(db, player)
-    data = {**snapshot, "city": res.get("city", {})}
+    data = WorkActionData(**snapshot, city=res.get("city", {})).model_dump()
     response = api_success(res["message"], data, effects)
     return save_idempotent_response(db, "work_shift", idempotency_key, player_id, response)
 
@@ -507,11 +515,11 @@ def submit_exam(
 
     player = db.query(Player).filter(Player.id == to_uuid(data.player_id)).first()
     snapshot = build_player_snapshot(db, player)
-    data_out = {
+    data_out = ExamSubmitActionData(
         **snapshot,
-        "passed": res.get("passed"),
-        "score": res.get("score"),
-        "details": res.get("details", []),
-    }
+        passed=res.get("passed"),
+        score=res.get("score"),
+        details=res.get("details", []),
+    ).model_dump()
     response = api_success(res["message"], data_out, build_goal_effects(db, player))
     return save_idempotent_response(db, "exam_submit", idempotency_key, data.player_id, response)

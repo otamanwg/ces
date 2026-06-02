@@ -137,3 +137,49 @@ class DayTickData(BaseModel):
     city: DayTickCityData
     stats: DayTickStatsData
     news: list[CityNewsItem]
+
+
+class CityBalanceSnapshot(BaseModel):
+    treasury_balance: float
+
+
+class BusinessActionSnapshot(BaseModel):
+    id: str
+    name: str
+    type: str
+    cash_balance: float
+    purchase_price: float | None = None
+
+
+class SportsStatsData(BaseModel):
+    strength: int
+    stamina: int
+
+
+class ExamSubmissionDetailData(BaseModel):
+    question_id: int
+    correct: bool
+    explanation: str
+
+
+class WorkActionData(PlayerSnapshotData):
+    city: CityBalanceSnapshot
+
+
+class BusinessBuyActionData(PlayerSnapshotData):
+    business: BusinessActionSnapshot
+
+
+class BusinessDividendActionData(PlayerSnapshotData):
+    business: BusinessActionSnapshot
+    dividend: float
+
+
+class SportsTrainActionData(PlayerSnapshotData):
+    sports_stats: SportsStatsData
+
+
+class ExamSubmitActionData(PlayerSnapshotData):
+    passed: bool
+    score: str
+    details: list[ExamSubmissionDetailData]
