@@ -265,7 +265,7 @@ DoD:
 Наступний вузький крок після Sprint 14:
 
 1. ✅ Backend/API contract pass для player snapshot DTO.
-2. Manual playtest pass через `scripts/play.ps1 -ResetDb -RunCheck`.
+2. ✅ Manual playtest pass через `scripts/play.ps1 -ResetDb -RunCheck`.
 3. Route envelope DTO pass для city status/news.
 
 ---
@@ -281,6 +281,7 @@ DoD:
 3. ✅ Backend: city status/news DTO.
 4. ✅ Tests: API contract coverage для city status/news.
 5. ✅ Перевірка: `scripts/check.ps1`, commit.
+6. ✅ Manual smoke: Godot MCP `run_scene` + HTTP `scripts/smoke_mvp.py`.
 
 ---
 
