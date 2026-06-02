@@ -38,10 +38,20 @@ def client():
 
 
 def test_frozen_sports_simulate_matches_contract(client):
-    response = client.post("/api/sports/simulate_matches")
+    response = client.post("/api/frozen/sports/simulate_matches")
 
     assert response.status_code == 200
     body = response.json()
     assert body["success"] is True
     assert len(body["matches"]) == 3
     FrozenSportsMatchesResponse.model_validate(body)
+
+
+def test_mvp_sports_clubs_route_keeps_api_envelope(client):
+    response = client.get("/api/sports/clubs")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["success"] is True
+    assert "data" in body
+    assert "clubs" in body["data"]

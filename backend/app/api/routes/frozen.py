@@ -14,7 +14,7 @@ from backend.app.services.advanced import (
 from backend.app.services.education import purchase_fake_diploma, run_police_audit
 from backend.app.services.sports import sign_athlete_contract, simulate_league_matches, train_at_gym
 
-router = APIRouter(prefix="/api", tags=["frozen"])
+router = APIRouter(prefix="/api/frozen", tags=["frozen"])
 
 
 class GymTrain(BaseModel):
