@@ -12,249 +12,436 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
+[node name="Backdrop" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = 12.0
-offset_right = -12.0
-offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.055, 0.075, 0.095, 1)
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = 18.0
+offset_right = -18.0
+offset_bottom = -18.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ContentScroll" type="ScrollContainer" parent="MarginContainer"]
+[node name="LandscapeGrid" type="HBoxContainer" parent="RootMargin"]
 layout_mode = 2
-size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="LeftRail" type="VBoxContainer" parent="RootMargin/LandscapeGrid"]
+custom_minimum_size = Vector2(310, 0)
+layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 14
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/ContentScroll"]
+[node name="TitlePanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/LeftRail"]
 layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 10
 
-[node name="TitleLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer"]
+[node name="TitleBox" type="VBoxContainer" parent="RootMargin/LandscapeGrid/LeftRail/TitlePanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TitleLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/TitlePanel/TitleBox"]
 layout_mode = 2
 text = "City Economic Simulator"
 horizontal_alignment = 1
+autowrap_mode = 3
 
-[node name="StatusLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer"]
+[node name="StatusLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/TitlePanel/TitleBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Завантаження..."
 autowrap_mode = 3
+text_overrun_behavior = 3
 
-[node name="EffectsLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer"]
-unique_name_in_owner = true
+[node name="PlayerPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/LeftRail"]
 layout_mode = 2
-autowrap_mode = 3
+size_flags_vertical = 3
 
-[node name="ErrorStateLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer"]
-unique_name_in_owner = true
+[node name="PlayerBox" type="VBoxContainer" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel"]
 layout_mode = 2
-autowrap_mode = 3
-
-[node name="EventHistoryLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Події: —"
-autowrap_mode = 3
-
-[node name="GoalLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Ціль: —"
-autowrap_mode = 3
-
-[node name="GoalProgressBar" type="ProgressBar" parent="MarginContainer/ContentScroll/VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="NextActionPanel" type="PanelContainer" parent="MarginContainer/ContentScroll/VBoxContainer"]
-layout_mode = 2
-
-[node name="NextActionLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/NextActionPanel"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Наступний крок: —"
-autowrap_mode = 3
-
-[node name="CityPanel" type="PanelContainer" parent="MarginContainer/ContentScroll/VBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="CityBox" type="VBoxContainer" parent="MarginContainer/ContentScroll/VBoxContainer/CityPanel"]
-layout_mode = 2
-size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="CityNameLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/CityPanel/CityBox"]
+[node name="UsernameLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Підключення..."
+text = "Завантаження..."
 autowrap_mode = 3
+text_overrun_behavior = 3
 
-[node name="TreasuryLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/CityPanel/CityBox"]
+[node name="BalanceLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "0.00 ₴"
 autowrap_mode = 3
 
-[node name="InflationLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/CityPanel/CityBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "0.0%"
-autowrap_mode = 3
-
-[node name="PlayerPanel" type="PanelContainer" parent="MarginContainer/ContentScroll/VBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="PlayerBox" type="VBoxContainer" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 8
-
-[node name="UsernameLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Завантаження..."
-autowrap_mode = 3
-
-[node name="BalanceLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "0.00 ₴"
-autowrap_mode = 3
-
-[node name="EducationLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
+[node name="EducationLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "-"
 autowrap_mode = 3
 
-[node name="CurrentJobLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
+[node name="CurrentJobLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Безробітний"
 autowrap_mode = 3
+text_overrun_behavior = 3
 
-[node name="CurrentHostelLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
+[node name="CurrentHostelLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Немає"
 autowrap_mode = 3
+text_overrun_behavior = 3
 
-[node name="EnergyLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
+[node name="EnergyLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
 layout_mode = 2
 text = "Енергія"
 
-[node name="EnergyBar" type="TextureProgressBar" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
+[node name="EnergyBar" type="TextureProgressBar" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 value = 100.0
 
-[node name="MoodLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
+[node name="MoodLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
 layout_mode = 2
 text = "Настрій"
 
-[node name="MoodBar" type="TextureProgressBar" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
+[node name="MoodBar" type="TextureProgressBar" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HungerLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
+[node name="HungerLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
 layout_mode = 2
 text = "Голод"
 
-[node name="HungerBar" type="TextureProgressBar" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
+[node name="HungerBar" type="TextureProgressBar" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="OwnedBusinessLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
+[node name="OwnedBusinessLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Бізнес: немає"
 autowrap_mode = 3
+text_overrun_behavior = 3
 
-[node name="SportsLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
+[node name="SportsLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Спорт: немає"
 autowrap_mode = 3
+text_overrun_behavior = 3
 
-[node name="ApplyJobButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
+[node name="CityPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/LeftRail"]
+layout_mode = 2
+
+[node name="CityBox" type="VBoxContainer" parent="RootMargin/LandscapeGrid/LeftRail/CityPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CityNameLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/CityPanel/CityBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Підключення..."
+autowrap_mode = 3
+text_overrun_behavior = 3
+
+[node name="TreasuryLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/CityPanel/CityBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0.00 ₴"
+autowrap_mode = 3
+
+[node name="InflationLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/CityPanel/CityBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0.0%"
+autowrap_mode = 3
+
+[node name="CenterStage" type="VBoxContainer" parent="RootMargin/LandscapeGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="CityVisualPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CityVisual" type="Control" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel"]
+custom_minimum_size = Vector2(0, 360)
+layout_mode = 2
+
+[node name="Sky" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.12, 0.23, 0.31, 1)
+
+[node name="Ground" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -86.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(0.12, 0.26, 0.18, 1)
+
+[node name="Road" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = -64.0
+offset_right = -28.0
+offset_bottom = -28.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(0.13, 0.14, 0.15, 1)
+
+[node name="Sun" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+layout_mode = 1
+offset_left = 38.0
+offset_top = 34.0
+offset_right = 112.0
+offset_bottom = 108.0
+color = Color(0.95, 0.75, 0.32, 1)
+
+[node name="BuildingA" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 92.0
+offset_top = -210.0
+offset_right = 188.0
+offset_bottom = -86.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(0.21, 0.28, 0.34, 1)
+
+[node name="BuildingB" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 214.0
+offset_top = -280.0
+offset_right = 332.0
+offset_bottom = -86.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(0.28, 0.36, 0.42, 1)
+
+[node name="BuildingC" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 360.0
+offset_top = -170.0
+offset_right = 500.0
+offset_bottom = -86.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(0.18, 0.23, 0.27, 1)
+
+[node name="PlayerMarker" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 540.0
+offset_top = -134.0
+offset_right = 598.0
+offset_bottom = -86.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(0.72, 0.43, 0.18, 1)
+
+[node name="CityCaption" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = 88.0
+grow_horizontal = 2
+text = "Твій район: робота, оренда, спорт і перший бізнес"
+autowrap_mode = 3
+text_overrun_behavior = 3
+
+[node name="NextActionPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NextActionLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/NextActionPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Наступний крок: —"
+autowrap_mode = 3
+text_overrun_behavior = 3
+
+[node name="GoalPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GoalBox" type="VBoxContainer" parent="RootMargin/LandscapeGrid/CenterStage/GoalPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GoalLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/GoalPanel/GoalBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ціль: —"
+autowrap_mode = 3
+text_overrun_behavior = 3
+
+[node name="GoalProgressBar" type="ProgressBar" parent="RootMargin/LandscapeGrid/CenterStage/GoalPanel/GoalBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EffectsLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/GoalPanel/GoalBox"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+text_overrun_behavior = 3
+
+[node name="EventPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EventHistoryLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/EventPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Події: —"
+autowrap_mode = 3
+text_overrun_behavior = 3
+
+[node name="ErrorStateLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+text_overrun_behavior = 3
+
+[node name="ActionRail" type="VBoxContainer" parent="RootMargin/LandscapeGrid"]
+custom_minimum_size = Vector2(270, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="ActionsTitle" type="Label" parent="RootMargin/LandscapeGrid/ActionRail"]
+layout_mode = 2
+text = "Дії"
+horizontal_alignment = 1
+
+[node name="ApplyJobButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Знайти роботу"
+text_overrun_behavior = 3
 
-[node name="WorkButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
+[node name="WorkButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Працювати"
+text_overrun_behavior = 3
 
-[node name="SleepButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
+[node name="SleepButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Спати"
+text_overrun_behavior = 3
 
-[node name="EatButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
+[node name="EatButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Поїсти"
+text_overrun_behavior = 3
 
-[node name="ExamButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
+[node name="ExamButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Іспит"
+text_overrun_behavior = 3
 
-[node name="RefreshButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
+[node name="BuyBusinessButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Оновити"
-
-[node name="BuyBusinessButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Купити бізнес"
+text_overrun_behavior = 3
 
-[node name="CollectDividendButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
+[node name="CollectDividendButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Зібрати дивіденд"
+text_overrun_behavior = 3
 
-[node name="JoinSportsButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
+[node name="JoinSportsButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "У спорт"
+text_overrun_behavior = 3
 
-[node name="TrainSportsButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
+[node name="TrainSportsButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Тренуватись"
+text_overrun_behavior = 3
+
+[node name="RefreshButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Оновити"
+text_overrun_behavior = 3
 
 [node name="ExamOverlay" type="PanelContainer" parent="."]
 visible = false
@@ -268,10 +455,10 @@ script = ExtResource("2")
 
 [node name="ExamMargin" type="MarginContainer" parent="ExamOverlay"]
 layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
 
 [node name="ExamVBox" type="VBoxContainer" parent="ExamOverlay/ExamMargin"]
 layout_mode = 2
@@ -287,11 +474,13 @@ autowrap_mode = 3
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 3
+text_overrun_behavior = 3
 
 [node name="ExamResultLabel" type="Label" parent="ExamOverlay/ExamMargin/ExamVBox"]
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 3
+text_overrun_behavior = 3
 
 [node name="ExamScroll" type="ScrollContainer" parent="ExamOverlay/ExamMargin/ExamVBox"]
 layout_mode = 2
@@ -318,13 +507,13 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Закрити"
 
-[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/ApplyJobButton" to="." method="OnApplyJobButtonPressed"]
-[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/WorkButton" to="." method="OnWorkButtonPressed"]
-[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/SleepButton" to="." method="OnSleepButtonPressed"]
-[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/EatButton" to="." method="OnEatButtonPressed"]
-[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/ExamButton" to="." method="OnExamButtonPressed"]
-[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/RefreshButton" to="." method="OnRefreshButtonPressed"]
-[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/BuyBusinessButton" to="." method="OnBuyBusinessButtonPressed"]
-[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/CollectDividendButton" to="." method="OnCollectDividendButtonPressed"]
-[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/JoinSportsButton" to="." method="OnJoinSportsButtonPressed"]
-[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/TrainSportsButton" to="." method="OnTrainSportsButtonPressed"]
+[connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/ApplyJobButton" to="." method="OnApplyJobButtonPressed"]
+[connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/WorkButton" to="." method="OnWorkButtonPressed"]
+[connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/SleepButton" to="." method="OnSleepButtonPressed"]
+[connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/EatButton" to="." method="OnEatButtonPressed"]
+[connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/ExamButton" to="." method="OnExamButtonPressed"]
+[connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/BuyBusinessButton" to="." method="OnBuyBusinessButtonPressed"]
+[connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/CollectDividendButton" to="." method="OnCollectDividendButtonPressed"]
+[connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/JoinSportsButton" to="." method="OnJoinSportsButtonPressed"]
+[connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/TrainSportsButton" to="." method="OnTrainSportsButtonPressed"]
+[connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/RefreshButton" to="." method="OnRefreshButtonPressed"]
