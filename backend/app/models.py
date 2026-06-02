@@ -30,6 +30,34 @@ class City(Base):
     businesses: Mapped[List["Business"]] = relationship("Business", back_populates="city")
     mayor: Mapped[Optional["Player"]] = relationship("Player", foreign_keys=[mayor_player_id], post_update=True)
     transactions: Mapped[List["TransactionModelLog"]] = relationship("TransactionModelLog", back_populates="city")
+    districts: Mapped[List["CityDistrict"]] = relationship("CityDistrict", back_populates="city")
+
+
+class CityDistrict(Base):
+    __tablename__ = "city_districts"
+    __table_args__ = (
+        UniqueConstraint("city_id", "code", name="uq_city_districts_city_code"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    code: Mapped[str] = mapped_column(String(50), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    zone_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    description: Mapped[str] = mapped_column(String(300), nullable=False)
+    display_order: Mapped[int] = mapped_column(Integer, default=0)
+    land_available_hectares: Mapped[float] = mapped_column(Decimal(10, 2), default=0.00)
+    rent_level: Mapped[int] = mapped_column(Integer, default=0)
+    job_supply: Mapped[int] = mapped_column(Integer, default=0)
+    crime_risk: Mapped[int] = mapped_column(Integer, default=0)
+    traffic: Mapped[int] = mapped_column(Integer, default=0)
+    service_coverage: Mapped[int] = mapped_column(Integer, default=0)
+    medical_coverage: Mapped[int] = mapped_column(Integer, default=0)
+    land_value: Mapped[int] = mapped_column(Integer, default=0)
+    desirability: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    city: Mapped["City"] = relationship("City", back_populates="districts")
 
 # 2. МОДЕЛЬ ГРАВЦЯ
 class Player(Base):

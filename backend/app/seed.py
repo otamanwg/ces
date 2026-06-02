@@ -2,6 +2,7 @@ import logging
 from sqlalchemy.orm import Session
 
 from backend.app.models import Business, City, Hostel, Job, SportsClub
+from backend.app.services.city_districts import ensure_starter_districts
 
 
 logger = logging.getLogger("CityServer")
@@ -9,7 +10,11 @@ logger = logging.getLogger("CityServer")
 
 def seed_initial_data(db: Session) -> None:
     """Create the neutral MVP city and starter gameplay data when DB is empty."""
-    if db.query(City).count() > 0:
+    existing_cities = db.query(City).all()
+    if existing_cities:
+        for city in existing_cities:
+            ensure_starter_districts(db, city)
+        db.commit()
         return
 
     logger.info("Створення початкового нейтрального міста та комунальних підприємств...")
@@ -22,6 +27,7 @@ def seed_initial_data(db: Session) -> None:
     )
     db.add(city)
     db.flush()
+    ensure_starter_districts(db, city)
 
     gkh = Business(
         city_id=city.id,

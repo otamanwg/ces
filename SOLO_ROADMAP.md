@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 19: Core Visual Model.**
+**Sprint 20: City District Foundation.**
 
-Мета: перевести клієнт у landscape-first ігрову подачу, не змінюючи економічні механіки.
+Мета: закласти backend-каркас районів міста, щоб майбутній landscape visual layer показував не тільки числа, а реальну структуру міста.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -360,6 +360,21 @@ DoD:
 4. ✅ Scene: підключити core asset так, щоб майбутній style pack міг підмінити тільки visual layer.
 5. ⏭️ Text safety: перевірити довгі job/status/event strings у landscape без вильоту за контейнер.
 6. ✅ Перевірка: `check.ps1`, `smoke_godot_dashboard.ps1`, commit.
+
+---
+
+## Sprint 20 — City District Foundation
+
+Ціль: перетворити місто з одного абстрактного статусу на набір районів із метриками, які згодом керуватимуть візуалом, землею, AI-мером, медициною, криміналом і цінами.
+
+Порядок:
+
+1. ✅ Backend: `CityDistrict` model/table + Alembic migration.
+2. ✅ Backend: 6 стартових районів для малого міста: вокзал, комерційне ядро, висотна житлова зона, промзона, передмістя, зовнішні землі.
+3. ✅ Backend: district metrics у `/api/city/status`: rent, jobs, crime, traffic, services, medicine, land value, desirability.
+4. ✅ Tests: seed/API contract coverage для стартових районів.
+5. ✅ Docs: зафіксувати правила AI-мера, debt recovery, onboarding age adaptation і 24h move cooldown.
+6. ⏳ Наступний backend крок: rule-based AI mayor policy для майбутніх building applications.
 
 ---
 

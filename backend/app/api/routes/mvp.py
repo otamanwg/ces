@@ -13,6 +13,7 @@ from backend.app.schemas.mvp import (
     BusinessMarketItem,
     BusinessBuyActionData,
     BusinessDividendActionData,
+    CityDistrictItem,
     CityStatusData,
     DayTickData,
     ExamSubmitActionData,
@@ -38,6 +39,7 @@ from backend.app.services.education import load_manager_exam, process_exam_submi
 from backend.app.services.ids import to_uuid, try_uuid
 from backend.app.services.idempotency import get_idempotent_response
 from backend.app.services.city_news import build_city_news, build_day_tick_news
+from backend.app.services.city_districts import get_city_districts
 from backend.app.services.job_queries import education_rank, get_active_job, get_job, get_vacant_jobs
 from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
 from backend.app.services.needs import process_meal_purchase
@@ -101,6 +103,26 @@ def get_city_status(db: Session = Depends(get_db)):
         tax_rate_property=float(city.tax_rate_property),
         inflation_rate=float(city.inflation_rate),
         news=build_city_news(db, city),
+        districts=[
+            CityDistrictItem(
+                id=str(district.id),
+                code=district.code,
+                name=district.name,
+                zone_type=district.zone_type,
+                description=district.description,
+                display_order=district.display_order,
+                land_available_hectares=float(district.land_available_hectares),
+                rent_level=district.rent_level,
+                job_supply=district.job_supply,
+                crime_risk=district.crime_risk,
+                traffic=district.traffic,
+                service_coverage=district.service_coverage,
+                medical_coverage=district.medical_coverage,
+                land_value=district.land_value,
+                desirability=district.desirability,
+            )
+            for district in get_city_districts(db, city.id)
+        ],
     )
     return api_success("Статус міста оновлено.", data.model_dump())
 

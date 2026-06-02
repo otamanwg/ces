@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from backend.app.models import Business, City, Hostel, Job, Player, SportsClub, TransactionModelLog
+from backend.app.models import Business, City, CityDistrict, Hostel, Job, Player, SportsClub, TransactionModelLog
 from backend.app.schemas.service_results import (
     BusinessDividendServiceResult,
     BusinessPurchaseServiceResult,
@@ -43,9 +43,46 @@ def test_seed_creates_core_city_data():
         seed_initial_data(db)
 
         assert db.query(City).count() == 1
+        assert db.query(CityDistrict).count() == 6
         assert db.query(Job).count() == 3
         assert db.query(Hostel).count() == 5
         assert len(get_buyable_businesses(db)) == 1
+        districts = db.query(CityDistrict).order_by(CityDistrict.display_order).all()
+        assert [district.code for district in districts] == [
+            "bus_station",
+            "commercial_core",
+            "highrise_residential",
+            "industrial_edge",
+            "suburb_private_sector",
+            "outer_land",
+        ]
+        assert all(0 <= district.medical_coverage <= 100 for district in districts)
+        assert districts[-1].land_available_hectares == Decimal("250.00")
+    finally:
+        db.close()
+
+
+def test_seed_backfills_districts_for_existing_city():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        city = City(name="Existing Dev City")
+        db.add(city)
+        db.commit()
+
+        seed_initial_data(db)
+
+        assert db.query(City).count() == 1
+        assert db.query(CityDistrict).count() == 6
+        seed_initial_data(db)
+        assert db.query(CityDistrict).count() == 6
+
+        missing = db.query(CityDistrict).filter(CityDistrict.code == "outer_land").one()
+        db.delete(missing)
+        db.commit()
+        assert db.query(CityDistrict).count() == 5
+
+        seed_initial_data(db)
+        assert db.query(CityDistrict).count() == 6
     finally:
         db.close()
 

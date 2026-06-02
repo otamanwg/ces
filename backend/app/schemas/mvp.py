@@ -108,6 +108,24 @@ class CityNewsItem(BaseModel):
     priority: int
 
 
+class CityDistrictItem(BaseModel):
+    id: str
+    code: str
+    name: str
+    zone_type: str
+    description: str
+    display_order: int
+    land_available_hectares: float
+    rent_level: int
+    job_supply: int
+    crime_risk: int
+    traffic: int
+    service_coverage: int
+    medical_coverage: int
+    land_value: int
+    desirability: int
+
+
 class CityStatusData(BaseModel):
     id: str
     name: str
@@ -116,6 +134,7 @@ class CityStatusData(BaseModel):
     tax_rate_property: float
     inflation_rate: float
     news: list[CityNewsItem]
+    districts: list[CityDistrictItem]
 
 
 class DayTickCityData(BaseModel):

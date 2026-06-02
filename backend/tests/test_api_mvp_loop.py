@@ -63,6 +63,16 @@ def test_full_mvp_api_loop(client):
     assert city_body["data"]["news"][0]["type"] == "business_market"
     assert city_body["data"]["news"][0]["severity"] == "info"
     assert city_body["data"]["news"][0]["priority"] == 40
+    assert [district["code"] for district in city_body["data"]["districts"]] == [
+        "bus_station",
+        "commercial_core",
+        "highrise_residential",
+        "industrial_edge",
+        "suburb_private_sector",
+        "outer_land",
+    ]
+    assert city_body["data"]["districts"][0]["medical_coverage"] == 45
+    assert city_body["data"]["districts"][-1]["zone_type"] == "expansion"
     CityStatusData.model_validate(city_body["data"])
 
     register_res = test_client.post("/api/player/register", json={"username": "solo-dev"})
