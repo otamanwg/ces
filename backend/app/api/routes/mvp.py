@@ -17,6 +17,7 @@ from backend.app.schemas.mvp import (
     ExamSubmitActionData,
     ExamInfoData,
     ExamQuestionData,
+    PlayerSnapshotData,
     SportsClubItem,
     SportsClubsData,
     SportsTrainActionData,
@@ -83,6 +84,26 @@ class ExamAnswers(BaseModel):
 
 def require_player(db: Session, player_id: str, player_token: str | None) -> Player | None:
     return get_authorized_player(db, player_id, player_token)
+
+
+def build_player_action_response(db: Session, player: Player, message: str, response_model=PlayerSnapshotData, **extras) -> dict:
+    snapshot = build_player_snapshot(db, player)
+    payload = response_model(**snapshot, **extras).model_dump()
+    return api_success(message, payload, build_goal_effects(db, player))
+
+
+def save_player_action_response(
+    db: Session,
+    action: str,
+    idempotency_key: str | None,
+    player_id: str,
+    player: Player,
+    message: str,
+    response_model=PlayerSnapshotData,
+    **extras,
+) -> dict:
+    response = build_player_action_response(db, player, message, response_model, **extras)
+    return save_idempotent_response(db, action, idempotency_key, player_id, response)
 
 
 @router.get("/city/status")
@@ -240,10 +261,16 @@ def buy_business(
         return api_error(res["message"])
 
     db.refresh(player)
-    snapshot = build_player_snapshot(db, player)
-    data_out = BusinessBuyActionData(**snapshot, business=res["business"]).model_dump()
-    response = api_success(res["message"], data_out, build_goal_effects(db, player))
-    return save_idempotent_response(db, "business_buy", idempotency_key, data.player_id, response)
+    return save_player_action_response(
+        db,
+        "business_buy",
+        idempotency_key,
+        data.player_id,
+        player,
+        res["message"],
+        BusinessBuyActionData,
+        business=res["business"],
+    )
 
 
 @router.post("/businesses/dividend")
@@ -270,14 +297,17 @@ def collect_business_dividend(
         return api_error(res["message"])
 
     db.refresh(player)
-    snapshot = build_player_snapshot(db, player)
-    data_out = BusinessDividendActionData(**snapshot, business=res["business"], dividend=res["dividend"]).model_dump()
-    response = api_success(
+    return save_player_action_response(
+        db,
+        "business_dividend",
+        idempotency_key,
+        data.player_id,
+        player,
         res["message"],
-        data_out,
-        build_goal_effects(db, player),
+        BusinessDividendActionData,
+        business=res["business"],
+        dividend=res["dividend"],
     )
-    return save_idempotent_response(db, "business_dividend", idempotency_key, data.player_id, response)
 
 
 @router.get("/sports/clubs")
@@ -322,9 +352,7 @@ def join_sports_club(
         return api_error(res["message"])
 
     db.refresh(player)
-    snapshot = build_player_snapshot(db, player)
-    response = api_success(res["message"], snapshot, build_goal_effects(db, player))
-    return save_idempotent_response(db, "sports_join", idempotency_key, data.player_id, response)
+    return save_player_action_response(db, "sports_join", idempotency_key, data.player_id, player, res["message"])
 
 
 @router.post("/sports/train")
@@ -347,10 +375,16 @@ def train_sports(
         return api_error(res["message"])
 
     db.refresh(player)
-    snapshot = build_player_snapshot(db, player)
-    data_out = SportsTrainActionData(**snapshot, sports_stats=res["stats"]).model_dump()
-    response = api_success(res["message"], data_out, build_goal_effects(db, player))
-    return save_idempotent_response(db, "sports_train", idempotency_key, data.player_id, response)
+    return save_player_action_response(
+        db,
+        "sports_train",
+        idempotency_key,
+        data.player_id,
+        player,
+        res["message"],
+        SportsTrainActionData,
+        sports_stats=res["stats"],
+    )
 
 
 @router.post("/jobs/apply")
@@ -392,12 +426,7 @@ def apply_for_job(
     job.filled_by_player_id = player.id
     db.commit()
 
-    snapshot = build_player_snapshot(db, player)
-    return api_success(
-        f"Вас працевлаштовано на '{job.title}'.",
-        snapshot,
-        build_goal_effects(db, player),
-    )
+    return build_player_action_response(db, player, f"Вас працевлаштовано на '{job.title}'.")
 
 
 @router.post("/jobs/work/{player_id}")
@@ -419,11 +448,16 @@ def do_work_shift(
         return api_error(res["message"])
 
     player = db.query(Player).filter(Player.id == to_uuid(player_id)).first()
-    snapshot = build_player_snapshot(db, player)
-    effects = build_goal_effects(db, player)
-    data = WorkActionData(**snapshot, city=res.get("city", {})).model_dump()
-    response = api_success(res["message"], data, effects)
-    return save_idempotent_response(db, "work_shift", idempotency_key, player_id, response)
+    return save_player_action_response(
+        db,
+        "work_shift",
+        idempotency_key,
+        player_id,
+        player,
+        res["message"],
+        WorkActionData,
+        city=res.get("city", {}),
+    )
 
 
 @router.post("/hostels/sleep/{player_id}")
@@ -445,9 +479,7 @@ def sleep_in_hostel(
         return api_error(res["message"])
 
     player = db.query(Player).filter(Player.id == to_uuid(player_id)).first()
-    snapshot = build_player_snapshot(db, player)
-    response = api_success(res["message"], snapshot, build_goal_effects(db, player))
-    return save_idempotent_response(db, "sleep", idempotency_key, player_id, response)
+    return save_player_action_response(db, "sleep", idempotency_key, player_id, player, res["message"])
 
 
 @router.post("/needs/eat/{player_id}")
@@ -469,9 +501,7 @@ def eat_meal(
         return api_error(res["message"])
 
     player = db.query(Player).filter(Player.id == to_uuid(player_id)).first()
-    snapshot = build_player_snapshot(db, player)
-    response = api_success(res["message"], snapshot, build_goal_effects(db, player))
-    return save_idempotent_response(db, "eat", idempotency_key, player_id, response)
+    return save_player_action_response(db, "eat", idempotency_key, player_id, player, res["message"])
 
 
 @router.get("/education/exam/info")
@@ -514,12 +544,15 @@ def submit_exam(
         return api_error(res["message"])
 
     player = db.query(Player).filter(Player.id == to_uuid(data.player_id)).first()
-    snapshot = build_player_snapshot(db, player)
-    data_out = ExamSubmitActionData(
-        **snapshot,
+    return save_player_action_response(
+        db,
+        "exam_submit",
+        idempotency_key,
+        data.player_id,
+        player,
+        res["message"],
+        ExamSubmitActionData,
         passed=res.get("passed"),
         score=res.get("score"),
         details=res.get("details", []),
-    ).model_dump()
-    response = api_success(res["message"], data_out, build_goal_effects(db, player))
-    return save_idempotent_response(db, "exam_submit", idempotency_key, data.player_id, response)
+    )
