@@ -685,8 +685,21 @@ public partial class CityDashboardController : Control
 				continue;
 			}
 
-			_statusPresenter?.AddEvent(string.IsNullOrWhiteSpace(title) ? message : $"{title}: {message}");
+			string severity = item?["severity"]?.ToString() ?? "info";
+			_statusPresenter?.AddEvent(FormatNewsEvent(title, message, severity));
 		}
+	}
+
+	private static string FormatNewsEvent(string title, string message, string severity)
+	{
+		string prefix = severity switch
+		{
+			"warning" => "[!]",
+			"watch" => "[~]",
+			_ => "[i]",
+		};
+		string body = string.IsNullOrWhiteSpace(title) ? message : $"{title}: {message}";
+		return $"{prefix} {body}";
 	}
 
 	private void UpdateNextActionHint(JsonNode effects)
