@@ -4,12 +4,15 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from backend.app.api.routes.frozen import router as frozen_router
 from backend.app.api.routes.mvp import router as mvp_router
 from backend.app.core.config import settings
+from backend.app.core.exceptions import GameException
 from backend.app.database import get_db, init_db
 from backend.app.realtime.manager import ws_manager
+from backend.app.schemas.response import api_error
 from backend.app.seed import seed_initial_data
 
 logging.basicConfig(level=logging.INFO)
@@ -42,6 +45,13 @@ app = FastAPI(
     version="0.3.0",
     lifespan=lifespan,
 )
+
+
+# Глобальний обробник доменних помилок GameException
+@app.exception_handler(GameException)
+def game_exception_handler(request, exc: GameException):
+    return JSONResponse(status_code=200, content=api_error(exc.message, exc.data))
+
 
 app.add_middleware(
     CORSMiddleware,

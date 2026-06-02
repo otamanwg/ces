@@ -34,7 +34,7 @@ def load_manager_exam() -> dict:
 def process_exam_submission(db: Session, player_id: str, submitted_answers: Dict[str, int]) -> dict:
     """Оцінювання відповідей гравця та надання диплома"""
     player_uuid = to_uuid(player_id)
-    player = db.query(Player).filter(Player.id == player_uuid).first()
+    player = db.query(Player).filter(Player.id == player_uuid).with_for_update().first()
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
     if player.education_level != "High School":
@@ -112,7 +112,7 @@ def process_exam_submission(db: Session, player_id: str, submitted_answers: Dict
 def purchase_fake_diploma(db: Session, player_id: str) -> dict:
     """Тіньова купівля підробленого диплома Коледжу (Швидко, але небезпечно)"""
     player_uuid = to_uuid(player_id)
-    player = db.query(Player).filter(Player.id == player_uuid).first()
+    player = db.query(Player).filter(Player.id == player_uuid).with_for_update().first()
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
 

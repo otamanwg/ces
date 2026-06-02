@@ -8,7 +8,7 @@ public partial class ApiClient : Node
     [Signal]
     public delegate void RequestFinishedEventHandler(string endpoint, bool success, string jsonBody);
 
-    private const string BaseUrl = "http://127.0.0.1:8000";
+    [Export] public string BaseUrl = "http://127.0.0.1:8000";
     private HttpRequest _http;
     private readonly Queue<PendingRequest> _queue = new();
     private bool _busy;

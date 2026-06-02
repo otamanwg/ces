@@ -4,7 +4,7 @@
 import random
 from decimal import Decimal
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from backend.app.models import Player, SportsClub, PlayerAthleteContract, City
 from backend.app.schemas.service_results import (
@@ -203,9 +203,9 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
 
             # ВИПЛАТА ЗАРПЛАТ АТЛЕТАМ:
             # Зарплати виплачуються з бюджету клубу
-            winner_contracts = db.query(PlayerAthleteContract).filter(PlayerAthleteContract.club_id == winner.id).all()
+            winner_contracts = db.query(PlayerAthleteContract).options(joinedload(PlayerAthleteContract.player)).filter(PlayerAthleteContract.club_id == winner.id).all()
             for c in winner_contracts:
-                p = db.query(Player).filter(Player.id == c.player_id).first()
+                p = c.player
                 salary = money(c.salary_per_match)
                 credit(db, p, "balance", salary)
                 debit(db, winner, "cash_balance", salary)

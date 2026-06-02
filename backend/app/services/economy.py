@@ -2,8 +2,8 @@
 # Файл: backend/app/services/economy.py
 
 from decimal import Decimal
-from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy import func, text
+from sqlalchemy.orm import Session, joinedload
 
 from backend.app.models import Player, City, Job, Hostel, TransactionModelLog, Business
 from backend.app.schemas.service_results import DayTickServiceResult, RentPaymentServiceResult, WorkShiftServiceResult
@@ -26,7 +26,7 @@ def _active_money_supply(db: Session, city_id) -> Decimal:
 def process_shift_work(db: Session, player_id: str) -> dict:
     """Обробка робочої зміни гравця (Виснаження енергії, виплата ЗП, сплата податку в Скарбницю)"""
     player_uuid = to_uuid(player_id)
-    player = db.query(Player).filter(Player.id == player_uuid).first()
+    player = db.query(Player).filter(Player.id == player_uuid).with_for_update().first()
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
 
@@ -99,7 +99,7 @@ def process_shift_work(db: Session, player_id: str) -> dict:
 def process_rent_payment(db: Session, player_id: str) -> dict:
     """Нічний сон гравця: одноразова оплата оренди та відновлення енергії/настрою."""
     player_uuid = to_uuid(player_id)
-    player = db.query(Player).filter(Player.id == player_uuid).first()
+    player = db.query(Player).filter(Player.id == player_uuid).with_for_update().first()
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
 
@@ -191,12 +191,18 @@ def game_day_tick(db: Session, city_id: str) -> dict:
     if not city:
         return {"success": False, "message": "Місто не знайдено"}
 
+    # Очищення застарілих записів ідемпотентності (старших за 1 день)
+    from backend.app.models import IdempotencyRecord
+    db.query(IdempotencyRecord).filter(
+        IdempotencyRecord.created_at < func.now() - text("INTERVAL '1 day'")
+    ).delete(synchronize_session=False)
+
     active_before = _active_money_supply(db, city_uuid)
     players_updated = 0
     homeless_players = 0
     hungry_players = 0
 
-    players = db.query(Player).filter(Player.city_id == city_uuid).all()
+    players = db.query(Player).options(joinedload(Player.hostel_rented)).filter(Player.city_id == city_uuid).all()
     for player in players:
         players_updated += 1
         player.energy = max(0, player.energy - 5)
@@ -206,7 +212,7 @@ def game_day_tick(db: Session, city_id: str) -> dict:
             hungry_players += 1
             player.mood = max(10, player.mood - 5)
 
-        hostel = db.query(Hostel).filter(Hostel.tenant_player_id == player.id).first()
+        hostel = player.hostel_rented
         if not hostel:
             homeless_players += 1
             player.mood = max(10, player.mood - 8)

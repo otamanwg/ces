@@ -29,7 +29,7 @@ def decrease_hunger(player: Player, amount: int) -> None:
 
 def process_meal_purchase(db: Session, player_id: str) -> dict:
     player_uuid = to_uuid(player_id)
-    player = db.query(Player).filter(Player.id == player_uuid).first()
+    player = db.query(Player).filter(Player.id == player_uuid).with_for_update().first()
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
 
