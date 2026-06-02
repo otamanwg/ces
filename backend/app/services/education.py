@@ -117,13 +117,25 @@ def purchase_fake_diploma(db: Session, player_id: str) -> dict:
     if money(player.balance) < black_market_cost:
         return {"success": False, "message": f"Кримінальний дилер вимагає {black_market_cost} ₴. У вас немає такої суми."}
 
-    # Списання грошей (вони йдуть у тіньовий сектор / видаляються з обігу, частина може йти Мафії)
-    player.balance = money(player.balance) - black_market_cost
+    city = db.query(City).filter(City.id == player.city_id).first()
+
+    # Списання грошей у тіньовий сектор: це money sink, але він має бути видимим в аудиті.
+    debit(db, player, "balance", black_market_cost)
+    log_transaction(
+        db,
+        city.id,
+        sender_id=player.id,
+        sender_type="player",
+        receiver_id=city.id,
+        receiver_type="system",
+        amount=float(black_market_cost),
+        tax=0.0,
+        purpose="fake_diploma_purchase",
+    )
     player.education_level = "College"
     player.diploma_verified = False  # Підробка!
 
     # Створення поліцейського запису про можливе правопорушення
-    city = db.query(City).filter(City.id == player.city_id).first()
     record = PoliceRecord(
         player_id=player.id,
         offense_type="Fake College Diploma Purchased",
@@ -159,20 +171,33 @@ def run_police_audit(db: Session, player_id: str) -> dict:
     if not player.diploma_verified and record:
         # Зловили! Штрафуємо та анулюємо диплом
         fine = money(record.fine_amount)
-        player.balance = max(money("0.00"), money(player.balance) - fine)
+        collected_fine = min(money(player.balance), fine)
+        debit(db, player, "balance", collected_fine)
         player.education_level = "High School"  # Ануляція освіти
         player.diploma_verified = True
         
         # Гроші від штрафу йдуть у Скарбницю міста
         city = db.query(City).filter(City.id == player.city_id).first()
-        city.treasury_balance = money(city.treasury_balance) + fine
+        credit(db, city, "treasury_balance", collected_fine)
+        if collected_fine > money("0.00"):
+            log_transaction(
+                db,
+                city.id,
+                sender_id=player.id,
+                sender_type="player",
+                receiver_id=city.id,
+                receiver_type="treasury",
+                amount=float(collected_fine),
+                tax=0.0,
+                purpose="fake_diploma_fine",
+            )
         
         record.status = "fined"
         db.commit()
         
         return {
             "busted": True,
-            "message": f"🚨 ПОЛІЦІЯ! Ваше резюме пройшло аудит. Виявлено підроблений диплом! Вас оштрафовано на {fine:.2f} ₴, а диплом анульовано.",
+            "message": f"🚨 ПОЛІЦІЯ! Ваше резюме пройшло аудит. Виявлено підроблений диплом! Стягнуто штраф {collected_fine:.2f} ₴, а диплом анульовано.",
             "player": {
                 "balance": float(player.balance),
                 "education_level": player.education_level

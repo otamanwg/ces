@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 12: Sports side progression.**
+**Sprint 13: Frozen economy audit.**
 
-Мета: додати легкий спортивний side-progression без повної ліги.
+Мета: прибрати прямі грошові мутації у старих side-системах і закрити ризики money creation regression-тестами.
 
 ---
 
@@ -218,8 +218,8 @@ DoD:
 Наступний вузький крок після Sprint 12:
 
 1. ✅ Sports match payout smoke.
-2. News polish/filtering, якщо feed стане шумним.
-3. Economy audit: private/public ledger coverage for remaining frozen systems.
+2. ✅ Economy audit: private/public ledger coverage for remaining frozen systems.
+3. News polish/filtering, якщо feed стане шумним.
 
 Поки не чіпати:
 
@@ -228,6 +228,26 @@ DoD:
 - Full politics.
 - Full insurance/unions.
 - Mobile export/release.
+
+---
+
+## Sprint 13 — Frozen Economy Audit
+
+Ціль: side-системи, які ще не стали основним loop, не повинні ламати бухгалтерію MVP.
+
+Порядок:
+
+1. ✅ Backend: fake diploma purchase логувати як shadow/system money sink.
+2. ✅ Backend: police audit стягує тільки доступний баланс і не створює повний штраф у treasury.
+3. ✅ Backend: insurance premiums, loan repayments, collector seizure, lobby fund transfers використовують `debit`/`credit`.
+4. ✅ Tests: frozen economy coverage для дипломів, страхування, кредитів/колекторів.
+5. ✅ Перевірка: `scripts/check.ps1`, commit.
+
+Наступний вузький крок після Sprint 13:
+
+1. News polish/filtering, якщо feed стане шумним.
+2. API/client presentation pass для sports/news.
+3. Ще один ledger audit, якщо знайдуться прямі money mutations поза services.
 
 ---
 

@@ -2,17 +2,13 @@
 # Файл: backend/app/services/advanced.py
 
 from datetime import datetime, timedelta
-from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
 from backend.app.models import Player, Business, LaborUnion, BankLoan, InsurancePolicy, Cartel, City
-from backend.app.services.ledger import log_transaction
+from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.ids import to_uuid
-
-
-def money(value) -> Decimal:
-    return Decimal(str(value))
+from backend.app.services.money import money
 
 def toggle_labor_union_strike(db: Session, business_id: str, union_name: str) -> dict:
     """Оголошення або завершення страйку профспілкою підприємства"""
@@ -62,8 +58,8 @@ def buy_insurance_policy(db: Session, player_id: str, business_id: str,
         return {"success": False, "message": "Недостатньо грошей для першого страхового внеску!"}
 
     # Оплата внеску
-    player.balance = money(player.balance) - premium_amount
-    provider.cash_balance = money(provider.cash_balance) + premium_amount
+    debit(db, player, "balance", premium_amount)
+    credit(db, provider, "cash_balance", premium_amount)
 
     policy = InsurancePolicy(
         player_id=player.id,
@@ -106,11 +102,11 @@ def process_daily_loan_installments_and_collectors(db: Session, player_id: str) 
         
         if money(player.balance) >= payment:
             # Успішна сплата кредиту
-            player.balance = money(player.balance) - payment
+            debit(db, player, "balance", payment)
             loan.remaining_debt = max(money("0.00"), money(loan.remaining_debt) - payment)
             
             # Гроші повертаються в міський банк (Скарбницю)
-            city.treasury_balance = money(city.treasury_balance) + payment
+            credit(db, city, "treasury_balance", payment)
             
             if money(loan.remaining_debt) == money("0.00"):
                 loan.status = "paid"
@@ -132,11 +128,11 @@ def process_daily_loan_installments_and_collectors(db: Session, player_id: str) 
             
             # Колектори конфісковують 50% від усіх поточних грошей гравця на рахунку
             seizure = money(player.balance) * money("0.50")
-            player.balance = money(player.balance) - seizure
+            debit(db, player, "balance", seizure)
             loan.remaining_debt = max(money("0.00"), money(loan.remaining_debt) - seizure)
             
             # Кошти вилучаються в Скарбницю
-            city.treasury_balance = money(city.treasury_balance) + seizure
+            credit(db, city, "treasury_balance", seizure)
             
             results.append(
                 f"🚨 ШІ-КОЛЕКТОРИ! Кредит прострочено. Заморожено рахунки гравця {player.username}. "
@@ -179,8 +175,8 @@ def donate_to_lobby_fund(db: Session, cartel_name: str, city_id: str, industry: 
         db.refresh(cartel)
 
     # Переказ коштів у фонд картелю
-    player.balance = money(player.balance) - donation
-    cartel.lobby_fund = money(cartel.lobby_fund) + donation
+    debit(db, player, "balance", donation)
+    credit(db, cartel, "lobby_fund", donation)
 
     log_transaction(
         db, city_id,
@@ -198,7 +194,7 @@ def donate_to_lobby_fund(db: Session, cartel_name: str, city_id: str, industry: 
     if money(cartel.lobby_fund) >= money("5000.00"):
         city = db.query(City).filter(City.id == city_uuid).first()
         city.tax_rate_property = max(money("0.50"), money(city.tax_rate_property) - money("2.00"))
-        cartel.lobby_fund = money(cartel.lobby_fund) - money("5000.00")
+        debit(db, cartel, "lobby_fund", money("5000.00"))
         action_triggered = True
         message = (
             f"📈 ЛОБІЗМ! Промисловий Картель '{cartel.name}' успішно протиснув законопроект! "
