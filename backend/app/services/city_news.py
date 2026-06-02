@@ -3,7 +3,23 @@ from sqlalchemy.orm import Session
 from backend.app.models import Business, City, Hostel, Player
 
 
-def build_city_news(db: Session, city: City) -> list[dict]:
+def _news_item(news_type: str, title: str, message: str, severity: str, priority: int) -> dict:
+    return {
+        "type": news_type,
+        "title": title,
+        "message": message,
+        "severity": severity,
+        "priority": priority,
+    }
+
+
+def _limit_news(news: list[dict], max_items: int) -> list[dict]:
+    if max_items <= 0:
+        return []
+    return news[:max_items]
+
+
+def build_city_news(db: Session, city: City, max_items: int = 4) -> list[dict]:
     buyable_count = (
         db.query(Business)
         .filter(
@@ -26,70 +42,87 @@ def build_city_news(db: Session, city: City) -> list[dict]:
     news: list[dict] = []
     if buyable_count:
         news.append(
-            {
-                "type": "business_market",
-                "title": "Міський ринок бізнесів",
-                "message": f"Доступно бізнесів для купівлі: {buyable_count}.",
-            }
+            _news_item(
+                "business_market",
+                "Міський ринок бізнесів",
+                f"Доступно бізнесів для купівлі: {buyable_count}.",
+                "info",
+                40,
+            )
         )
     if owned_count:
         news.append(
-            {
-                "type": "business_ownership",
-                "title": "Приватний сектор",
-                "message": f"Гравці вже володіють бізнесами: {owned_count}.",
-            }
+            _news_item(
+                "business_ownership",
+                "Приватний сектор",
+                f"Гравці вже володіють бізнесами: {owned_count}.",
+                "info",
+                30,
+            )
         )
     if hungry_count:
         news.append(
-            {
-                "type": "needs",
-                "title": "Побутові потреби",
-                "message": f"Гравців із високим голодом: {hungry_count}.",
-            }
+            _news_item(
+                "needs",
+                "Побутові потреби",
+                f"Гравців із високим голодом: {hungry_count}.",
+                "warning",
+                80,
+            )
         )
     if homeless_count:
         news.append(
-            {
-                "type": "housing",
-                "title": "Житло",
-                "message": f"Гравців без житла: {homeless_count}.",
-            }
+            _news_item(
+                "housing",
+                "Житло",
+                f"Гравців без житла: {homeless_count}.",
+                "warning",
+                70,
+            )
         )
     if float(city.inflation_rate or 0) > 0:
         news.append(
-            {
-                "type": "inflation",
-                "title": "Інфляція",
-                "message": f"Інфляція міста: {float(city.inflation_rate):.1f}%.",
-            }
+            _news_item(
+                "inflation",
+                "Інфляція",
+                f"Інфляція міста: {float(city.inflation_rate):.1f}%.",
+                "watch",
+                60,
+            )
         )
 
-    return news
+    news.sort(key=lambda item: item["priority"], reverse=True)
+    return _limit_news(news, max_items)
 
 
-def build_day_tick_news(stats: dict) -> list[dict]:
+def build_day_tick_news(stats: dict, max_items: int = 4) -> list[dict]:
     news = [
-        {
-            "type": "day_tick",
-            "title": "Новий день",
-            "message": f"Оновлено гравців: {stats['players_updated']}.",
-        }
+        _news_item(
+            "day_tick",
+            "Новий день",
+            f"Оновлено гравців: {stats['players_updated']}.",
+            "info",
+            20,
+        )
     ]
     if stats.get("homeless_players", 0) > 0:
         news.append(
-            {
-                "type": "housing",
-                "title": "Ніч без житла",
-                "message": f"Гравців без житла: {stats['homeless_players']}. Настрій знижено.",
-            }
+            _news_item(
+                "housing",
+                "Ніч без житла",
+                f"Гравців без житла: {stats['homeless_players']}. Настрій знижено.",
+                "warning",
+                70,
+            )
         )
     if stats.get("hungry_players", 0) > 0:
         news.append(
-            {
-                "type": "needs",
-                "title": "Голод",
-                "message": f"Гравців із критичним голодом: {stats['hungry_players']}.",
-            }
+            _news_item(
+                "needs",
+                "Голод",
+                f"Гравців із критичним голодом: {stats['hungry_players']}.",
+                "warning",
+                80,
+            )
         )
-    return news
+    return _limit_news(news, max_items)

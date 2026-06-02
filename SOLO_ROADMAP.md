@@ -245,7 +245,7 @@ DoD:
 
 Наступний вузький крок після Sprint 13:
 
-1. News polish/filtering, якщо feed стане шумним.
+1. ✅ News polish/filtering, якщо feed стане шумним.
 2. API/client presentation pass для sports/news.
 3. Ще один ledger audit, якщо знайдуться прямі money mutations поза services.
 
