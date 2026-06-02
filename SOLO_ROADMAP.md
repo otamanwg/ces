@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 17: Dev Recovery & Smoke Reliability.**
+**Sprint 18: Playtest Readiness.**
 
-Мета: після рестарту ПК dev workflow має відновлюватись однією командою: backend health, smoke, Godot bridge.
+Мета: підготувати короткий ручний playtest loop, щоб швидко перевіряти, чи MVP відчувається як гра.
 
 ---
 
@@ -322,6 +322,19 @@ DoD:
 2. ✅ Scripts: `play.ps1` використовує backend starter замість ad-hoc PowerShell window.
 3. ✅ Scripts: `dev.ps1` стартує backend і запускає HTTP MVP smoke.
 4. ✅ Scripts: one-command Godot MCP bridge + dashboard smoke wrapper.
+
+---
+
+## Sprint 18 — Playtest Readiness
+
+Ціль: ручний 5-хвилинний playtest має мати зрозумілий сценарій, reset/start команди і критерії “готово/не готово”.
+
+Порядок:
+
+1. ✅ Docs/scripts: playtest checklist для `work -> sleep -> exam -> sports/business`.
+2. ⏭️ Scripts: за потреби smoke summary file або console output для playtest старту.
+3. ⏭️ Client: якщо smoke/playtest покаже неясний next action, полірнути текст без зміни backend.
+4. ⏭️ Перевірка: `check.ps1`, `smoke_godot_dashboard.ps1`, commit.
 
 ---
 
