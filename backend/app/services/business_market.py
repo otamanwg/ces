@@ -3,6 +3,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from backend.app.models import Business, City, Player
+from backend.app.schemas.service_results import BusinessDividendServiceResult, BusinessPurchaseServiceResult
 from backend.app.services.ids import to_uuid
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
@@ -86,20 +87,20 @@ def process_business_purchase(db: Session, player_id: str, business_id: str) -> 
     )
 
     db.commit()
-    return {
-        "success": True,
-        "message": f"Ви придбали бізнес '{business.name}' за {price:.2f} ₴.",
-        "business": {
+    return BusinessPurchaseServiceResult(
+        success=True,
+        message=f"Ви придбали бізнес '{business.name}' за {price:.2f} ₴.",
+        business={
             "id": str(business.id),
             "name": business.name,
             "type": business.type,
             "cash_balance": float(business.cash_balance),
             "purchase_price": float(price),
         },
-        "player": {
+        player={
             "balance": float(player.balance),
         },
-    }
+    ).model_dump()
 
 
 def process_business_dividend_collection(db: Session, player_id: str, business_id: str) -> dict:
@@ -136,17 +137,17 @@ def process_business_dividend_collection(db: Session, player_id: str, business_i
     )
 
     db.commit()
-    return {
-        "success": True,
-        "message": f"Отримано дивіденд {dividend:.2f} ₴ від бізнесу '{business.name}'.",
-        "business": {
+    return BusinessDividendServiceResult(
+        success=True,
+        message=f"Отримано дивіденд {dividend:.2f} ₴ від бізнесу '{business.name}'.",
+        business={
             "id": str(business.id),
             "name": business.name,
             "type": business.type,
             "cash_balance": float(business.cash_balance),
         },
-        "player": {
+        player={
             "balance": float(player.balance),
         },
-        "dividend": float(dividend),
-    }
+        dividend=float(dividend),
+    ).model_dump()

@@ -4,6 +4,7 @@ from decimal import Decimal
 import pytest
 
 from backend.app.models import Business, City, Hostel, Job, Player, SportsClub, TransactionModelLog
+from backend.app.schemas.service_results import BusinessDividendServiceResult, BusinessPurchaseServiceResult
 from backend.app.seed import seed_initial_data
 from backend.app.services.business_market import (
     get_buyable_businesses,
@@ -219,6 +220,7 @@ def test_business_purchase_transfers_money_to_treasury_and_assigns_owner():
         result = process_business_purchase(db, str(player.id), str(business.id))
 
         assert result["success"] is True
+        BusinessPurchaseServiceResult.model_validate(result)
         db.refresh(player)
         db.refresh(city)
         db.refresh(business)
@@ -259,6 +261,7 @@ def test_business_dividend_moves_cash_from_owned_business_to_player():
         result = process_business_dividend_collection(db, str(player.id), str(business.id))
 
         assert result["success"] is True
+        BusinessDividendServiceResult.model_validate(result)
         db.refresh(player)
         db.refresh(business)
         assert Decimal(str(player.balance)) == Decimal("200.00")
