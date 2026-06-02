@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.database import get_db
 from backend.app.models import City, Player, SportsClub
+from backend.app.schemas.frozen import FrozenSportsMatchesResponse
 from backend.app.services.advanced import (
     buy_insurance_policy,
     donate_to_lobby_fund,
@@ -102,7 +103,7 @@ def simulate_matches(db: Session = Depends(get_db)):
     if not city:
         raise HTTPException(status_code=404, detail="Місто не знайдене")
     res = simulate_league_matches(db, city.id)
-    return {"success": True, "matches": res}
+    return FrozenSportsMatchesResponse(success=True, matches=res).model_dump()
 
 
 @router.post("/advanced/union/strike")
