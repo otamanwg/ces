@@ -10,6 +10,8 @@ from backend.app.schemas.service_results import (
     DayTickServiceResult,
     ExamSubmissionServiceResult,
     MealPurchaseServiceResult,
+    SportsContractServiceResult,
+    SportsLeagueMatchServiceResult,
     RentPaymentServiceResult,
     SportsTrainServiceResult,
     WorkShiftServiceResult,
@@ -308,7 +310,9 @@ def test_gym_training_charges_player_treasury_and_logs_fee():
         db.add(player)
         db.commit()
 
-        assert sign_athlete_contract(db, str(player.id), str(club.id), 120.0)["success"] is True
+        contract_result = sign_athlete_contract(db, str(player.id), str(club.id), 120.0)
+        assert contract_result["success"] is True
+        SportsContractServiceResult.model_validate(contract_result)
         starting_treasury = Decimal(str(city.treasury_balance))
 
         result = train_at_gym(db, str(player.id), "strength")
@@ -351,13 +355,17 @@ def test_sports_matches_create_ticket_revenue_and_pay_winning_athlete(monkeypatc
         db.add(player)
         db.commit()
 
-        assert sign_athlete_contract(db, str(player.id), str(club.id), 120.0)["success"] is True
+        contract_result = sign_athlete_contract(db, str(player.id), str(club.id), 120.0)
+        assert contract_result["success"] is True
+        SportsContractServiceResult.model_validate(contract_result)
         starting_club_cash = Decimal(str(club.cash_balance))
 
         monkeypatch.setattr("backend.app.services.sports.random.randint", lambda _start, _end: 1)
         results = simulate_league_matches(db, str(city.id))
 
         assert len(results) == 3
+        for result in results:
+            SportsLeagueMatchServiceResult.model_validate(result)
         db.refresh(player)
         db.refresh(club)
         assert Decimal(str(player.balance)) == Decimal("290.00")

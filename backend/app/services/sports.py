@@ -7,7 +7,12 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from backend.app.models import Player, SportsClub, PlayerAthleteContract, City
-from backend.app.schemas.service_results import SportsTrainServiceResult
+from backend.app.schemas.service_results import (
+    SportsContractServiceResult,
+    SportsLeagueMatchServiceResult,
+    SportsLeagueMessageServiceResult,
+    SportsTrainServiceResult,
+)
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.ids import to_uuid
 
@@ -112,14 +117,21 @@ def sign_athlete_contract(db: Session, player_id: str, club_id: str, salary: flo
     db.add(contract)
     db.commit()
 
-    return {"success": True, "message": f"Вітаємо! Ви стали професійним атлетом клубу '{club.name}' із зарплатою {salary:.2f} ₴ за матч!"}
+    return SportsContractServiceResult(
+        success=True,
+        message=f"Вітаємо! Ви стали професійним атлетом клубу '{club.name}' із зарплатою {salary:.2f} ₴ за матч!",
+    ).model_dump()
 
 def simulate_league_matches(db: Session, city_id: str) -> list:
     """Симуляція матчів ліги міста (ШІ-симуляція на основі сили команд)"""
     city_uuid = to_uuid(city_id)
     clubs = db.query(SportsClub).filter(SportsClub.city_id == city_uuid).all()
     if len(clubs) < 2:
-        return [{"message": "Недостатньо клубів для проведення матчів ліги."}]
+        return [
+            SportsLeagueMessageServiceResult(
+                message="Недостатньо клубів для проведення матчів ліги.",
+            ).model_dump()
+        ]
 
     results = []
     
@@ -161,11 +173,13 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
 
             # Оновлення результатів ліги
             winner.league_points += 3
-            results.append({
-                "match": f"{club_a.name} VS {club_b.name}",
-                "result": f"{winner.name} виграв з рахунком {score_w}:{score_l}",
-                "winner_id": str(winner.id)
-            })
+            results.append(
+                SportsLeagueMatchServiceResult(
+                    match=f"{club_a.name} VS {club_b.name}",
+                    result=f"{winner.name} виграв з рахунком {score_w}:{score_l}",
+                    winner_id=str(winner.id),
+                ).model_dump()
+            )
 
             # ЕКОНОМІКА МАТЧУ: Збори з квитків
             # Дохід = Місткість стадіону * Ціна квитка * (0.4 - 1.0 заповнюваність залежно від рейтингу)

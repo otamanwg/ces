@@ -72,11 +72,26 @@ class SportsStatsServiceSnapshot(BaseModel):
     stamina: int
 
 
+class SportsContractServiceResult(BaseModel):
+    success: bool
+    message: str
+
+
 class SportsTrainServiceResult(BaseModel):
     success: bool
     message: str
     player: PlayerEnergyServiceSnapshot
     stats: SportsStatsServiceSnapshot
+
+
+class SportsLeagueMatchServiceResult(BaseModel):
+    match: str
+    result: str
+    winner_id: str
+
+
+class SportsLeagueMessageServiceResult(BaseModel):
+    message: str
 
 
 class WorkShiftServiceResult(BaseModel):
