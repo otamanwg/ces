@@ -217,8 +217,9 @@ DoD:
 
 Наступний вузький крок після Sprint 12:
 
-1. Sports match payout smoke.
+1. ✅ Sports match payout smoke.
 2. News polish/filtering, якщо feed стане шумним.
+3. Economy audit: private/public ledger coverage for remaining frozen systems.
 
 Поки не чіпати:
 

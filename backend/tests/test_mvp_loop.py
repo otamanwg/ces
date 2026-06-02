@@ -13,7 +13,7 @@ from backend.app.services.business_market import (
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.needs import process_meal_purchase
-from backend.app.services.sports import sign_athlete_contract, train_at_gym
+from backend.app.services.sports import sign_athlete_contract, simulate_league_matches, train_at_gym
 from backend.tests.db import make_test_session
 
 
@@ -312,6 +312,49 @@ def test_gym_training_charges_player_treasury_and_logs_fee():
         assert gym_log.receiver_id == city.id
         assert gym_log.receiver_type == "treasury"
         assert gym_log.amount == Decimal("40.00")
+    finally:
+        db.close()
+
+
+def test_sports_matches_create_ticket_revenue_and_pay_winning_athlete(monkeypatch):
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+
+        city = db.query(City).first()
+        club = db.query(SportsClub).first()
+        player = Player(
+            city_id=city.id,
+            username="match-athlete",
+            balance=Decimal("50.00"),
+            energy=100,
+            mood=100,
+            education_level="High School",
+        )
+        db.add(player)
+        db.commit()
+
+        assert sign_athlete_contract(db, str(player.id), str(club.id), 120.0)["success"] is True
+        starting_club_cash = Decimal(str(club.cash_balance))
+
+        monkeypatch.setattr("backend.app.services.sports.random.randint", lambda _start, _end: 1)
+        results = simulate_league_matches(db, str(city.id))
+
+        assert len(results) == 3
+        db.refresh(player)
+        db.refresh(club)
+        assert Decimal(str(player.balance)) == Decimal("290.00")
+        assert Decimal(str(club.cash_balance)) > starting_club_cash
+
+        ticket_logs = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "ticket_revenue").all()
+        assert len(ticket_logs) == 3
+        assert all(log.receiver_type == "business" for log in ticket_logs)
+
+        salary_logs = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "athlete_match_salary").all()
+        assert len(salary_logs) == 2
+        assert all(log.sender_id == club.id for log in salary_logs)
+        assert all(log.receiver_id == player.id for log in salary_logs)
+        assert sum(Decimal(str(log.amount)) for log in salary_logs) == Decimal("240.00")
     finally:
         db.close()
 

@@ -173,7 +173,18 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
             revenue = money(tickets_sold) * money(winner.ticket_price)
             
             # Нарахування прибутку на рахунок клубу
-            winner.cash_balance = money(winner.cash_balance) + revenue
+            credit(db, winner, "cash_balance", revenue)
+            log_transaction(
+                db,
+                city_id,
+                sender_id=city_uuid,
+                sender_type="system",
+                receiver_id=winner.id,
+                receiver_type="business",
+                amount=float(revenue),
+                tax=0.0,
+                purpose="ticket_revenue",
+            )
 
             # ВИПЛАТА ЗАРПЛАТ АТЛЕТАМ:
             # Зарплати виплачуються з бюджету клубу
@@ -181,8 +192,8 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
             for c in winner_contracts:
                 p = db.query(Player).filter(Player.id == c.player_id).first()
                 salary = money(c.salary_per_match)
-                p.balance = money(p.balance) + salary
-                winner.cash_balance = money(winner.cash_balance) - salary
+                credit(db, p, "balance", salary)
+                debit(db, winner, "cash_balance", salary)
 
                 log_transaction(
                     db, city_id,
