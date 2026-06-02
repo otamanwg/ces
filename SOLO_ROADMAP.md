@@ -308,7 +308,7 @@ DoD:
 1. ✅ Client/tests: lightweight C# console test runner для `DashboardEventHistory`.
 2. ✅ Client/tests: action presenter state matrix без Godot runtime через `DashboardActionViewModel`.
 3. ✅ Client/tests: player snapshot parser smoke без Godot runtime.
-4. ⏭️ Client/Godot smoke після кожної зміни client scripts.
+4. ✅ Client/Godot smoke після client script змін: dashboard scene, city status 200, MCP errors 0.
 
 ---
 
