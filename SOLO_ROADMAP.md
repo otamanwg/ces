@@ -293,6 +293,7 @@ DoD:
 15. ✅ Backend/tests: service result DTO для frozen economy diploma/audit/insurance/loans.
 16. ✅ Backend/tests: service result DTO для union strike/lobby fund.
 17. ✅ Backend/tests: frozen sports simulate route response DTO.
+18. ✅ Client/Godot smoke: dashboard scene запускається, city status API 200, MCP errors 0.
 
 ---
 
