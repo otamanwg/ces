@@ -39,70 +39,25 @@ public sealed class DashboardActionPresenter
 
 	public void Update(DashboardActionState state)
 	{
-		bool actionBusy = state.BootstrapPending
-			|| state.PendingApply
-			|| state.PendingBusinessMarket
-			|| state.PendingSportsClubs
-			|| state.PendingExamInfo
-			|| state.PendingRefresh
-			|| state.PendingWork
-			|| state.PendingSleep
-			|| state.PendingEat
-			|| state.PendingBusinessBuy
-			|| state.PendingDividend
-			|| state.PendingSportsJoin
-			|| state.PendingSportsTrain
-			|| state.PendingExam;
-
-		SetButtonState(_applyJobButton, !state.HasPlayer || !state.CanApplyJob || actionBusy, state.PendingApply ? "Шукаємо..." : "Знайти роботу");
-		SetButtonState(_workButton, !state.HasPlayer || !state.CanWork || actionBusy, state.PendingWork ? "Працюємо..." : "Працювати");
-		SetButtonState(_sleepButton, !state.HasPlayer || !state.CanSleep || actionBusy, state.PendingSleep ? "Спимо..." : "Спати");
-		SetButtonState(_eatButton, !state.HasPlayer || !state.CanEat || actionBusy, state.PendingEat ? "Їмо..." : "Поїсти");
-		SetButtonState(_buyBusinessButton, !state.HasPlayer || !state.CanBuyBusiness || actionBusy, state.PendingBusinessBuy ? "Купуємо..." : state.PendingBusinessMarket ? "Шукаємо..." : "Купити бізнес");
-		SetButtonState(_collectDividendButton, !state.HasPlayer || !state.CanCollectDividend || !state.HasOwnedBusiness || actionBusy, state.PendingDividend ? "Збираємо..." : "Зібрати дивіденд");
-		SetButtonState(_joinSportsButton, !state.HasPlayer || !state.CanJoinSports || actionBusy, state.PendingSportsJoin ? "Підписуємо..." : state.PendingSportsClubs ? "Шукаємо..." : "У спорт");
-		SetButtonState(_trainSportsButton, !state.HasPlayer || !state.CanTrainSports || actionBusy, state.PendingSportsTrain ? "Тренуємось..." : "Тренуватись");
-
-		string examButtonText = state.PendingExam
-			? "Надсилаємо..."
-			: state.PendingExamInfo ? "Завантаження..." : "Іспит";
-		SetButtonState(_examButton, !state.HasPlayer || !state.CanTakeExam || actionBusy, examButtonText);
-		SetButtonState(_refreshButton, state.BootstrapPending || state.PendingRefresh, state.PendingRefresh ? "Оновлюємо..." : "Оновити");
+		var view = DashboardActionViewModel.Build(state);
+		SetButtonState(_applyJobButton, view.ApplyJob);
+		SetButtonState(_workButton, view.Work);
+		SetButtonState(_sleepButton, view.Sleep);
+		SetButtonState(_eatButton, view.Eat);
+		SetButtonState(_buyBusinessButton, view.BuyBusiness);
+		SetButtonState(_collectDividendButton, view.CollectDividend);
+		SetButtonState(_joinSportsButton, view.JoinSports);
+		SetButtonState(_trainSportsButton, view.TrainSports);
+		SetButtonState(_examButton, view.Exam);
+		SetButtonState(_refreshButton, view.Refresh);
 	}
 
-	private static void SetButtonState(Button button, bool disabled, string text)
+	private static void SetButtonState(Button button, DashboardButtonView view)
 	{
 		if (button != null)
 		{
-			button.Disabled = disabled;
-			button.Text = text;
+			button.Disabled = view.Disabled;
+			button.Text = view.Text;
 		}
 	}
 }
-
-public readonly record struct DashboardActionState(
-	bool HasPlayer,
-	bool BootstrapPending,
-	bool PendingApply,
-	bool PendingBusinessMarket,
-	bool PendingSportsClubs,
-	bool PendingExamInfo,
-	bool PendingRefresh,
-	bool PendingWork,
-	bool PendingSleep,
-	bool PendingEat,
-	bool PendingBusinessBuy,
-	bool PendingDividend,
-	bool PendingSportsJoin,
-	bool PendingSportsTrain,
-	bool PendingExam,
-	bool CanApplyJob,
-	bool CanWork,
-	bool CanSleep,
-	bool CanEat,
-	bool CanBuyBusiness,
-	bool CanCollectDividend,
-	bool CanJoinSports,
-	bool CanTrainSports,
-	bool CanTakeExam,
-	bool HasOwnedBusiness);
