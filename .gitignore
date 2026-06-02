@@ -23,6 +23,8 @@ client/export_presets.cfg
 client/.mono/
 client/bin/
 client/obj/
+client_tests/bin/
+client_tests/obj/
 
 # Local tooling
 .tools/
