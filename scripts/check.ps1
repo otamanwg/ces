@@ -40,6 +40,10 @@ if (-not $SkipClient) {
         $dotnet = "dotnet"
     }
 
+    Write-Host "== Client logic tests =="
+    & $dotnet run --project client_tests\ClientLogicTests.csproj -c Debug
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
     Write-Host "== Client build =="
     & $dotnet build client\city_economic_simulator.csproj -c Debug -v minimal
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

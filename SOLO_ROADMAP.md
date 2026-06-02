@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 15: API contract hardening.**
+**Sprint 16: Client Testability & UX Guards.**
 
-Мета: зафіксувати backend response contracts DTO-моделями, щоб клієнтські parser-и мали стабільну форму даних.
+Мета: додати легкі client-side regression guards для presenter/parser логіки, не запускаючи Godot runtime у unit tests.
 
 ---
 
@@ -296,6 +296,19 @@ DoD:
 18. ✅ Client/Godot smoke: dashboard scene запускається, city status API 200, MCP errors 0.
 19. ✅ Backend/API: frozen routes винесено в `/api/frozen`, MVP `/api` перевірено проти колізій.
 20. ✅ Backend/tests: frozen sports clubs route response DTO.
+
+---
+
+## Sprint 16 — Client Testability & UX Guards
+
+Ціль: client presenter/parser логіка має мати швидкі regression tests поруч із backend checks.
+
+Порядок:
+
+1. ✅ Client/tests: lightweight C# console test runner для `DashboardEventHistory`.
+2. ⏭️ Client/tests: action presenter state matrix без Godot runtime, якщо вдасться винести pure view model.
+3. ⏭️ Client/tests: player snapshot parser smoke без Godot runtime.
+4. ⏭️ Client/Godot smoke після кожної зміни client scripts.
 
 ---
 

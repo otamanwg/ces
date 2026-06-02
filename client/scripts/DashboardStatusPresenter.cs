@@ -1,13 +1,11 @@
 using Godot;
-using System.Collections.Generic;
 
 public sealed class DashboardStatusPresenter
 {
 	private readonly Label _statusLabel;
 	private readonly Label _errorStateLabel;
 	private readonly Label _eventHistoryLabel;
-	private readonly Queue<string> _eventHistory = new();
-	private string _lastHistoryMessage = "";
+	private readonly DashboardEventHistory _eventHistory = new();
 
 	public DashboardStatusPresenter(Label statusLabel, Label errorStateLabel, Label eventHistoryLabel)
 	{
@@ -56,21 +54,14 @@ public sealed class DashboardStatusPresenter
 
 	private void AddEventHistory(string message)
 	{
-		if (_lastHistoryMessage == message)
+		if (!_eventHistory.Add(message))
 		{
 			return;
 		}
 
-		_lastHistoryMessage = message;
-		_eventHistory.Enqueue(message);
-		while (_eventHistory.Count > 5)
-		{
-			_eventHistory.Dequeue();
-		}
-
 		if (_eventHistoryLabel != null)
 		{
-			_eventHistoryLabel.Text = "Події:\n" + string.Join("\n", _eventHistory);
+			_eventHistoryLabel.Text = "Події:\n" + string.Join("\n", _eventHistory.Events);
 		}
 	}
 }
