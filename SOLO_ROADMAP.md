@@ -374,7 +374,8 @@ DoD:
 3. ✅ Backend: district metrics у `/api/city/status`: rent, jobs, crime, traffic, services, medicine, land value, desirability.
 4. ✅ Tests: seed/API contract coverage для стартових районів.
 5. ✅ Docs: зафіксувати правила AI-мера, debt recovery, onboarding age adaptation і 24h move cooldown.
-6. ⏳ Наступний backend крок: rule-based AI mayor policy для майбутніх building applications.
+6. ✅ Backend/tests: rule-based AI mayor policy для майбутніх building applications.
+7. ⏳ Наступний backend крок: `BuildingApplication` або `LandParcel` skeleton.
 
 ---
 
