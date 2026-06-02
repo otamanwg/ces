@@ -1,4 +1,4 @@
-public sealed record DashboardButtonView(string Text, bool Disabled);
+public sealed record DashboardButtonView(string Text, bool Disabled, string Tooltip);
 
 public sealed record DashboardActionsView(
 	DashboardButtonView ApplyJob,
@@ -34,18 +34,55 @@ public static class DashboardActionViewModel
 		string examButtonText = state.PendingExam
 			? "Надсилаємо..."
 			: state.PendingExamInfo ? "Завантаження..." : "Іспит";
+		string busyTooltip = actionBusy ? "Дочекайтесь завершення поточної дії." : "";
 
 		return new DashboardActionsView(
-			ApplyJob: new DashboardButtonView(state.PendingApply ? "Шукаємо..." : "Знайти роботу", !state.HasPlayer || !state.CanApplyJob || actionBusy),
-			Work: new DashboardButtonView(state.PendingWork ? "Працюємо..." : "Працювати", !state.HasPlayer || !state.CanWork || actionBusy),
-			Sleep: new DashboardButtonView(state.PendingSleep ? "Спимо..." : "Спати", !state.HasPlayer || !state.CanSleep || actionBusy),
-			Eat: new DashboardButtonView(state.PendingEat ? "Їмо..." : "Поїсти", !state.HasPlayer || !state.CanEat || actionBusy),
-			BuyBusiness: new DashboardButtonView(state.PendingBusinessBuy ? "Купуємо..." : state.PendingBusinessMarket ? "Шукаємо..." : "Купити бізнес", !state.HasPlayer || !state.CanBuyBusiness || actionBusy),
-			CollectDividend: new DashboardButtonView(state.PendingDividend ? "Збираємо..." : "Зібрати дивіденд", !state.HasPlayer || !state.CanCollectDividend || !state.HasOwnedBusiness || actionBusy),
-			JoinSports: new DashboardButtonView(state.PendingSportsJoin ? "Підписуємо..." : state.PendingSportsClubs ? "Шукаємо..." : "У спорт", !state.HasPlayer || !state.CanJoinSports || actionBusy),
-			TrainSports: new DashboardButtonView(state.PendingSportsTrain ? "Тренуємось..." : "Тренуватись", !state.HasPlayer || !state.CanTrainSports || actionBusy),
-			Exam: new DashboardButtonView(examButtonText, !state.HasPlayer || !state.CanTakeExam || actionBusy),
-			Refresh: new DashboardButtonView(state.PendingRefresh ? "Оновлюємо..." : "Оновити", state.BootstrapPending || state.PendingRefresh)
+			ApplyJob: BuildButton(state, actionBusy, state.CanApplyJob, state.PendingApply ? "Шукаємо..." : "Знайти роботу", "Немає доступної вакансії для вашої освіти.", busyTooltip),
+			Work: BuildButton(state, actionBusy, state.CanWork, state.PendingWork ? "Працюємо..." : "Працювати", "Спочатку знайдіть роботу або відновіть енергію.", busyTooltip),
+			Sleep: BuildButton(state, actionBusy, state.CanSleep, state.PendingSleep ? "Спимо..." : "Спати", "Потрібне місце в хостелі.", busyTooltip),
+			Eat: BuildButton(state, actionBusy, state.CanEat, state.PendingEat ? "Їмо..." : "Поїсти", "Потрібно більше голоду або коштів на обід.", busyTooltip),
+			BuyBusiness: BuildButton(state, actionBusy, state.CanBuyBusiness, state.PendingBusinessBuy ? "Купуємо..." : state.PendingBusinessMarket ? "Шукаємо..." : "Купити бізнес", "Накопичте достатньо коштів для першого бізнесу.", busyTooltip),
+			CollectDividend: BuildButton(state, actionBusy, state.CanCollectDividend && state.HasOwnedBusiness, state.PendingDividend ? "Збираємо..." : "Зібрати дивіденд", state.HasOwnedBusiness ? "У бізнесі ще замало каси для дивіденду." : "Спочатку купіть бізнес.", busyTooltip),
+			JoinSports: BuildButton(state, actionBusy, state.CanJoinSports, state.PendingSportsJoin ? "Підписуємо..." : state.PendingSportsClubs ? "Шукаємо..." : "У спорт", "Спортивний контракт уже активний.", busyTooltip),
+			TrainSports: BuildButton(state, actionBusy, state.CanTrainSports, state.PendingSportsTrain ? "Тренуємось..." : "Тренуватись", "Потрібен спортивний контракт, 40 ₴ і 40 енергії.", busyTooltip),
+			Exam: BuildButton(state, actionBusy, state.CanTakeExam, examButtonText, "Іспит доступний для High School після накопичення коштів.", busyTooltip),
+			Refresh: new DashboardButtonView(state.PendingRefresh ? "Оновлюємо..." : "Оновити", state.BootstrapPending || state.PendingRefresh, state.BootstrapPending || state.PendingRefresh ? "Оновлення вже виконується." : "Оновити стан міста і гравця.")
 		);
+	}
+
+	private static DashboardButtonView BuildButton(
+		DashboardActionState state,
+		bool actionBusy,
+		bool actionAllowed,
+		string text,
+		string unavailableTooltip,
+		string busyTooltip)
+	{
+		return new DashboardButtonView(
+			text,
+			!state.HasPlayer || !actionAllowed || actionBusy,
+			BuildTooltip(state, actionBusy, actionAllowed, "Потрібен зареєстрований гравець.", unavailableTooltip, busyTooltip)
+		);
+	}
+
+	private static string BuildTooltip(
+		DashboardActionState state,
+		bool actionBusy,
+		bool actionAllowed,
+		string noPlayerTooltip,
+		string unavailableTooltip,
+		string busyTooltip)
+	{
+		if (!state.HasPlayer)
+		{
+			return noPlayerTooltip;
+		}
+
+		if (actionBusy)
+		{
+			return busyTooltip;
+		}
+
+		return actionAllowed ? "" : unavailableTooltip;
 	}
 }

@@ -99,21 +99,33 @@ AssertSequence(
 var noPlayerActions = DashboardActionViewModel.Build(ActionState(hasPlayer: false));
 AssertEqual(true, noPlayerActions.ApplyJob.Disabled, "Apply job disabled without player");
 AssertEqual(true, noPlayerActions.Work.Disabled, "Work disabled without player");
+AssertEqual("Потрібен зареєстрований гравець.", noPlayerActions.Work.Tooltip, "Work explains missing player");
 AssertEqual(false, noPlayerActions.Refresh.Disabled, "Refresh stays available without player");
 
 var readyActions = DashboardActionViewModel.Build(ActionState());
 AssertEqual(false, readyActions.Work.Disabled, "Work enabled when allowed");
 AssertEqual("Працювати", readyActions.Work.Text, "Work default label");
+AssertEqual("", readyActions.Work.Tooltip, "Enabled work has no warning tooltip");
 AssertEqual(false, readyActions.CollectDividend.Disabled, "Dividend enabled with owned business");
 
 var noBusinessActions = DashboardActionViewModel.Build(ActionState(hasOwnedBusiness: false));
 AssertEqual(true, noBusinessActions.CollectDividend.Disabled, "Dividend disabled without owned business");
+AssertEqual("Спочатку купіть бізнес.", noBusinessActions.CollectDividend.Tooltip, "Dividend explains missing business");
+
+var needsBusinessMoneyActions = DashboardActionViewModel.Build(ActionState(canBuyBusiness: false));
+AssertEqual(true, needsBusinessMoneyActions.BuyBusiness.Disabled, "Business buy disabled without enough balance");
+AssertEqual("Накопичте достатньо коштів для першого бізнесу.", needsBusinessMoneyActions.BuyBusiness.Tooltip, "Business buy explains balance gate");
+
+var needsTrainingResourcesActions = DashboardActionViewModel.Build(ActionState(canTrainSports: false));
+AssertEqual(true, needsTrainingResourcesActions.TrainSports.Disabled, "Training disabled without resources");
+AssertEqual("Потрібен спортивний контракт, 40 ₴ і 40 енергії.", needsTrainingResourcesActions.TrainSports.Tooltip, "Training explains requirements");
 
 var pendingWorkActions = DashboardActionViewModel.Build(ActionState(pendingWork: true));
 AssertEqual(true, pendingWorkActions.ApplyJob.Disabled, "Pending work disables other actions");
 AssertEqual(true, pendingWorkActions.Sleep.Disabled, "Pending work disables sleep");
 AssertEqual("Працюємо...", pendingWorkActions.Work.Text, "Pending work label");
 AssertEqual(true, pendingWorkActions.Work.Disabled, "Pending work button is disabled while busy");
+AssertEqual("Дочекайтесь завершення поточної дії.", pendingWorkActions.Sleep.Tooltip, "Busy state explains disabled actions");
 
 var pendingMarketActions = DashboardActionViewModel.Build(ActionState(pendingBusinessMarket: true));
 AssertEqual("Шукаємо...", pendingMarketActions.BuyBusiness.Text, "Pending business market label");

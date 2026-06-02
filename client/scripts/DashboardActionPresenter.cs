@@ -58,6 +58,7 @@ public sealed class DashboardActionPresenter
 		{
 			button.Disabled = view.Disabled;
 			button.Text = view.Text;
+			button.TooltipText = view.Tooltip;
 		}
 	}
 }
