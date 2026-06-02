@@ -22,9 +22,17 @@
 
 ### Поточний Фокус
 
-**Sprint 18: Playtest Readiness.**
+**Sprint 19: Core Visual Model.**
 
-Мета: підготувати короткий ручний playtest loop, щоб швидко перевіряти, чи MVP відчувається як гра.
+Мета: перевести клієнт у landscape-first ігрову подачу, не змінюючи економічні механіки.
+
+### Майбутні Visual Style Packs
+
+Гра має підтримувати кілька візуальних стилів за вподобанням гравця: наприклад `anime`, `dark_fantasy`, `hyperreal`, `mafia` або інші тематичні паки.
+
+Архітектурний принцип: style pack змінює тільки presentation layer — фон, палітру, портрети, іконки, VFX, звуки та шрифтовий настрій. Економічні механіки, API contracts, player progression, balance і backend simulation залишаються спільними для всіх стилів.
+
+Поки MVP loop не відчувається як гра, основний стиль — нейтральний `core`, а всі scene/node names і client presenters мають лишатися style-agnostic.
 
 ---
 
@@ -335,6 +343,21 @@ DoD:
 2. ✅ Scripts: console output для playtest старту в `play.ps1`.
 3. ✅ Client: disabled action tooltips пояснюють, чому дія недоступна.
 4. ✅ Перевірка: `check.ps1`, `smoke_godot_dashboard.ps1`, commit.
+
+---
+
+## Sprint 19 — Core Visual Model
+
+Ціль: базовий Godot-клієнт має виглядати як landscape-first game screen, а не вертикальний бухгалтерський dashboard.
+
+Порядок:
+
+1. ✅ Project/client: landscape viewport `1280x720`.
+2. ✅ Scene: три зони `player/city status -> city visual -> actions`.
+3. ✅ Assets: neutral `core` city backdrop замість тимчасових прямокутників.
+4. ✅ Scene: підключити core asset так, щоб майбутній style pack міг підмінити тільки visual layer.
+5. ⏭️ Text safety: перевірити довгі job/status/event strings у landscape без вильоту за контейнер.
+6. ✅ Перевірка: `check.ps1`, `smoke_godot_dashboard.ps1`, commit.
 
 ---
 

@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://c0gtwynhiqsc8"]
+[gd_scene load_steps=4 format=3 uid="uid://c0gtwynhiqsc8"]
 
 [ext_resource type="Script" path="res://scripts/CityDashboardController.cs" id="1"]
 [ext_resource type="Script" path="res://scripts/ExamPanelController.cs" id="2"]
+[ext_resource type="Texture2D" uid="uid://c5or4w24e3qvh" path="res://assets/visual/core/city_backdrop_core.png" id="3"]
 
 [node name="CityDashboard" type="Control"]
 layout_mode = 3
@@ -187,7 +188,19 @@ size_flags_vertical = 3
 custom_minimum_size = Vector2(0, 360)
 layout_mode = 2
 
+[node name="CoreBackdrop" type="TextureRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 6
+
 [node name="Sky" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -197,6 +210,7 @@ grow_vertical = 2
 color = Color(0.12, 0.23, 0.31, 1)
 
 [node name="Ground" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+visible = false
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -208,6 +222,7 @@ grow_vertical = 0
 color = Color(0.12, 0.26, 0.18, 1)
 
 [node name="Road" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+visible = false
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -222,6 +237,7 @@ grow_vertical = 0
 color = Color(0.13, 0.14, 0.15, 1)
 
 [node name="Sun" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+visible = false
 layout_mode = 1
 offset_left = 38.0
 offset_top = 34.0
@@ -230,6 +246,7 @@ offset_bottom = 108.0
 color = Color(0.95, 0.75, 0.32, 1)
 
 [node name="BuildingA" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+visible = false
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -244,6 +261,7 @@ grow_vertical = 0
 color = Color(0.21, 0.28, 0.34, 1)
 
 [node name="BuildingB" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+visible = false
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -258,6 +276,7 @@ grow_vertical = 0
 color = Color(0.28, 0.36, 0.42, 1)
 
 [node name="BuildingC" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+visible = false
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
