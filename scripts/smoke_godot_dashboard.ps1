@@ -18,6 +18,9 @@ if (-not (Test-Path $godot)) {
     throw "Godot not found at $godot"
 }
 
+& "$Root\scripts\start_backend.ps1"
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 function Get-McpStatus {
     try {
         return Invoke-RestMethod -Uri "http://127.0.0.1:6507/status" -TimeoutSec 5

@@ -340,6 +340,7 @@ DoD:
 ```powershell
 .\scripts\pwsh7.ps1 -NoProfile -File .\scripts\check.ps1
 .\scripts\play.ps1 -ResetDb -RunCheck
+.\scripts\smoke_godot_dashboard.ps1
 .\scripts\start_godot_mcp_bridge.ps1
 .\scripts\invoke_godot_mcp.ps1 -Tool get_errors -ArgsJson '{"include_warnings":true}'
 ```
