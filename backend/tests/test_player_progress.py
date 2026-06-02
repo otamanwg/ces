@@ -10,7 +10,7 @@ from backend.app.services.economy import process_rent_payment, process_shift_wor
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.player_profile import build_player_snapshot
 from backend.app.services.player_progress import build_goal_effects
-from backend.app.services.sports import sign_athlete_contract
+from backend.app.services.sports import GYM_COST, GYM_ENERGY_COST, sign_athlete_contract
 from backend.tests.db import make_test_session
 
 
@@ -344,5 +344,103 @@ def test_next_action_guides_complete_starter_loop():
         hint = _next_action(build_goal_effects(db, player))
         assert hint["value"] == "Влаштуйтесь на кращу посаду"
         assert "Диспетчер" in (hint.get("delta") or "")
+    finally:
+        db.close()
+
+
+def test_next_action_suggests_business_after_core_loop_when_affordable():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="hint-business",
+            balance=Decimal("1500.00"),
+            energy=100,
+            mood=100,
+            education_level="College",
+        )
+        db.add(player)
+        db.flush()
+
+        college_job = db.query(Job).filter(Job.min_education == "College").first()
+        college_job.filled_by_player_id = player.id
+        db.commit()
+
+        hint = _next_action(build_goal_effects(db, player))
+        assert hint is not None
+        assert hint["value"] == "Купіть перший бізнес"
+        assert "1200" in (hint.get("delta") or "")
+    finally:
+        db.close()
+
+
+def test_next_action_suggests_dividend_for_owned_business():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="hint-dividend",
+            balance=Decimal("200.00"),
+            energy=100,
+            mood=100,
+            education_level="College",
+        )
+        db.add(player)
+        db.flush()
+
+        college_job = db.query(Job).filter(Job.min_education == "College").first()
+        college_job.filled_by_player_id = player.id
+        business = db.query(Business).filter(Business.type == "shop").one()
+        business.owner_player_id = player.id
+        business.cash_balance = Decimal("300.00")
+        db.commit()
+
+        hint = _next_action(build_goal_effects(db, player))
+        assert hint is not None
+        assert hint["value"] == "Зберіть дивіденд"
+        assert hint["delta"] == business.name
+    finally:
+        db.close()
+
+
+def test_next_action_suggests_sports_then_training_after_core_loop():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="hint-sports",
+            balance=Decimal("200.00"),
+            energy=100,
+            mood=100,
+            education_level="College",
+        )
+        db.add(player)
+        db.flush()
+
+        college_job = db.query(Job).filter(Job.min_education == "College").first()
+        college_job.filled_by_player_id = player.id
+        club = db.query(SportsClub).first()
+        db.commit()
+
+        hint = _next_action(build_goal_effects(db, player))
+        assert hint is not None
+        assert hint["value"] == "Підпишіть спортивний контракт"
+
+        assert sign_athlete_contract(db, str(player.id), str(club.id), 120.0)["success"] is True
+        player.balance = GYM_COST
+        player.energy = GYM_ENERGY_COST
+        db.commit()
+        db.refresh(player)
+
+        hint = _next_action(build_goal_effects(db, player))
+        assert hint is not None
+        assert hint["value"] == "Потренуйтесь у спортзалі"
+        assert "40" in (hint.get("delta") or "")
     finally:
         db.close()

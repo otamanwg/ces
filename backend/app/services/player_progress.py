@@ -4,11 +4,12 @@ from sqlalchemy.orm import Session
 
 from backend.app.models import Player
 from backend.app.schemas.response import GameEffect
-from backend.app.services.business_market import cheapest_business_price, get_owned_businesses
+from backend.app.services.business_market import MIN_DIVIDEND_AMOUNT, cheapest_business_price, get_owned_businesses
 from backend.app.services.education import load_manager_exam
 from backend.app.services.job_queries import get_active_job, get_first_vacant_job_by_min_education
 from backend.app.services.money import money
 from backend.app.services.needs import HUNGER_WARNING_THRESHOLD, MEAL_COST
+from backend.app.services.sports import GYM_COST, GYM_ENERGY_COST
 
 
 def build_next_action_hint(db: Session, player: Player) -> dict:
@@ -67,6 +68,45 @@ def build_next_action_hint(db: Session, player: Player) -> dict:
                 label="Наступний крок",
                 value="Складіть іспит у коледж",
                 delta=f"Достатньо коштів ({exam_cost:.0f} ₴)",
+            ).model_dump()
+
+    if player.education_level == "College":
+        owned_businesses = get_owned_businesses(db, player.id)
+        dividend_business = next(
+            (business for business in owned_businesses if money(business.cash_balance) >= MIN_DIVIDEND_AMOUNT),
+            None,
+        )
+        if dividend_business:
+            return GameEffect(
+                key="next_action",
+                label="Наступний крок",
+                value="Зберіть дивіденд",
+                delta=dividend_business.name,
+            ).model_dump()
+
+        business_price = cheapest_business_price(db)
+        if business_price is not None and money(player.balance) >= business_price:
+            return GameEffect(
+                key="next_action",
+                label="Наступний крок",
+                value="Купіть перший бізнес",
+                delta=f"Доступно від {business_price:.0f} ₴",
+            ).model_dump()
+
+        if player.athlete_contract is None:
+            return GameEffect(
+                key="next_action",
+                label="Наступний крок",
+                value="Підпишіть спортивний контракт",
+                delta="У спорт",
+            ).model_dump()
+
+        if money(player.balance) >= GYM_COST and player.energy >= GYM_ENERGY_COST:
+            return GameEffect(
+                key="next_action",
+                label="Наступний крок",
+                value="Потренуйтесь у спортзалі",
+                delta=f"{GYM_COST:.0f} ₴ / {GYM_ENERGY_COST} енергії",
             ).model_dump()
 
     return GameEffect(
