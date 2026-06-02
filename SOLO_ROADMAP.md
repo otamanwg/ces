@@ -282,6 +282,7 @@ DoD:
 4. ✅ Tests: API contract coverage для city status/news.
 5. ✅ Перевірка: `scripts/check.ps1`, commit.
 6. ✅ Manual smoke: Godot MCP `run_scene` + HTTP `scripts/smoke_mvp.py`.
+7. ✅ Tests: DTO contract coverage для vacancies/business market/sports clubs/exam info.
 
 ---
 

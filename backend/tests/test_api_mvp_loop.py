@@ -6,7 +6,14 @@ from fastapi.testclient import TestClient
 
 from backend.app.database import get_db
 from backend.app.models import IdempotencyRecord, Player, TransactionModelLog
-from backend.app.schemas.mvp import CityStatusData, DayTickData
+from backend.app.schemas.mvp import (
+    BusinessMarketData,
+    CityStatusData,
+    DayTickData,
+    ExamInfoData,
+    SportsClubsData,
+    VacanciesData,
+)
 from backend.app.seed import seed_initial_data
 from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
 from backend.tests.db import make_test_session
@@ -72,7 +79,8 @@ def test_full_mvp_api_loop(client):
 
     vacancies_res = test_client.get("/api/jobs/vacancies")
     assert vacancies_res.status_code == 200
-    vacancies = vacancies_res.json()["data"]["vacancies"]
+    vacancies_data = VacanciesData.model_validate(vacancies_res.json()["data"])
+    vacancies = [v.model_dump() for v in vacancies_data.vacancies]
     hs_job = next(j for j in vacancies if j["min_education"] == "High School")
 
     apply_res = test_client.post(
@@ -172,18 +180,19 @@ def test_full_mvp_api_loop(client):
 
     exam_info = test_client.get("/api/education/exam/info")
     assert exam_info.status_code == 200
-    assert len(exam_info.json()["data"]["questions"]) == 5
+    exam_info_data = ExamInfoData.model_validate(exam_info.json()["data"])
+    assert len(exam_info_data.questions) == 5
 
     # Earn enough for exam: target MVP loop is one work/sleep cycle from the starter state.
     player = db.query(Player).filter(Player.id == player_id).first()
-    while float(player.balance) < exam_info.json()["data"]["cost_to_take"]:
+    while float(player.balance) < exam_info_data.cost_to_take:
         test_client.post(f"/api/jobs/work/{player_id}", headers=auth_headers)
         test_client.post(f"/api/hostels/sleep/{player_id}", headers=auth_headers)
         db.refresh(player)
 
-    exam = test_client.get("/api/education/exam/info").json()["data"]
+    exam = ExamInfoData.model_validate(test_client.get("/api/education/exam/info").json()["data"])
     # All correct answers are index 0 in seed exam file
-    answers = {str(q["id"]): 0 for q in exam["questions"]}
+    answers = {str(q.id): 0 for q in exam.questions}
 
     exam_headers = {"X-Player-Token": player_token, "Idempotency-Key": "api-loop-exam-1"}
     submit_res = test_client.post(
@@ -232,7 +241,10 @@ def test_full_mvp_api_loop(client):
     db.refresh(player)
     assert player.balance == balance_after_pass
 
-    vacancies_after = test_client.get("/api/jobs/vacancies").json()["data"]["vacancies"]
+    vacancies_after = [
+        v.model_dump()
+        for v in VacanciesData.model_validate(test_client.get("/api/jobs/vacancies").json()["data"]).vacancies
+    ]
     college_job = next(j for j in vacancies_after if j["min_education"] == "College")
     apply_college = test_client.post(
         "/api/jobs/apply",
@@ -256,8 +268,9 @@ def test_business_market_and_buy_endpoint_are_idempotent(client):
     assert market_res.status_code == 200
     market_body = market_res.json()
     assert market_body["success"] is True
-    assert len(market_body["data"]["businesses"]) == 1
-    business = market_body["data"]["businesses"][0]
+    market_data = BusinessMarketData.model_validate(market_body["data"])
+    assert len(market_data.businesses) == 1
+    business = market_data.businesses[0].model_dump()
     assert business["type"] == "shop"
     assert business["purchase_price"] == 1200.0
 
@@ -345,7 +358,8 @@ def test_sports_join_and_train_are_idempotent(client):
     assert clubs_res.status_code == 200
     clubs_body = clubs_res.json()
     assert clubs_body["success"] is True
-    club = clubs_body["data"]["clubs"][0]
+    clubs_data = SportsClubsData.model_validate(clubs_body["data"])
+    club = clubs_data.clubs[0].model_dump()
     assert club["salary_per_match"] == 120.0
 
     join_payload = {"player_id": player_id, "club_id": club["id"]}
