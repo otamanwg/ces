@@ -1,16 +1,17 @@
 from sqlalchemy.orm import Session
 
 from backend.app.models import Business, City, Hostel, Player
+from backend.app.schemas.mvp import CityNewsItem
 
 
 def _news_item(news_type: str, title: str, message: str, severity: str, priority: int) -> dict:
-    return {
-        "type": news_type,
-        "title": title,
-        "message": message,
-        "severity": severity,
-        "priority": priority,
-    }
+    return CityNewsItem(
+        type=news_type,
+        title=title,
+        message=message,
+        severity=severity,
+        priority=priority,
+    ).model_dump()
 
 
 def _limit_news(news: list[dict], max_items: int) -> list[dict]:

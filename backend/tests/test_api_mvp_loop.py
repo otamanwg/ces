@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from backend.app.database import get_db
 from backend.app.models import IdempotencyRecord, Player, TransactionModelLog
+from backend.app.schemas.mvp import CityStatusData, DayTickData
 from backend.app.seed import seed_initial_data
 from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
 from backend.tests.db import make_test_session
@@ -49,6 +50,7 @@ def test_full_mvp_api_loop(client):
     assert city_body["data"]["news"][0]["type"] == "business_market"
     assert city_body["data"]["news"][0]["severity"] == "info"
     assert city_body["data"]["news"][0]["priority"] == 40
+    CityStatusData.model_validate(city_body["data"])
 
     register_res = test_client.post("/api/player/register", json={"username": "solo-dev"})
     assert register_res.status_code == 200
@@ -163,6 +165,7 @@ def test_full_mvp_api_loop(client):
     assert tick_body["data"]["news"][0]["type"] == "day_tick"
     assert tick_body["data"]["news"][0]["severity"] == "info"
     assert tick_body["data"]["news"][0]["priority"] == 20
+    DayTickData.model_validate(tick_body["data"])
 
     player_after_tick = test_client.get(f"/api/player/{player_id}", headers=auth_headers).json()["data"]
     assert player_after_tick["balance"] == balance_after_sleep

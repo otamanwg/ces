@@ -278,9 +278,9 @@ DoD:
 
 1. ✅ Backend: `PlayerSnapshotData`, `PlayerActionsData`, business/sports snapshot DTO.
 2. ✅ Tests: validated player snapshot contract із job/hostel/business/sports/actions.
-3. ⏳ Backend: city status/news DTO.
-4. ⏳ Tests: API contract coverage для city status/news.
-5. ⏳ Перевірка: `scripts/check.ps1`, commit.
+3. ✅ Backend: city status/news DTO.
+4. ✅ Tests: API contract coverage для city status/news.
+5. ✅ Перевірка: `scripts/check.ps1`, commit.
 
 ---
 

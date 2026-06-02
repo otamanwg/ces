@@ -10,6 +10,8 @@ from backend.app.models import City, Hostel, Player, SportsClub
 from backend.app.schemas.mvp import (
     BusinessMarketData,
     BusinessMarketItem,
+    CityStatusData,
+    DayTickData,
     ExamInfoData,
     ExamQuestionData,
     SportsClubItem,
@@ -85,16 +87,16 @@ def get_city_status(db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Місто не знайдене")
 
     update_inflation_rate(db, city.id)
-    data = {
-        "id": str(city.id),
-        "name": city.name,
-        "treasury_balance": float(city.treasury_balance),
-        "tax_rate_income": float(city.tax_rate_income),
-        "tax_rate_property": float(city.tax_rate_property),
-        "inflation_rate": float(city.inflation_rate),
-        "news": build_city_news(db, city),
-    }
-    return api_success("Статус міста оновлено.", data)
+    data = CityStatusData(
+        id=str(city.id),
+        name=city.name,
+        treasury_balance=float(city.treasury_balance),
+        tax_rate_income=float(city.tax_rate_income),
+        tax_rate_property=float(city.tax_rate_property),
+        inflation_rate=float(city.inflation_rate),
+        news=build_city_news(db, city),
+    )
+    return api_success("Статус міста оновлено.", data.model_dump())
 
 
 @router.post("/city/tick-day")
@@ -109,7 +111,8 @@ def run_city_day_tick(db: Session = Depends(get_db)):
     res = game_day_tick(db, str(city.id))
     if not res["success"]:
         return api_error(res["message"])
-    return api_success(res["message"], {"city": res["city"], "stats": res["stats"], "news": build_day_tick_news(res["stats"])})
+    data = DayTickData(city=res["city"], stats=res["stats"], news=build_day_tick_news(res["stats"]))
+    return api_success(res["message"], data.model_dump())
 
 
 @router.post("/player/register")

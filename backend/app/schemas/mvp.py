@@ -98,3 +98,42 @@ class PlayerSnapshotData(BaseModel):
     sports_contract: SportsContractSnapshot | None
     actions: PlayerActionsData
     goal_effects: list[GameEffect]
+
+
+class CityNewsItem(BaseModel):
+    type: str
+    title: str
+    message: str
+    severity: str
+    priority: int
+
+
+class CityStatusData(BaseModel):
+    id: str
+    name: str
+    treasury_balance: float
+    tax_rate_income: float
+    tax_rate_property: float
+    inflation_rate: float
+    news: list[CityNewsItem]
+
+
+class DayTickCityData(BaseModel):
+    id: str
+    inflation_rate: float
+    treasury_balance: float
+
+
+class DayTickStatsData(BaseModel):
+    players_updated: int
+    rent_collected: float
+    homeless_players: int
+    hungry_players: int
+    active_money_before: float
+    active_money_after: float
+
+
+class DayTickData(BaseModel):
+    city: DayTickCityData
+    stats: DayTickStatsData
+    news: list[CityNewsItem]
