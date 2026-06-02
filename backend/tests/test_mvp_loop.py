@@ -7,9 +7,12 @@ from backend.app.models import Business, City, Hostel, Job, Player, SportsClub, 
 from backend.app.schemas.service_results import (
     BusinessDividendServiceResult,
     BusinessPurchaseServiceResult,
+    DayTickServiceResult,
     ExamSubmissionServiceResult,
     MealPurchaseServiceResult,
+    RentPaymentServiceResult,
     SportsTrainServiceResult,
+    WorkShiftServiceResult,
 )
 from backend.app.seed import seed_initial_data
 from backend.app.services.business_market import (
@@ -72,6 +75,7 @@ def test_work_and_sleep_loop_updates_player_and_logs_transactions():
 
         work_result = process_shift_work(db, str(player.id))
         assert work_result["success"] is True
+        WorkShiftServiceResult.model_validate(work_result)
         assert work_result["player"]["energy"] == 70
         assert work_result["player"]["hunger"] == 20
         assert work_result["player"]["balance"] > 500
@@ -80,6 +84,7 @@ def test_work_and_sleep_loop_updates_player_and_logs_transactions():
 
         sleep_result = process_rent_payment(db, str(player.id))
         assert sleep_result["success"] is True
+        RentPaymentServiceResult.model_validate(sleep_result)
         assert sleep_result["player"]["energy"] == 100
         assert sleep_result["player"]["hunger"] == 30
         db.refresh(city)
@@ -187,6 +192,7 @@ def test_private_business_shift_pays_worker_from_business_cash_and_taxes_city():
         result = process_shift_work(db, str(worker.id))
 
         assert result["success"] is True
+        WorkShiftServiceResult.model_validate(result)
         db.refresh(worker)
         db.refresh(business)
         db.refresh(city)
@@ -398,6 +404,7 @@ def test_game_day_tick_applies_decay_without_rent():
         for _ in range(30):
             last_result = game_day_tick(db, str(city.id))
             assert last_result["success"] is True
+            DayTickServiceResult.model_validate(last_result)
             assert last_result["stats"]["rent_collected"] == 0.0
             assert "hungry_players" in last_result["stats"]
 
@@ -437,6 +444,7 @@ def test_sleep_then_tick_does_not_double_charge_rent():
 
         sleep_result = process_rent_payment(db, str(player.id))
         assert sleep_result["success"] is True
+        RentPaymentServiceResult.model_validate(sleep_result)
 
         db.refresh(player)
         balance_after_sleep = Decimal(str(player.balance))
@@ -445,6 +453,7 @@ def test_sleep_then_tick_does_not_double_charge_rent():
 
         tick_result = game_day_tick(db, str(city.id))
         assert tick_result["success"] is True
+        DayTickServiceResult.model_validate(tick_result)
         assert tick_result["stats"]["rent_collected"] == 0.0
 
         db.refresh(player)
@@ -528,12 +537,14 @@ def test_starter_balance_reaches_college_after_one_work_sleep_cycle():
 
         work_result = process_shift_work(db, str(player.id))
         assert work_result["success"] is True
+        WorkShiftServiceResult.model_validate(work_result)
         db.refresh(player)
         assert Decimal(str(player.balance)) == Decimal("680.00")
         assert player.energy == 70
 
         sleep_result = process_rent_payment(db, str(player.id))
         assert sleep_result["success"] is True
+        RentPaymentServiceResult.model_validate(sleep_result)
         db.refresh(player)
         assert Decimal(str(player.balance)) == Decimal("665.00")
         assert player.energy == 100

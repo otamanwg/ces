@@ -6,6 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.app.models import Player, City, Job, Hostel, TransactionModelLog, Business
+from backend.app.schemas.service_results import DayTickServiceResult, RentPaymentServiceResult, WorkShiftServiceResult
 from backend.app.services.ids import to_uuid
 from backend.app.services.job_queries import get_active_job
 from backend.app.services.ledger import credit, debit, log_transaction
@@ -82,18 +83,18 @@ def process_shift_work(db: Session, player_id: str) -> dict:
 
     db.commit()
 
-    return {
-        "success": True,
-        "message": f"Зміну успішно відпрацьовано! Отримано {net_salary:.2f} ₴ (після податку {city.tax_rate_income}%).",
-        "player": {
+    return WorkShiftServiceResult(
+        success=True,
+        message=f"Зміну успішно відпрацьовано! Отримано {net_salary:.2f} ₴ (після податку {city.tax_rate_income}%).",
+        player={
             "balance": float(player.balance),
             "energy": player.energy,
             "hunger": player.hunger,
         },
-        "city": {
+        city={
             "treasury_balance": float(city.treasury_balance)
-        }
-    }
+        },
+    ).model_dump()
 
 def process_rent_payment(db: Session, player_id: str) -> dict:
     """Нічний сон гравця: одноразова оплата оренди та відновлення енергії/настрою."""
@@ -141,16 +142,16 @@ def process_rent_payment(db: Session, player_id: str) -> dict:
         message = "Недостатньо коштів на оренду! Ви спали на лавці в парку. Енергія майже не відновилась."
 
     db.commit()
-    return {
-        "success": True,
-        "message": message,
-        "player": {
+    return RentPaymentServiceResult(
+        success=True,
+        message=message,
+        player={
             "balance": float(player.balance),
             "energy": player.energy,
             "mood": player.mood,
             "hunger": player.hunger,
-        }
-    }
+        },
+    ).model_dump()
 
 def update_inflation_rate(db: Session, city_id: str) -> float:
     """Автоматичний прорахунок активної грошової маси та інфляції"""
@@ -221,15 +222,15 @@ def game_day_tick(db: Session, city_id: str) -> dict:
 
     db.commit()
 
-    return {
-        "success": True,
-        "message": "Настав новий день. Оренду сплачуйте кнопкою «Спати».",
-        "city": {
+    return DayTickServiceResult(
+        success=True,
+        message="Настав новий день. Оренду сплачуйте кнопкою «Спати».",
+        city={
             "id": str(city.id),
             "inflation_rate": float(city.inflation_rate),
             "treasury_balance": float(city.treasury_balance),
         },
-        "stats": {
+        stats={
             "players_updated": players_updated,
             "rent_collected": 0.0,
             "homeless_players": homeless_players,
@@ -237,4 +238,4 @@ def game_day_tick(db: Session, city_id: str) -> dict:
             "active_money_before": float(active_before),
             "active_money_after": float(active_after),
         },
-    }
+    ).model_dump()

@@ -22,8 +22,34 @@ class PlayerEnergyServiceSnapshot(PlayerBalanceServiceSnapshot):
     energy: int
 
 
+class PlayerWorkServiceSnapshot(PlayerEnergyServiceSnapshot):
+    hunger: int
+
+
+class PlayerRestServiceSnapshot(PlayerWorkServiceSnapshot):
+    mood: int
+
+
 class PlayerEducationServiceSnapshot(PlayerBalanceServiceSnapshot):
     education_level: str
+
+
+class CityTreasuryServiceSnapshot(BaseModel):
+    treasury_balance: float
+
+
+class DayTickCityServiceSnapshot(CityTreasuryServiceSnapshot):
+    id: str
+    inflation_rate: float
+
+
+class DayTickStatsServiceSnapshot(BaseModel):
+    players_updated: int
+    rent_collected: float
+    homeless_players: int
+    hungry_players: int
+    active_money_before: float
+    active_money_after: float
 
 
 class BusinessPurchaseServiceResult(BaseModel):
@@ -51,6 +77,26 @@ class SportsTrainServiceResult(BaseModel):
     message: str
     player: PlayerEnergyServiceSnapshot
     stats: SportsStatsServiceSnapshot
+
+
+class WorkShiftServiceResult(BaseModel):
+    success: bool
+    message: str
+    player: PlayerWorkServiceSnapshot
+    city: CityTreasuryServiceSnapshot
+
+
+class RentPaymentServiceResult(BaseModel):
+    success: bool
+    message: str
+    player: PlayerRestServiceSnapshot
+
+
+class DayTickServiceResult(BaseModel):
+    success: bool
+    message: str
+    city: DayTickCityServiceSnapshot
+    stats: DayTickStatsServiceSnapshot
 
 
 class MealPurchaseServiceResult(BaseModel):

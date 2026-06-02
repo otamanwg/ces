@@ -288,6 +288,7 @@ DoD:
 10. ✅ Backend: винести action response helper-и з route file в `api/responses.py`.
 11. ✅ Backend/tests: service result DTO для business purchase/dividend.
 12. ✅ Backend/tests: service result DTO для meal/sports training/exam submit.
+13. ✅ Backend/tests: service result DTO для work/sleep/day tick.
 
 ---
 
