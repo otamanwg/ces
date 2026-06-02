@@ -184,6 +184,10 @@ class BuildingApplicationData(BaseModel):
     mayor_questions: list[str]
 
 
+class LandPurchaseActionData(PlayerSnapshotData):
+    land_parcel: LandParcelItem
+
+
 class DayTickCityData(BaseModel):
     id: str
     inflation_rate: float

@@ -4,8 +4,11 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from backend.app.models import City, CityDistrict, LandParcel
+from backend.app.models import City, CityDistrict, LandParcel, Player
 from backend.app.services.city_districts import ensure_starter_districts
+from backend.app.services.ids import to_uuid
+from backend.app.services.ledger import credit, debit, log_transaction
+from backend.app.services.money import money
 
 
 CITY_OWNED = "city_owned"
@@ -127,6 +130,58 @@ def get_land_parcels(db: Session, city_id: UUID) -> list[LandParcel]:
         .order_by(CityDistrict.display_order, LandParcel.current_price, LandParcel.label)
         .all()
     )
+
+
+def process_land_purchase(db: Session, player_id: str, land_parcel_id: str) -> dict:
+    player_uuid = to_uuid(player_id)
+    parcel_uuid = to_uuid(land_parcel_id)
+    player = db.query(Player).filter(Player.id == player_uuid).with_for_update().first()
+    if not player:
+        return {"success": False, "message": "Гравця не знайдено"}
+
+    parcel = db.query(LandParcel).filter(LandParcel.id == parcel_uuid).with_for_update().first()
+    if not parcel or parcel.city_id != player.city_id:
+        return {"success": False, "message": "Ділянку не знайдено."}
+
+    if parcel.status != CITY_OWNED or parcel.owner_player_id is not None:
+        return {"success": False, "message": "Ця ділянка вже має власника."}
+
+    price = money(parcel.current_price)
+    if money(player.balance) < price:
+        return {"success": False, "message": f"Недостатньо коштів для купівлі землі! Потрібно: {price:.2f} ₴."}
+
+    city = db.query(City).filter(City.id == player.city_id).first()
+    if not city:
+        return {"success": False, "message": "Місто не знайдено"}
+
+    debit(db, player, "balance", price)
+    credit(db, city, "treasury_balance", price)
+    parcel.owner_player_id = player.id
+    parcel.status = OWNED
+
+    log_transaction(
+        db,
+        city.id,
+        sender_id=player.id,
+        sender_type="player",
+        receiver_id=city.id,
+        receiver_type="treasury",
+        amount=float(price),
+        tax=0.0,
+        purpose="land_purchase",
+    )
+
+    db.commit()
+    db.refresh(parcel)
+    db.refresh(player)
+    return {
+        "success": True,
+        "message": f"Ви придбали ділянку '{parcel.label}' за {price:.2f} ₴.",
+        "land_parcel": parcel,
+        "player": {
+            "balance": float(player.balance),
+        },
+    }
 
 
 def calculate_player_city_land_share_pct(db: Session, city_id: UUID, player_id: UUID) -> Decimal:

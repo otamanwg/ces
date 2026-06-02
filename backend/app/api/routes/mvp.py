@@ -22,6 +22,7 @@ from backend.app.schemas.mvp import (
     ExamQuestionData,
     LandParcelItem,
     LandParcelsData,
+    LandPurchaseActionData,
     MayorPolicyIssueData,
     SportsClubItem,
     SportsClubsData,
@@ -45,7 +46,7 @@ from backend.app.services.ids import to_uuid, try_uuid
 from backend.app.services.idempotency import get_idempotent_response, save_idempotent_response
 from backend.app.services.city_news import build_city_news, build_day_tick_news
 from backend.app.services.city_districts import get_city_districts
-from backend.app.services.land import get_land_parcels
+from backend.app.services.land import get_land_parcels, process_land_purchase
 from backend.app.services.job_queries import education_rank, get_active_job, get_job, get_vacant_jobs
 from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
 from backend.app.services.needs import process_meal_purchase
@@ -73,6 +74,11 @@ class BusinessBuy(BaseModel):
 class BusinessDividend(BaseModel):
     player_id: str
     business_id: str
+
+
+class LandBuy(BaseModel):
+    player_id: str
+    land_parcel_id: str
 
 
 class BuildingApplicationCreate(BaseModel):
@@ -198,6 +204,42 @@ def get_public_land_parcels(db: Session = Depends(get_db)):
 
     data = LandParcelsData(parcels=[land_parcel_item(parcel) for parcel in get_land_parcels(db, city.id)])
     return api_success("Доступні земельні ділянки.", data.model_dump())
+
+
+@router.post("/land/buy")
+def buy_land_parcel(
+    data: LandBuy,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db),
+):
+    player = require_player(db, data.player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    cached = get_idempotent_response(db, "land_buy", idempotency_key, data.player_id)
+    if cached:
+        return cached
+
+    land_parcel_uuid = try_uuid(data.land_parcel_id)
+    if land_parcel_uuid is None:
+        return api_error("Ділянку не знайдено.")
+
+    res = process_land_purchase(db, data.player_id, str(land_parcel_uuid))
+    if not res["success"]:
+        return api_error(res["message"])
+
+    db.refresh(player)
+    return save_player_action_response(
+        db,
+        "land_buy",
+        idempotency_key,
+        data.player_id,
+        player,
+        res["message"],
+        LandPurchaseActionData,
+        land_parcel=land_parcel_item(res["land_parcel"]),
+    )
 
 
 @router.post("/building/applications")

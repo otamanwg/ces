@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 21: Land And Building Applications.**
+**Sprint 22: Building Activation.**
 
-Мета: зробити перший backend skeleton для землі та будівельних заявок, не відкриваючи ще повну економіку купівлі/біржі.
+Мета: після купівлі землі й погодженої заявки підготувати створення реального building/asset, але без поспішного UI.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -392,7 +392,21 @@ DoD:
 5. ✅ Backend/API: authenticated `/api/building/applications`, idempotent submit.
 6. ✅ Backend: заявка можлива тільки на власну ділянку.
 7. ✅ Backend/tests: AI mayor policy інтегровано в building application response.
-8. ⏳ Наступний backend крок: land purchase з ledger `land_purchase`, ownership transfer і перевіркою балансу.
+8. ✅ Backend/API/tests: land purchase з ledger `land_purchase`, ownership transfer і перевіркою балансу.
+9. ⏳ Наступний backend крок: approved building application activation у building/asset record.
+
+---
+
+## Sprint 22 — Building Activation
+
+Ціль: погоджена AI-мером заявка має стати реальним міським активом, який згодом можна буде показувати на карті й включати в економіку.
+
+Порядок:
+
+1. ⏳ Backend: визначити мінімальну `Building`/asset model.
+2. ⏳ Backend: activation endpoint тільки для `approved` applications.
+3. ⏳ Backend: parcel status переходить із `owned` у `under_construction` або `built`.
+4. ⏳ Backend/tests: approved/revision/ownership/idempotency coverage.
 
 ---
 
