@@ -327,6 +327,58 @@ def test_business_dividend_endpoint_is_idempotent(client):
     assert malformed_dividend.json()["message"] == "Бізнес не знайдено"
 
 
+def test_sports_join_and_train_are_idempotent(client):
+    test_client, db = client
+
+    register = test_client.post("/api/player/register", json={"username": "api-athlete"}).json()
+    player_id = register["data"]["id"]
+    headers = {"X-Player-Token": register["data"]["auth_token"]}
+
+    clubs_res = test_client.get("/api/sports/clubs")
+    assert clubs_res.status_code == 200
+    clubs_body = clubs_res.json()
+    assert clubs_body["success"] is True
+    club = clubs_body["data"]["clubs"][0]
+    assert club["salary_per_match"] == 120.0
+
+    join_payload = {"player_id": player_id, "club_id": club["id"]}
+    join_headers = {**headers, "Idempotency-Key": "api-sports-join-1"}
+    join_res = test_client.post("/api/sports/join", json=join_payload, headers=join_headers)
+    assert join_res.status_code == 200
+    join_body = join_res.json()
+    assert join_body["success"] is True
+    assert join_body["data"]["sports_contract"]["strength"] == 10
+
+    repeat_join = test_client.post("/api/sports/join", json=join_payload, headers=join_headers)
+    assert repeat_join.status_code == 200
+    assert repeat_join.json() == join_body
+
+    train_payload = {"player_id": player_id, "stat_type": "strength"}
+    train_headers = {**headers, "Idempotency-Key": "api-sports-train-1"}
+    train_res = test_client.post("/api/sports/train", json=train_payload, headers=train_headers)
+    assert train_res.status_code == 200
+    train_body = train_res.json()
+    assert train_body["success"] is True
+    assert train_body["data"]["balance"] == 460.0
+    assert train_body["data"]["energy"] == 60
+    assert train_body["data"]["sports_contract"]["strength"] >= 12
+    transactions_after_train = db.query(TransactionModelLog).count()
+
+    repeat_train = test_client.post("/api/sports/train", json=train_payload, headers=train_headers)
+    assert repeat_train.status_code == 200
+    assert repeat_train.json() == train_body
+    assert db.query(TransactionModelLog).count() == transactions_after_train
+
+    malformed_train = test_client.post(
+        "/api/sports/train",
+        json={"player_id": player_id, "stat_type": "unknown"},
+        headers=headers,
+    )
+    assert malformed_train.status_code == 200
+    assert malformed_train.json()["success"] is False
+    assert malformed_train.json()["message"] == "Невідомий тип тренування"
+
+
 def test_eat_endpoint_is_idempotent_and_logs_food(client):
     test_client, db = client
 

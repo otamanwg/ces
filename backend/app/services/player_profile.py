@@ -10,6 +10,7 @@ from backend.app.services.job_queries import education_rank, get_active_job, has
 from backend.app.services.money import money
 from backend.app.services.needs import MEAL_COST
 from backend.app.services.player_progress import build_goal_effects
+from backend.app.services.sports import GYM_COST, GYM_ENERGY_COST
 
 
 def build_player_actions(db: Session, player: Player, job: Job | None, hostel: Hostel | None) -> dict:
@@ -23,6 +24,8 @@ def build_player_actions(db: Session, player: Player, job: Job | None, hostel: H
         "can_eat": (player.hunger or 0) > 0 and money(player.balance) >= MEAL_COST,
         "can_buy_business": (cheapest_business_price(db) or Decimal("999999999.00")) <= money(player.balance),
         "can_collect_dividend": any(money(b.cash_balance) >= Decimal("250.00") for b in get_owned_businesses(db, player.id)),
+        "can_join_sports": player.athlete_contract is None,
+        "can_train_sports": bool(player.athlete_contract and money(player.balance) >= GYM_COST and player.energy >= GYM_ENERGY_COST),
         "can_take_exam": player.education_level == "High School" and money(player.balance) >= exam_cost,
     }
 
@@ -32,6 +35,7 @@ def build_player_snapshot(db: Session, player: Player) -> dict:
     hostel = db.query(Hostel).filter(Hostel.tenant_player_id == player.id).first()
     actions = build_player_actions(db, player, job, hostel)
     owned_businesses = get_owned_businesses(db, player.id)
+    athlete_contract = player.athlete_contract
 
     return {
         "id": str(player.id),
@@ -54,6 +58,14 @@ def build_player_snapshot(db: Session, player: Player) -> dict:
             }
             for b in owned_businesses
         ],
+        "sports_contract": {
+            "club": athlete_contract.club.name,
+            "strength": athlete_contract.strength_stat,
+            "stamina": athlete_contract.stamina_stat,
+            "salary_per_match": float(athlete_contract.salary_per_match),
+        }
+        if athlete_contract
+        else None,
         "actions": actions,
         "goal_effects": build_goal_effects(db, player),
     }

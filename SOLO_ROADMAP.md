@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 11: City events/news.**
+**Sprint 12: Sports side progression.**
 
-Мета: зробити стан міста видимим через короткі новини/події без великої event-системи.
+Мета: додати легкий спортивний side-progression без повної ліги.
 
 ---
 
@@ -198,6 +198,26 @@ DoD:
 Наступний вузький крок після Sprint 11:
 
 1. Sports as lightweight side progression.
+2. News polish/filtering, якщо feed стане шумним.
+
+---
+
+## Sprint 12 — Sports Side Progression
+
+Ціль: зробити спорт маленькою додатковою петлею: вступ у клуб -> тренування -> stats.
+
+Порядок:
+
+1. ✅ Backend: MVP sports clubs endpoint.
+2. ✅ Backend: authenticated/idempotent join sports club.
+3. ✅ Backend: authenticated/idempotent gym training із ledger `gym_training`.
+4. ✅ Tests: service/API money, energy, idempotency, sports actions.
+5. ✅ Client: sport status + кнопки “У спорт” і “Тренуватись”.
+6. ⏳ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
+
+Наступний вузький крок після Sprint 12:
+
+1. Sports match payout smoke.
 2. News polish/filtering, якщо feed стане шумним.
 
 Поки не чіпати:

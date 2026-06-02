@@ -6,8 +6,17 @@ from sqlalchemy.orm import Session
 
 from backend.app.core.config import settings
 from backend.app.database import get_db
-from backend.app.models import City, Hostel, Player
-from backend.app.schemas.mvp import BusinessMarketData, BusinessMarketItem, ExamInfoData, ExamQuestionData, VacanciesData, VacancyItem
+from backend.app.models import City, Hostel, Player, SportsClub
+from backend.app.schemas.mvp import (
+    BusinessMarketData,
+    BusinessMarketItem,
+    ExamInfoData,
+    ExamQuestionData,
+    SportsClubItem,
+    SportsClubsData,
+    VacanciesData,
+    VacancyItem,
+)
 from backend.app.schemas.response import api_error, api_success
 from backend.app.services.auth import get_authorized_player, new_player_token
 from backend.app.services.business_market import (
@@ -26,6 +35,7 @@ from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NO
 from backend.app.services.needs import process_meal_purchase
 from backend.app.services.player_profile import build_player_snapshot, get_player_snapshot
 from backend.app.services.player_progress import build_goal_effects
+from backend.app.services.sports import sign_athlete_contract, train_at_gym
 
 router = APIRouter(prefix="/api", tags=["mvp"])
 
@@ -47,6 +57,16 @@ class BusinessBuy(BaseModel):
 class BusinessDividend(BaseModel):
     player_id: str
     business_id: str
+
+
+class SportsContractJoin(BaseModel):
+    player_id: str
+    club_id: str
+
+
+class SportsTrain(BaseModel):
+    player_id: str
+    stat_type: str
 
 
 class ExamAnswers(BaseModel):
@@ -248,6 +268,78 @@ def collect_business_dividend(
         build_goal_effects(db, player),
     )
     return save_idempotent_response(db, "business_dividend", idempotency_key, data.player_id, response)
+
+
+@router.get("/sports/clubs")
+def get_mvp_sports_clubs(db: Session = Depends(get_db)):
+    clubs = db.query(SportsClub).order_by(SportsClub.name).all()
+    data = SportsClubsData(
+        clubs=[
+            SportsClubItem(
+                id=str(c.id),
+                name=c.name,
+                sport_type=c.sport_type,
+                salary_per_match=120.0,
+                league_points=c.league_points,
+            )
+            for c in clubs
+        ]
+    )
+    return api_success("Доступні спортивні клуби.", data.model_dump())
+
+
+@router.post("/sports/join")
+def join_sports_club(
+    data: SportsContractJoin,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db),
+):
+    player = require_player(db, data.player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    cached = get_idempotent_response(db, "sports_join", idempotency_key, data.player_id)
+    if cached:
+        return cached
+
+    club_uuid = try_uuid(data.club_id)
+    if club_uuid is None:
+        return api_error("Спортивний клуб не знайдено")
+
+    res = sign_athlete_contract(db, data.player_id, str(club_uuid), 120.0)
+    if not res["success"]:
+        return api_error(res["message"])
+
+    db.refresh(player)
+    snapshot = build_player_snapshot(db, player)
+    response = api_success(res["message"], snapshot, build_goal_effects(db, player))
+    return save_idempotent_response(db, "sports_join", idempotency_key, data.player_id, response)
+
+
+@router.post("/sports/train")
+def train_sports(
+    data: SportsTrain,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db),
+):
+    player = require_player(db, data.player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    cached = get_idempotent_response(db, "sports_train", idempotency_key, data.player_id)
+    if cached:
+        return cached
+
+    res = train_at_gym(db, data.player_id, data.stat_type)
+    if not res["success"]:
+        return api_error(res["message"])
+
+    db.refresh(player)
+    snapshot = build_player_snapshot(db, player)
+    response = api_success(res["message"], {**snapshot, "sports_stats": res["stats"]}, build_goal_effects(db, player))
+    return save_idempotent_response(db, "sports_train", idempotency_key, data.player_id, response)
 
 
 @router.post("/jobs/apply")

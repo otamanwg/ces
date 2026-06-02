@@ -180,6 +180,12 @@ layout_mode = 2
 text = "Бізнес: немає"
 autowrap_mode = 3
 
+[node name="SportsLabel" type="Label" parent="MarginContainer/ContentScroll/VBoxContainer/PlayerPanel/PlayerBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Спорт: немає"
+autowrap_mode = 3
+
 [node name="ApplyJobButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
@@ -235,6 +241,20 @@ custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Зібрати дивіденд"
+
+[node name="JoinSportsButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "У спорт"
+
+[node name="TrainSportsButton" type="Button" parent="MarginContainer/ContentScroll/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Тренуватись"
 
 [node name="ExamOverlay" type="PanelContainer" parent="."]
 visible = false
@@ -306,3 +326,5 @@ text = "Закрити"
 [connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/RefreshButton" to="." method="OnRefreshButtonPressed"]
 [connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/BuyBusinessButton" to="." method="OnBuyBusinessButtonPressed"]
 [connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/CollectDividendButton" to="." method="OnCollectDividendButtonPressed"]
+[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/JoinSportsButton" to="." method="OnJoinSportsButtonPressed"]
+[connection signal="pressed" from="MarginContainer/ContentScroll/VBoxContainer/TrainSportsButton" to="." method="OnTrainSportsButtonPressed"]

@@ -26,6 +26,18 @@ class BusinessMarketData(BaseModel):
     businesses: list[BusinessMarketItem]
 
 
+class SportsClubItem(BaseModel):
+    id: str
+    name: str
+    sport_type: str
+    salary_per_match: float
+    league_points: int
+
+
+class SportsClubsData(BaseModel):
+    clubs: list[SportsClubItem]
+
+
 class ExamQuestionData(BaseModel):
     id: int
     text: str

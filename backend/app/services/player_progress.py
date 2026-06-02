@@ -128,6 +128,16 @@ def build_goal_effects(db: Session, player: Player) -> list[dict]:
                 ).model_dump()
             )
 
+    if player.athlete_contract:
+        effects.append(
+            GameEffect(
+                key="goal_sports_training",
+                label="Спорт",
+                value=f"STR {player.athlete_contract.strength_stat} / STA {player.athlete_contract.stamina_stat}",
+                delta=player.athlete_contract.club.name,
+            ).model_dump()
+        )
+
     effects.append(
         GameEffect(
             key="stability_energy",

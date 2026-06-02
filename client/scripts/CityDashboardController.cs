@@ -12,6 +12,7 @@ public partial class CityDashboardController : Control
 	[Export] public Label CurrentJobLabel;
 	[Export] public Label CurrentHostelLabel;
 	[Export] public Label OwnedBusinessLabel;
+	[Export] public Label SportsLabel;
 	[Export] public Label StatusLabel;
 	[Export] public Label EffectsLabel;
 	[Export] public Label ErrorStateLabel;
@@ -36,13 +37,17 @@ public partial class CityDashboardController : Control
 	private Button _eatButton;
 	private Button _buyBusinessButton;
 	private Button _collectDividendButton;
+	private Button _joinSportsButton;
+	private Button _trainSportsButton;
 	private Button _examButton;
 	private Button _refreshButton;
 	private DashboardStatusPresenter _statusPresenter;
 	private bool _applyFirstVacancy;
 	private bool _buyFirstBusiness;
+	private bool _joinFirstSportsClub;
 	private bool _pendingApply;
 	private bool _pendingBusinessMarket;
+	private bool _pendingSportsClubs;
 	private bool _pendingExamInfo;
 	private bool _pendingRefresh;
 	private bool _bootstrapPending = true;
@@ -53,6 +58,8 @@ public partial class CityDashboardController : Control
 	private bool _canEat;
 	private bool _canBuyBusiness;
 	private bool _canCollectDividend;
+	private bool _canJoinSports;
+	private bool _canTrainSports;
 	private bool _canTakeExam;
 	private string _playerEducation = "High School";
 	private string _ownedBusinessId = "";
@@ -61,6 +68,8 @@ public partial class CityDashboardController : Control
 	private string _pendingEatKey = "";
 	private string _pendingBusinessBuyKey = "";
 	private string _pendingDividendKey = "";
+	private string _pendingSportsJoinKey = "";
+	private string _pendingSportsTrainKey = "";
 	private string _pendingExamKey = "";
 	private const string ApplyJobText = "Знайти роботу";
 	private const string WorkText = "Працювати";
@@ -68,6 +77,8 @@ public partial class CityDashboardController : Control
 	private const string EatText = "Поїсти";
 	private const string BuyBusinessText = "Купити бізнес";
 	private const string CollectDividendText = "Зібрати дивіденд";
+	private const string JoinSportsText = "У спорт";
+	private const string TrainSportsText = "Тренуватись";
 	private const string ExamText = "Іспит";
 	private const string RefreshText = "Оновити";
 
@@ -125,6 +136,7 @@ public partial class CityDashboardController : Control
 		CurrentJobLabel ??= GetNodeOrNull<Label>("%CurrentJobLabel");
 		CurrentHostelLabel ??= GetNodeOrNull<Label>("%CurrentHostelLabel");
 		OwnedBusinessLabel ??= GetNodeOrNull<Label>("%OwnedBusinessLabel");
+		SportsLabel ??= GetNodeOrNull<Label>("%SportsLabel");
 		StatusLabel ??= GetNodeOrNull<Label>("%StatusLabel");
 		EffectsLabel ??= GetNodeOrNull<Label>("%EffectsLabel");
 		ErrorStateLabel ??= GetNodeOrNull<Label>("%ErrorStateLabel");
@@ -144,6 +156,8 @@ public partial class CityDashboardController : Control
 		_eatButton ??= GetNodeOrNull<Button>("%EatButton");
 		_buyBusinessButton ??= GetNodeOrNull<Button>("%BuyBusinessButton");
 		_collectDividendButton ??= GetNodeOrNull<Button>("%CollectDividendButton");
+		_joinSportsButton ??= GetNodeOrNull<Button>("%JoinSportsButton");
+		_trainSportsButton ??= GetNodeOrNull<Button>("%TrainSportsButton");
 		_examButton ??= GetNodeOrNull<Button>("%ExamButton");
 		_refreshButton ??= GetNodeOrNull<Button>("%RefreshButton");
 	}
@@ -179,6 +193,12 @@ public partial class CityDashboardController : Control
 		if (endpoint == "/api/businesses/market" && _buyFirstBusiness)
 		{
 			HandleBusinessMarketForBuy(root);
+			return;
+		}
+
+		if (endpoint == "/api/sports/clubs" && _joinFirstSportsClub)
+		{
+			HandleSportsClubsForJoin(root);
 			return;
 		}
 
@@ -260,8 +280,10 @@ public partial class CityDashboardController : Control
 	{
 		_applyFirstVacancy = false;
 		_buyFirstBusiness = false;
+		_joinFirstSportsClub = false;
 		_pendingApply = false;
 		_pendingBusinessMarket = false;
+		_pendingSportsClubs = false;
 		_pendingExamInfo = false;
 		_pendingRefresh = false;
 		ClearPendingAction(endpoint);
@@ -306,6 +328,8 @@ public partial class CityDashboardController : Control
 		_canEat = false;
 		_canBuyBusiness = false;
 		_canCollectDividend = false;
+		_canJoinSports = false;
+		_canTrainSports = false;
 		_canTakeExam = false;
 		SetErrorState($"{message} Створюємо нового гравця...");
 		UpdateActionButtons();
@@ -429,6 +453,39 @@ public partial class CityDashboardController : Control
 		_apiClient?.PostAuthorizedIdempotent("/api/businesses/buy", _session.AuthToken, _pendingBusinessBuyKey, payload);
 	}
 
+	private void HandleSportsClubsForJoin(JsonNode root)
+	{
+		_joinFirstSportsClub = false;
+		_pendingSportsClubs = false;
+
+		if (root["success"]?.GetValue<bool>() != true)
+		{
+			SetErrorState("Не вдалось отримати спортивні клуби.");
+			UpdateActionButtons();
+			return;
+		}
+
+		var clubs = root["data"]?["clubs"]?.AsArray();
+		if (clubs == null || clubs.Count == 0)
+		{
+			SetErrorState("Немає доступних спортивних клубів.");
+			UpdateActionButtons();
+			return;
+		}
+
+		string clubId = clubs[0]?["id"]?.ToString() ?? "";
+		if (string.IsNullOrEmpty(clubId) || _session == null)
+		{
+			UpdateActionButtons();
+			return;
+		}
+
+		string payload = ApiClient.BuildJson(new { player_id = _session.PlayerId, club_id = clubId });
+		_pendingSportsJoinKey = BuildActionKey("sports-join");
+		UpdateActionButtons();
+		_apiClient?.PostAuthorizedIdempotent("/api/sports/join", _session.AuthToken, _pendingSportsJoinKey, payload);
+	}
+
 	private void HandleExamInfo(JsonNode root)
 	{
 		_pendingExamInfo = false;
@@ -528,6 +585,14 @@ public partial class CityDashboardController : Control
 			}
 		}
 
+		if (SportsLabel != null)
+		{
+			var sports = data["sports_contract"];
+			SportsLabel.Text = sports == null
+				? "Спорт: немає"
+				: $"Спорт: {sports["club"]} STR {sports["strength"]} / STA {sports["stamina"]}";
+		}
+
 		if (EnergyBar != null)
 		{
 			EnergyBar.Value = data["energy"]?.GetValue<int>() ?? 0;
@@ -566,6 +631,8 @@ public partial class CityDashboardController : Control
 			_canEat = false;
 			_canBuyBusiness = false;
 			_canCollectDividend = false;
+			_canJoinSports = true;
+			_canTrainSports = false;
 			_canTakeExam = _playerEducation == "High School";
 			return;
 		}
@@ -576,6 +643,8 @@ public partial class CityDashboardController : Control
 		_canEat = actions["can_eat"]?.GetValue<bool>() ?? false;
 		_canBuyBusiness = actions["can_buy_business"]?.GetValue<bool>() ?? false;
 		_canCollectDividend = actions["can_collect_dividend"]?.GetValue<bool>() ?? false;
+		_canJoinSports = actions["can_join_sports"]?.GetValue<bool>() ?? false;
+		_canTrainSports = actions["can_train_sports"]?.GetValue<bool>() ?? false;
 		_canTakeExam = actions["can_take_exam"]?.GetValue<bool>() ?? false;
 	}
 
@@ -738,6 +807,7 @@ public partial class CityDashboardController : Control
 		bool actionBusy = _bootstrapPending
 			|| _pendingApply
 			|| _pendingBusinessMarket
+			|| _pendingSportsClubs
 			|| _pendingExamInfo
 			|| _pendingRefresh
 			|| !string.IsNullOrEmpty(_pendingWorkKey)
@@ -745,6 +815,8 @@ public partial class CityDashboardController : Control
 			|| !string.IsNullOrEmpty(_pendingEatKey)
 			|| !string.IsNullOrEmpty(_pendingBusinessBuyKey)
 			|| !string.IsNullOrEmpty(_pendingDividendKey)
+			|| !string.IsNullOrEmpty(_pendingSportsJoinKey)
+			|| !string.IsNullOrEmpty(_pendingSportsTrainKey)
 			|| !string.IsNullOrEmpty(_pendingExamKey);
 		SetButtonState(_applyJobButton, !hasPlayer || !_canApplyJob || actionBusy, _pendingApply ? "Шукаємо..." : ApplyJobText);
 		SetButtonState(_workButton, !hasPlayer || !_canWork || actionBusy, !string.IsNullOrEmpty(_pendingWorkKey) ? "Працюємо..." : WorkText);
@@ -752,6 +824,8 @@ public partial class CityDashboardController : Control
 		SetButtonState(_eatButton, !hasPlayer || !_canEat || actionBusy, !string.IsNullOrEmpty(_pendingEatKey) ? "Їмо..." : EatText);
 		SetButtonState(_buyBusinessButton, !hasPlayer || !_canBuyBusiness || actionBusy, !string.IsNullOrEmpty(_pendingBusinessBuyKey) ? "Купуємо..." : _pendingBusinessMarket ? "Шукаємо..." : BuyBusinessText);
 		SetButtonState(_collectDividendButton, !hasPlayer || !_canCollectDividend || string.IsNullOrEmpty(_ownedBusinessId) || actionBusy, !string.IsNullOrEmpty(_pendingDividendKey) ? "Збираємо..." : CollectDividendText);
+		SetButtonState(_joinSportsButton, !hasPlayer || !_canJoinSports || actionBusy, !string.IsNullOrEmpty(_pendingSportsJoinKey) ? "Підписуємо..." : _pendingSportsClubs ? "Шукаємо..." : JoinSportsText);
+		SetButtonState(_trainSportsButton, !hasPlayer || !_canTrainSports || actionBusy, !string.IsNullOrEmpty(_pendingSportsTrainKey) ? "Тренуємось..." : TrainSportsText);
 		string examButtonText = !string.IsNullOrEmpty(_pendingExamKey)
 			? "Надсилаємо..."
 			: _pendingExamInfo ? "Завантаження..." : ExamText;
@@ -828,6 +902,18 @@ public partial class CityDashboardController : Control
 		else if (endpoint == "/api/businesses/market")
 		{
 			_pendingBusinessMarket = false;
+		}
+		else if (endpoint == "/api/sports/join")
+		{
+			_pendingSportsJoinKey = "";
+		}
+		else if (endpoint == "/api/sports/train")
+		{
+			_pendingSportsTrainKey = "";
+		}
+		else if (endpoint == "/api/sports/clubs")
+		{
+			_pendingSportsClubs = false;
 		}
 		else if (endpoint == "/api/education/exam/submit")
 		{
@@ -988,6 +1074,50 @@ public partial class CityDashboardController : Control
 		ClearErrorState();
 		SetStatus("Збираємо дивіденд...");
 		_apiClient?.PostAuthorizedIdempotent("/api/businesses/dividend", _session.AuthToken, _pendingDividendKey, payload);
+	}
+
+	public void OnJoinSportsButtonPressed()
+	{
+		if (_session == null || !_session.HasAuthenticatedPlayer)
+		{
+			SetStatus("Немає активного гравця.");
+			return;
+		}
+
+		if (_pendingSportsClubs || !string.IsNullOrEmpty(_pendingSportsJoinKey))
+		{
+			SetStatus("Спортивний контракт уже обробляється...");
+			return;
+		}
+
+		_pendingSportsClubs = true;
+		_joinFirstSportsClub = true;
+		UpdateActionButtons();
+		ClearErrorState();
+		SetStatus("Шукаємо спортивний клуб...");
+		_apiClient?.Get("/api/sports/clubs");
+	}
+
+	public void OnTrainSportsButtonPressed()
+	{
+		if (_session == null || !_session.HasAuthenticatedPlayer)
+		{
+			SetStatus("Немає активного гравця.");
+			return;
+		}
+
+		if (!string.IsNullOrEmpty(_pendingSportsTrainKey))
+		{
+			SetStatus("Тренування вже обробляється...");
+			return;
+		}
+
+		string payload = ApiClient.BuildJson(new { player_id = _session.PlayerId, stat_type = "strength" });
+		_pendingSportsTrainKey = BuildActionKey("sports-train");
+		UpdateActionButtons();
+		ClearErrorState();
+		SetStatus("Тренуємо силу...");
+		_apiClient?.PostAuthorizedIdempotent("/api/sports/train", _session.AuthToken, _pendingSportsTrainKey, payload);
 	}
 
 	public void OnExamButtonPressed()

@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from backend.app.models import Business, City, Hostel, Job, Player, TransactionModelLog
+from backend.app.models import Business, City, Hostel, Job, Player, SportsClub, TransactionModelLog
 from backend.app.seed import seed_initial_data
 from backend.app.services.business_market import (
     get_buyable_businesses,
@@ -13,6 +13,7 @@ from backend.app.services.business_market import (
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.needs import process_meal_purchase
+from backend.app.services.sports import sign_athlete_contract, train_at_gym
 from backend.tests.db import make_test_session
 
 
@@ -269,6 +270,48 @@ def test_business_dividend_moves_cash_from_owned_business_to_player():
         assert dividend_log.receiver_id == player.id
         assert dividend_log.receiver_type == "player"
         assert dividend_log.amount == Decimal("100.00")
+    finally:
+        db.close()
+
+
+def test_gym_training_charges_player_treasury_and_logs_fee():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+
+        city = db.query(City).first()
+        club = db.query(SportsClub).first()
+        player = Player(
+            city_id=city.id,
+            username="gym-player",
+            balance=Decimal("100.00"),
+            energy=100,
+            mood=100,
+            education_level="High School",
+        )
+        db.add(player)
+        db.commit()
+
+        assert sign_athlete_contract(db, str(player.id), str(club.id), 120.0)["success"] is True
+        starting_treasury = Decimal(str(city.treasury_balance))
+
+        result = train_at_gym(db, str(player.id), "strength")
+
+        assert result["success"] is True
+        db.refresh(player)
+        db.refresh(city)
+        assert Decimal(str(player.balance)) == Decimal("60.00")
+        assert player.energy == 60
+        assert result["stats"]["strength"] >= 12
+        assert result["stats"]["strength"] <= 15
+        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal("40.00")
+
+        gym_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "gym_training").one()
+        assert gym_log.sender_id == player.id
+        assert gym_log.sender_type == "player"
+        assert gym_log.receiver_id == city.id
+        assert gym_log.receiver_type == "treasury"
+        assert gym_log.amount == Decimal("40.00")
     finally:
         db.close()
 

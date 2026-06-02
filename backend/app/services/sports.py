@@ -7,12 +7,16 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from backend.app.models import Player, SportsClub, PlayerAthleteContract, City
-from backend.app.services.ledger import log_transaction
+from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.ids import to_uuid
 
 
 def money(value) -> Decimal:
     return Decimal(str(value))
+
+
+GYM_COST = money("40.00")
+GYM_ENERGY_COST = 40
 
 def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
     """Тренування у Спортзалі (Витрачає енергію та гроші, прокачує силу/витривалість)"""
@@ -21,13 +25,13 @@ def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
 
-    gym_cost = money("40.00")
-    energy_cost = 40
+    if stat_to_train not in ("strength", "stamina"):
+        return {"success": False, "message": "Невідомий тип тренування"}
 
-    if money(player.balance) < gym_cost:
-        return {"success": False, "message": f"Недостатньо грошей на абонемент! Потрібно: {gym_cost} ₴"}
-    if player.energy < energy_cost:
-        return {"success": False, "message": f"Недостатньо енергії для тренування! Потрібно: {energy_cost}%"}
+    if money(player.balance) < GYM_COST:
+        return {"success": False, "message": f"Недостатньо грошей на абонемент! Потрібно: {GYM_COST} ₴"}
+    if player.energy < GYM_ENERGY_COST:
+        return {"success": False, "message": f"Недостатньо енергії для тренування! Потрібно: {GYM_ENERGY_COST}%"}
 
     # Знаходження контракту гравця або створення стартового
     contract = db.query(PlayerAthleteContract).filter(PlayerAthleteContract.player_id == player_uuid).first()
@@ -37,23 +41,33 @@ def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
         return {"success": False, "message": "Спочатку підпишіть контракт у Центрі Зайнятості чи Спортивній Асоціації."}
 
     # Списання ресурсів
-    player.balance = money(player.balance) - gym_cost
-    player.energy -= energy_cost
+    debit(db, player, "balance", GYM_COST)
+    player.energy -= GYM_ENERGY_COST
     
     # Гроші за спортзал йдуть у міську скарбницю (або власнику спортзалу)
     city = db.query(City).filter(City.id == player.city_id).first()
-    city.treasury_balance = money(city.treasury_balance) + gym_cost
+    credit(db, city, "treasury_balance", GYM_COST)
 
     # Прокачування статів
     gain = random.randint(2, 5)
     if stat_to_train == "strength":
         contract.strength_stat += gain
         message = f"🏋️ Ви чудово потиснули штангу! Сила зросла на +{gain} (Поточна Сила: {contract.strength_stat})."
-    elif stat_to_train == "stamina":
+    else:
         contract.stamina_stat += gain
         message = f"🏃 Ви відбігали 10 км на доріжці! Витривалість зросла на +{gain} (Поточна Витривалість: {contract.stamina_stat})."
-    else:
-        return {"success": False, "message": "Невідомий тип тренування"}
+
+    log_transaction(
+        db,
+        city.id,
+        sender_id=player.id,
+        sender_type="player",
+        receiver_id=city.id,
+        receiver_type="treasury",
+        amount=float(GYM_COST),
+        tax=0.0,
+        purpose="gym_training",
+    )
 
     db.commit()
     return {
