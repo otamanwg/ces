@@ -16,10 +16,15 @@ Write-Host "Running pytest..."
 & $python -m pytest backend/tests -q
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-Write-Host "Smoke test (start backend separately if needed)..."
-Write-Host "Backend: http://127.0.0.1:8000  (if port blocked, use 8010)"
+Write-Host "Starting backend if needed..."
+& ".\scripts\start_backend.ps1"
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+Write-Host "Running HTTP MVP smoke..."
+& $python scripts/smoke_mvp.py
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 Write-Host ""
-Write-Host "  Optional reset: .\scripts\reset_dev_db.ps1"
-Write-Host "  Terminal 1: $python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload"
-Write-Host "  Terminal 2: $python scripts/smoke_mvp.py"
-Write-Host "  Godot: open client/ and press F5"
+Write-Host "Dev backend is ready at http://127.0.0.1:8000"
+Write-Host "Optional reset: .\scripts\reset_dev_db.ps1"
+Write-Host "Godot: open client/ and press F5"

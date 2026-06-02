@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 16: Client Testability & UX Guards.**
+**Sprint 17: Dev Recovery & Smoke Reliability.**
 
-Мета: додати легкі client-side regression guards для presenter/parser логіки, не запускаючи Godot runtime у unit tests.
+Мета: після рестарту ПК dev workflow має відновлюватись однією командою: backend health, smoke, Godot bridge.
 
 ---
 
@@ -309,6 +309,19 @@ DoD:
 2. ✅ Client/tests: action presenter state matrix без Godot runtime через `DashboardActionViewModel`.
 3. ✅ Client/tests: player snapshot parser smoke без Godot runtime.
 4. ✅ Client/Godot smoke після client script змін: dashboard scene, city status 200, MCP errors 0.
+
+---
+
+## Sprint 17 — Dev Recovery & Smoke Reliability
+
+Ціль: локальна розробка після перезапуску ПК має швидко повертатися в робочий стан без ручного піднімання кількох процесів.
+
+Порядок:
+
+1. ✅ Scripts: `start_backend.ps1` із health-check, logs і background start.
+2. ✅ Scripts: `play.ps1` використовує backend starter замість ad-hoc PowerShell window.
+3. ✅ Scripts: `dev.ps1` стартує backend і запускає HTTP MVP smoke.
+4. ✅ Scripts: one-command Godot MCP bridge + dashboard smoke wrapper.
 
 ---
 

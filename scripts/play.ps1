@@ -44,20 +44,8 @@ Push-Location client
 dotnet build city_economic_simulator.csproj -c Debug -v q
 Pop-Location
 
-$backendUp = $false
-try {
-    $r = Invoke-WebRequest -Uri "http://127.0.0.1:8000/" -TimeoutSec 2
-    if ($r.StatusCode -eq 200) { $backendUp = $true }
-} catch {}
-
-if (-not $backendUp) {
-    Write-Host "Starting backend in new window..."
-    Start-Process powershell -ArgumentList @(
-        "-NoExit", "-Command",
-        "cd '$Root'; & '$python' -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload"
-    )
-    Start-Sleep -Seconds 3
-}
+& "$Root\scripts\start_backend.ps1"
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "Opening Godot project..."
 Write-Host "Godot MCP: keep editor open for Cursor AI (MCP Connected top-right)."
