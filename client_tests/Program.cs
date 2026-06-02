@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 static void AssertEqual<T>(T expected, T actual, string message)
 {
@@ -119,5 +120,63 @@ AssertEqual("Шукаємо...", pendingMarketActions.BuyBusiness.Text, "Pending
 
 var pendingExamActions = DashboardActionViewModel.Build(ActionState(pendingExamInfo: true));
 AssertEqual("Завантаження...", pendingExamActions.Exam.Text, "Pending exam info label");
+
+var richSnapshotJson = JsonNode.Parse(
+	"""
+	{
+		"id": "player-1",
+		"username": "solo-dev",
+		"auth_token": "token-1",
+		"balance": 1234.5,
+		"education_level": "College",
+		"job": "Бариста",
+		"hostel": "Hostel A",
+		"owned_businesses": [
+			{"id": "business-1", "name": "Coffee Shop"}
+		],
+		"sports_contract": {
+			"club": "FC Test",
+			"strength": 12,
+			"stamina": 15
+		},
+		"energy": 80,
+		"mood": 70,
+		"hunger": 25,
+		"actions": {"can_work": true}
+	}
+	"""
+)!;
+var richSnapshot = DashboardPlayerSnapshot.FromJson(richSnapshotJson);
+AssertEqual("player-1", richSnapshot.Id, "Snapshot id parsed");
+AssertEqual("solo-dev", richSnapshot.Username, "Snapshot username parsed");
+AssertEqual("token-1", richSnapshot.AuthToken, "Snapshot auth token parsed");
+AssertEqual(1234.5, richSnapshot.Balance, "Snapshot balance parsed");
+AssertEqual("College", richSnapshot.EducationLevel, "Snapshot education parsed");
+AssertEqual("Бариста", richSnapshot.Job, "Snapshot job parsed");
+AssertEqual(true, richSnapshot.HasJob, "Snapshot detects active job");
+AssertEqual("business-1", richSnapshot.OwnedBusinessId, "Snapshot owned business id parsed");
+AssertEqual("Бізнес: Coffee Shop", richSnapshot.OwnedBusinessText, "Snapshot owned business label parsed");
+AssertEqual("Спорт: FC Test STR 12 / STA 15", richSnapshot.SportsText, "Snapshot sports label parsed");
+AssertEqual(80, richSnapshot.Energy, "Snapshot energy parsed");
+AssertEqual(70, richSnapshot.Mood, "Snapshot mood parsed");
+AssertEqual(25, richSnapshot.Hunger, "Snapshot hunger parsed");
+
+var defaultSnapshotJson = JsonNode.Parse(
+	"""
+	{
+		"owned_businesses": [],
+		"sports_contract": null
+	}
+	"""
+)!;
+var defaultSnapshot = DashboardPlayerSnapshot.FromJson(defaultSnapshotJson);
+AssertEqual("Гість", defaultSnapshot.Username, "Snapshot default username");
+AssertEqual("High School", defaultSnapshot.EducationLevel, "Snapshot default education");
+AssertEqual("Безробітний", defaultSnapshot.Job, "Snapshot default job");
+AssertEqual(false, defaultSnapshot.HasJob, "Snapshot default has no job");
+AssertEqual("Вулиця", defaultSnapshot.Hostel, "Snapshot default hostel");
+AssertEqual("", defaultSnapshot.OwnedBusinessId, "Snapshot default owned business id");
+AssertEqual("Бізнес: немає", defaultSnapshot.OwnedBusinessText, "Snapshot default owned business text");
+AssertEqual("Спорт: немає", defaultSnapshot.SportsText, "Snapshot default sports text");
 
 Console.WriteLine("Client logic tests passed.");

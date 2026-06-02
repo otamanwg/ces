@@ -10,5 +10,6 @@
     <Compile Include="..\client\scripts\DashboardActionState.cs" Link="DashboardActionState.cs" />
     <Compile Include="..\client\scripts\DashboardActionViewModel.cs" Link="DashboardActionViewModel.cs" />
     <Compile Include="..\client\scripts\DashboardEventHistory.cs" Link="DashboardEventHistory.cs" />
+    <Compile Include="..\client\scripts\DashboardPlayerSnapshot.cs" Link="DashboardPlayerSnapshot.cs" />
   </ItemGroup>
 </Project>
