@@ -137,6 +137,53 @@ class CityStatusData(BaseModel):
     districts: list[CityDistrictItem]
 
 
+class LandParcelItem(BaseModel):
+    id: str
+    city_id: str
+    district_id: str
+    district_code: str
+    district_name: str
+    code: str
+    label: str
+    land_type: str
+    zoning_type: str
+    area_hectares: float
+    base_price_per_hectare: float
+    current_price: float
+    status: str
+    owner_player_id: str | None
+
+
+class LandParcelsData(BaseModel):
+    parcels: list[LandParcelItem]
+
+
+class MayorPolicyIssueData(BaseModel):
+    code: str
+    message: str
+
+
+class BuildingApplicationData(BaseModel):
+    id: str
+    city_id: str
+    district_id: str
+    land_parcel_id: str
+    applicant_player_id: str
+    proposed_name: str
+    project_type: str
+    land_area_hectares: float
+    expected_jobs: int
+    traffic_load: int
+    service_load: int
+    medical_load: int
+    public_benefit: int
+    status: str
+    mayor_score: int
+    mayor_summary: str
+    mayor_issues: list[MayorPolicyIssueData]
+    mayor_questions: list[str]
+
+
 class DayTickCityData(BaseModel):
     id: str
     inflation_rate: float

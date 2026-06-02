@@ -2,7 +2,7 @@ import logging
 from sqlalchemy.orm import Session
 
 from backend.app.models import Business, City, Hostel, Job, SportsClub
-from backend.app.services.city_districts import ensure_starter_districts
+from backend.app.services.land import ensure_starter_land_parcels
 
 
 logger = logging.getLogger("CityServer")
@@ -13,7 +13,7 @@ def seed_initial_data(db: Session) -> None:
     existing_cities = db.query(City).all()
     if existing_cities:
         for city in existing_cities:
-            ensure_starter_districts(db, city)
+            ensure_starter_land_parcels(db, city)
         db.commit()
         return
 
@@ -27,7 +27,7 @@ def seed_initial_data(db: Session) -> None:
     )
     db.add(city)
     db.flush()
-    ensure_starter_districts(db, city)
+    ensure_starter_land_parcels(db, city)
 
     gkh = Business(
         city_id=city.id,

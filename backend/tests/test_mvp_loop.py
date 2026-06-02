@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from backend.app.models import Business, City, CityDistrict, Hostel, Job, Player, SportsClub, TransactionModelLog
+from backend.app.models import Business, City, CityDistrict, Hostel, Job, LandParcel, Player, SportsClub, TransactionModelLog
 from backend.app.schemas.service_results import (
     BusinessDividendServiceResult,
     BusinessPurchaseServiceResult,
@@ -44,6 +44,7 @@ def test_seed_creates_core_city_data():
 
         assert db.query(City).count() == 1
         assert db.query(CityDistrict).count() == 6
+        assert db.query(LandParcel).count() == 6
         assert db.query(Job).count() == 3
         assert db.query(Hostel).count() == 5
         assert len(get_buyable_businesses(db)) == 1
@@ -58,6 +59,10 @@ def test_seed_creates_core_city_data():
         ]
         assert all(0 <= district.medical_coverage <= 100 for district in districts)
         assert districts[-1].land_available_hectares == Decimal("250.00")
+        parcels = db.query(LandParcel).order_by(LandParcel.current_price).all()
+        assert parcels[0].code == "bus_station_kiosk_lot"
+        assert parcels[0].current_price == Decimal("200.00")
+        assert all(parcel.status == "city_owned" for parcel in parcels)
     finally:
         db.close()
 
@@ -75,14 +80,25 @@ def test_seed_backfills_districts_for_existing_city():
         assert db.query(CityDistrict).count() == 6
         seed_initial_data(db)
         assert db.query(CityDistrict).count() == 6
+        assert db.query(LandParcel).count() == 6
 
         missing = db.query(CityDistrict).filter(CityDistrict.code == "outer_land").one()
         db.delete(missing)
         db.commit()
         assert db.query(CityDistrict).count() == 5
+        assert db.query(LandParcel).count() == 5
 
         seed_initial_data(db)
         assert db.query(CityDistrict).count() == 6
+        assert db.query(LandParcel).count() == 6
+
+        missing_parcel = db.query(LandParcel).filter(LandParcel.code == "outer_expansion_lot").one()
+        db.delete(missing_parcel)
+        db.commit()
+        assert db.query(LandParcel).count() == 5
+
+        seed_initial_data(db)
+        assert db.query(LandParcel).count() == 6
     finally:
         db.close()
 

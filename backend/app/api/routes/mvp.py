@@ -7,8 +7,9 @@ from sqlalchemy.orm import Session
 from backend.app.core.config import settings
 from backend.app.api.responses import build_player_action_response, save_player_action_response
 from backend.app.database import get_db
-from backend.app.models import City, Hostel, Player, SportsClub
+from backend.app.models import BuildingApplication, City, Hostel, LandParcel, Player, SportsClub
 from backend.app.schemas.mvp import (
+    BuildingApplicationData,
     BusinessMarketData,
     BusinessMarketItem,
     BusinessBuyActionData,
@@ -19,6 +20,9 @@ from backend.app.schemas.mvp import (
     ExamSubmitActionData,
     ExamInfoData,
     ExamQuestionData,
+    LandParcelItem,
+    LandParcelsData,
+    MayorPolicyIssueData,
     SportsClubItem,
     SportsClubsData,
     SportsTrainActionData,
@@ -34,12 +38,14 @@ from backend.app.services.business_market import (
     process_business_dividend_collection,
     process_business_purchase,
 )
+from backend.app.services.building_applications import create_building_application
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work, update_inflation_rate
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.ids import to_uuid, try_uuid
-from backend.app.services.idempotency import get_idempotent_response
+from backend.app.services.idempotency import get_idempotent_response, save_idempotent_response
 from backend.app.services.city_news import build_city_news, build_day_tick_news
 from backend.app.services.city_districts import get_city_districts
+from backend.app.services.land import get_land_parcels
 from backend.app.services.job_queries import education_rank, get_active_job, get_job, get_vacant_jobs
 from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
 from backend.app.services.needs import process_meal_purchase
@@ -69,6 +75,18 @@ class BusinessDividend(BaseModel):
     business_id: str
 
 
+class BuildingApplicationCreate(BaseModel):
+    player_id: str
+    land_parcel_id: str
+    proposed_name: str
+    project_type: str
+    expected_jobs: int = 0
+    traffic_load: int = 0
+    service_load: int = 0
+    medical_load: int = 0
+    public_benefit: int = 0
+
+
 class SportsContractJoin(BaseModel):
     player_id: str
     club_id: str
@@ -86,6 +104,51 @@ class ExamAnswers(BaseModel):
 
 def require_player(db: Session, player_id: str, player_token: str | None) -> Player | None:
     return get_authorized_player(db, player_id, player_token)
+
+
+def land_parcel_item(parcel: LandParcel) -> LandParcelItem:
+    return LandParcelItem(
+        id=str(parcel.id),
+        city_id=str(parcel.city_id),
+        district_id=str(parcel.district_id),
+        district_code=parcel.district.code,
+        district_name=parcel.district.name,
+        code=parcel.code,
+        label=parcel.label,
+        land_type=parcel.land_type,
+        zoning_type=parcel.zoning_type,
+        area_hectares=float(parcel.area_hectares),
+        base_price_per_hectare=float(parcel.base_price_per_hectare),
+        current_price=float(parcel.current_price),
+        status=parcel.status,
+        owner_player_id=str(parcel.owner_player_id) if parcel.owner_player_id else None,
+    )
+
+
+def building_application_data(application: BuildingApplication) -> BuildingApplicationData:
+    return BuildingApplicationData(
+        id=str(application.id),
+        city_id=str(application.city_id),
+        district_id=str(application.district_id),
+        land_parcel_id=str(application.land_parcel_id),
+        applicant_player_id=str(application.applicant_player_id),
+        proposed_name=application.proposed_name,
+        project_type=application.project_type,
+        land_area_hectares=float(application.land_area_hectares),
+        expected_jobs=application.expected_jobs,
+        traffic_load=application.traffic_load,
+        service_load=application.service_load,
+        medical_load=application.medical_load,
+        public_benefit=application.public_benefit,
+        status=application.status,
+        mayor_score=application.mayor_score,
+        mayor_summary=application.mayor_summary,
+        mayor_issues=[
+            MayorPolicyIssueData(code=issue.get("code", ""), message=issue.get("message", ""))
+            for issue in application.mayor_issues
+        ],
+        mayor_questions=list(application.mayor_questions),
+    )
 
 
 @router.get("/city/status")
@@ -125,6 +188,57 @@ def get_city_status(db: Session = Depends(get_db)):
         ],
     )
     return api_success("Статус міста оновлено.", data.model_dump())
+
+
+@router.get("/land/parcels")
+def get_public_land_parcels(db: Session = Depends(get_db)):
+    city = db.query(City).first()
+    if not city:
+        return api_error("Місто не знайдене.")
+
+    data = LandParcelsData(parcels=[land_parcel_item(parcel) for parcel in get_land_parcels(db, city.id)])
+    return api_success("Доступні земельні ділянки.", data.model_dump())
+
+
+@router.post("/building/applications")
+def submit_building_application(
+    data: BuildingApplicationCreate,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db),
+):
+    player = require_player(db, data.player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    cached = get_idempotent_response(db, "building_application", idempotency_key, data.player_id)
+    if cached:
+        return cached
+
+    land_parcel_uuid = try_uuid(data.land_parcel_id)
+    if land_parcel_uuid is None:
+        return api_error("Ділянку не знайдено.")
+
+    res = create_building_application(
+        db,
+        player,
+        land_parcel_uuid,
+        proposed_name=data.proposed_name,
+        project_type=data.project_type,
+        expected_jobs=data.expected_jobs,
+        traffic_load=data.traffic_load,
+        service_load=data.service_load,
+        medical_load=data.medical_load,
+        public_benefit=data.public_benefit,
+    )
+    if not res["success"]:
+        return api_error(res["message"])
+
+    response = api_success(
+        res["message"],
+        building_application_data(res["application"]).model_dump(),
+    )
+    return save_idempotent_response(db, "building_application", idempotency_key, data.player_id, response)
 
 
 @router.post("/city/tick-day")

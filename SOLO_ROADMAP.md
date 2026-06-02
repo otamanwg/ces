@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 20: City District Foundation.**
+**Sprint 21: Land And Building Applications.**
 
-Мета: закласти backend-каркас районів міста, щоб майбутній landscape visual layer показував не тільки числа, а реальну структуру міста.
+Мета: зробити перший backend skeleton для землі та будівельних заявок, не відкриваючи ще повну економіку купівлі/біржі.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -376,6 +376,23 @@ DoD:
 5. ✅ Docs: зафіксувати правила AI-мера, debt recovery, onboarding age adaptation і 24h move cooldown.
 6. ✅ Backend/tests: rule-based AI mayor policy для майбутніх building applications.
 7. ⏳ Наступний backend крок: `BuildingApplication` або `LandParcel` skeleton.
+
+---
+
+## Sprint 21 — Land And Building Applications
+
+Ціль: перетворити районний шар на першу реальну економічну одиницю землі та підготувати будівництво через AI-мера.
+
+Порядок:
+
+1. ✅ Backend: `LandParcel` model/table + Alembic migration.
+2. ✅ Backend: стартові city-owned ділянки, прив'язані до 6 районів.
+3. ✅ Backend/API: `/api/land/parcels` повертає доступні parcel-и з district context і ціною.
+4. ✅ Backend: `BuildingApplication` model/table.
+5. ✅ Backend/API: authenticated `/api/building/applications`, idempotent submit.
+6. ✅ Backend: заявка можлива тільки на власну ділянку.
+7. ✅ Backend/tests: AI mayor policy інтегровано в building application response.
+8. ⏳ Наступний backend крок: land purchase з ledger `land_purchase`, ownership transfer і перевіркою балансу.
 
 ---
 

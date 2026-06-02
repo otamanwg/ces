@@ -30,7 +30,21 @@ class City(Base):
     businesses: Mapped[List["Business"]] = relationship("Business", back_populates="city")
     mayor: Mapped[Optional["Player"]] = relationship("Player", foreign_keys=[mayor_player_id], post_update=True)
     transactions: Mapped[List["TransactionModelLog"]] = relationship("TransactionModelLog", back_populates="city")
-    districts: Mapped[List["CityDistrict"]] = relationship("CityDistrict", back_populates="city")
+    districts: Mapped[List["CityDistrict"]] = relationship(
+        "CityDistrict",
+        back_populates="city",
+        cascade="all, delete-orphan",
+    )
+    land_parcels: Mapped[List["LandParcel"]] = relationship(
+        "LandParcel",
+        back_populates="city",
+        cascade="all, delete-orphan",
+    )
+    building_applications: Mapped[List["BuildingApplication"]] = relationship(
+        "BuildingApplication",
+        back_populates="city",
+        cascade="all, delete-orphan",
+    )
 
 
 class CityDistrict(Base):
@@ -58,6 +72,75 @@ class CityDistrict(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     city: Mapped["City"] = relationship("City", back_populates="districts")
+    land_parcels: Mapped[List["LandParcel"]] = relationship(
+        "LandParcel",
+        back_populates="district",
+        cascade="all, delete-orphan",
+    )
+    building_applications: Mapped[List["BuildingApplication"]] = relationship(
+        "BuildingApplication",
+        back_populates="district",
+        cascade="all, delete-orphan",
+    )
+
+
+class LandParcel(Base):
+    __tablename__ = "land_parcels"
+    __table_args__ = (
+        UniqueConstraint("city_id", "code", name="uq_land_parcels_city_code"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    district_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False)
+    code: Mapped[str] = mapped_column(String(70), nullable=False)
+    label: Mapped[str] = mapped_column(String(120), nullable=False)
+    land_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    zoning_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    area_hectares: Mapped[float] = mapped_column(Decimal(10, 2), nullable=False)
+    base_price_per_hectare: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
+    current_price: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="city_owned")
+    owner_player_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    city: Mapped["City"] = relationship("City", back_populates="land_parcels")
+    district: Mapped["CityDistrict"] = relationship("CityDistrict", back_populates="land_parcels")
+    owner: Mapped[Optional["Player"]] = relationship("Player", back_populates="land_parcels")
+    building_applications: Mapped[List["BuildingApplication"]] = relationship(
+        "BuildingApplication",
+        back_populates="land_parcel",
+        cascade="all, delete-orphan",
+    )
+
+
+class BuildingApplication(Base):
+    __tablename__ = "building_applications"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    district_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False)
+    land_parcel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("land_parcels.id", ondelete="CASCADE"), nullable=False)
+    applicant_player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
+    proposed_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    project_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    land_area_hectares: Mapped[float] = mapped_column(Decimal(10, 2), nullable=False)
+    expected_jobs: Mapped[int] = mapped_column(Integer, default=0)
+    traffic_load: Mapped[int] = mapped_column(Integer, default=0)
+    service_load: Mapped[int] = mapped_column(Integer, default=0)
+    medical_load: Mapped[int] = mapped_column(Integer, default=0)
+    public_benefit: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(30), default="revision_required")
+    mayor_score: Mapped[int] = mapped_column(Integer, default=0)
+    mayor_summary: Mapped[str] = mapped_column(String(300), nullable=False)
+    mayor_issues: Mapped[list] = mapped_column(JSON, default=list)
+    mayor_questions: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    city: Mapped["City"] = relationship("City", back_populates="building_applications")
+    district: Mapped["CityDistrict"] = relationship("CityDistrict", back_populates="building_applications")
+    land_parcel: Mapped["LandParcel"] = relationship("LandParcel", back_populates="building_applications")
+    applicant: Mapped["Player"] = relationship("Player", back_populates="building_applications")
 
 # 2. МОДЕЛЬ ГРАВЦЯ
 class Player(Base):
@@ -85,6 +168,11 @@ class Player(Base):
     athlete_contract: Mapped[Optional["PlayerAthleteContract"]] = relationship("PlayerAthleteContract", back_populates="player", uselist=False)
     loans: Mapped[List["BankLoan"]] = relationship("BankLoan", back_populates="player")
     insurance_policies: Mapped[List["InsurancePolicy"]] = relationship("InsurancePolicy", back_populates="player")
+    land_parcels: Mapped[List["LandParcel"]] = relationship("LandParcel", back_populates="owner")
+    building_applications: Mapped[List["BuildingApplication"]] = relationship(
+        "BuildingApplication",
+        back_populates="applicant",
+    )
 
 # 3. МОДЕЛЬ ПІДПРИЄМСТВА (БІЗНЕСУ)
 class Business(Base):
