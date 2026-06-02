@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.app.core.config import settings
+from backend.app.api.responses import build_player_action_response, save_player_action_response
 from backend.app.database import get_db
 from backend.app.models import City, Hostel, Player, SportsClub
 from backend.app.schemas.mvp import (
@@ -17,7 +18,6 @@ from backend.app.schemas.mvp import (
     ExamSubmitActionData,
     ExamInfoData,
     ExamQuestionData,
-    PlayerSnapshotData,
     SportsClubItem,
     SportsClubsData,
     SportsTrainActionData,
@@ -36,7 +36,7 @@ from backend.app.services.business_market import (
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work, update_inflation_rate
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.ids import to_uuid, try_uuid
-from backend.app.services.idempotency import get_idempotent_response, save_idempotent_response
+from backend.app.services.idempotency import get_idempotent_response
 from backend.app.services.city_news import build_city_news, build_day_tick_news
 from backend.app.services.job_queries import education_rank, get_active_job, get_job, get_vacant_jobs
 from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
@@ -84,26 +84,6 @@ class ExamAnswers(BaseModel):
 
 def require_player(db: Session, player_id: str, player_token: str | None) -> Player | None:
     return get_authorized_player(db, player_id, player_token)
-
-
-def build_player_action_response(db: Session, player: Player, message: str, response_model=PlayerSnapshotData, **extras) -> dict:
-    snapshot = build_player_snapshot(db, player)
-    payload = response_model(**snapshot, **extras).model_dump()
-    return api_success(message, payload, build_goal_effects(db, player))
-
-
-def save_player_action_response(
-    db: Session,
-    action: str,
-    idempotency_key: str | None,
-    player_id: str,
-    player: Player,
-    message: str,
-    response_model=PlayerSnapshotData,
-    **extras,
-) -> dict:
-    response = build_player_action_response(db, player, message, response_model, **extras)
-    return save_idempotent_response(db, action, idempotency_key, player_id, response)
 
 
 @router.get("/city/status")

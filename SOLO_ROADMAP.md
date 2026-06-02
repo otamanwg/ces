@@ -285,6 +285,7 @@ DoD:
 7. ✅ Tests: DTO contract coverage для vacancies/business market/sports clubs/exam info.
 8. ✅ Backend/tests: DTO contract coverage для action responses.
 9. ✅ Backend: helper для player action responses + idempotency save.
+10. ✅ Backend: винести action response helper-и з route file в `api/responses.py`.
 
 ---
 
