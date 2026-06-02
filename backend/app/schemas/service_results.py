@@ -34,6 +34,10 @@ class PlayerEducationServiceSnapshot(PlayerBalanceServiceSnapshot):
     education_level: str
 
 
+class PlayerDiplomaServiceSnapshot(PlayerEducationServiceSnapshot):
+    diploma_verified: bool
+
+
 class CityTreasuryServiceSnapshot(BaseModel):
     treasury_balance: float
 
@@ -133,3 +137,30 @@ class ExamSubmissionServiceResult(BaseModel):
     message: str
     details: list[ExamSubmissionDetailServiceResult]
     player: PlayerEducationServiceSnapshot
+
+
+class FakeDiplomaPurchaseServiceResult(BaseModel):
+    success: bool
+    message: str
+    player: PlayerDiplomaServiceSnapshot
+
+
+class PoliceAuditBustedServiceResult(BaseModel):
+    busted: bool
+    message: str
+    player: PlayerEducationServiceSnapshot
+
+
+class PoliceAuditClearServiceResult(BaseModel):
+    busted: bool
+    message: str
+
+
+class InsurancePolicyPurchaseServiceResult(BaseModel):
+    success: bool
+    message: str
+
+
+class LoanDailyServiceResult(BaseModel):
+    success: bool
+    details: list[str]

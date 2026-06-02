@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 from backend.app.models import Player, Business, LaborUnion, BankLoan, InsurancePolicy, Cartel, City
+from backend.app.schemas.service_results import InsurancePolicyPurchaseServiceResult, LoanDailyServiceResult
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.ids import to_uuid
 from backend.app.services.money import money
@@ -80,7 +81,10 @@ def buy_insurance_policy(db: Session, player_id: str, business_id: str,
     )
 
     db.commit()
-    return {"success": True, "message": f"Ви успішно застрахували активи на суму {coverage:.2f} ₴. Внесок: {premium:.2f} ₴ сплачено."}
+    return InsurancePolicyPurchaseServiceResult(
+        success=True,
+        message=f"Ви успішно застрахували активи на суму {coverage:.2f} ₴. Внесок: {premium:.2f} ₴ сплачено.",
+    ).model_dump()
 
 def process_daily_loan_installments_and_collectors(db: Session, player_id: str) -> dict:
     """Списання щоденних платежів за кредитом. При несплаті запускаються ШІ-Колектори!"""
@@ -148,7 +152,7 @@ def process_daily_loan_installments_and_collectors(db: Session, player_id: str) 
             )
 
     db.commit()
-    return {"success": True, "details": results}
+    return LoanDailyServiceResult(success=True, details=results).model_dump()
 
 def donate_to_lobby_fund(db: Session, cartel_name: str, city_id: str, industry: str, 
                            player_id: str, amount: float) -> dict:

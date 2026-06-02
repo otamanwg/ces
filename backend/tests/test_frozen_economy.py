@@ -4,6 +4,12 @@ from decimal import Decimal
 import pytest
 
 from backend.app.models import BankLoan, Business, City, InsurancePolicy, Player, PoliceRecord, TransactionModelLog
+from backend.app.schemas.service_results import (
+    FakeDiplomaPurchaseServiceResult,
+    InsurancePolicyPurchaseServiceResult,
+    LoanDailyServiceResult,
+    PoliceAuditBustedServiceResult,
+)
 from backend.app.seed import seed_initial_data
 from backend.app.services.advanced import buy_insurance_policy, process_daily_loan_installments_and_collectors
 from backend.app.services.education import purchase_fake_diploma, run_police_audit
@@ -39,6 +45,7 @@ def test_fake_diploma_purchase_and_audit_do_not_create_treasury_money():
         purchase_result = purchase_fake_diploma(db, str(player.id))
 
         assert purchase_result["success"] is True
+        FakeDiplomaPurchaseServiceResult.model_validate(purchase_result)
         db.refresh(player)
         db.refresh(city)
         assert Decimal(str(player.balance)) == Decimal("100.00")
@@ -57,6 +64,7 @@ def test_fake_diploma_purchase_and_audit_do_not_create_treasury_money():
         audit_result = run_police_audit(db, str(player.id))
 
         assert audit_result["busted"] is True
+        PoliceAuditBustedServiceResult.model_validate(audit_result)
         db.refresh(player)
         db.refresh(city)
         assert Decimal(str(player.balance)) == Decimal("0.00")
@@ -97,6 +105,7 @@ def test_insurance_policy_moves_premium_from_player_to_provider():
         result = buy_insurance_policy(db, str(player.id), str(target_business.id), str(provider.id), 1000.0, 75.0)
 
         assert result["success"] is True
+        InsurancePolicyPurchaseServiceResult.model_validate(result)
         db.refresh(player)
         db.refresh(provider)
         assert Decimal(str(player.balance)) == Decimal("425.00")
@@ -155,8 +164,12 @@ def test_loan_installments_and_collector_seizure_transfer_available_money_to_tre
         db.commit()
 
         starting_treasury = Decimal(str(city.treasury_balance))
-        assert process_daily_loan_installments_and_collectors(db, str(payer.id))["success"] is True
-        assert process_daily_loan_installments_and_collectors(db, str(delinquent.id))["success"] is True
+        paid_result = process_daily_loan_installments_and_collectors(db, str(payer.id))
+        seized_result = process_daily_loan_installments_and_collectors(db, str(delinquent.id))
+        assert paid_result["success"] is True
+        assert seized_result["success"] is True
+        LoanDailyServiceResult.model_validate(paid_result)
+        LoanDailyServiceResult.model_validate(seized_result)
 
         db.refresh(payer)
         db.refresh(delinquent)

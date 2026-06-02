@@ -9,7 +9,12 @@ from typing import Dict, List
 from sqlalchemy.orm import Session
 
 from backend.app.models import Player, PoliceRecord, City
-from backend.app.schemas.service_results import ExamSubmissionServiceResult
+from backend.app.schemas.service_results import (
+    ExamSubmissionServiceResult,
+    FakeDiplomaPurchaseServiceResult,
+    PoliceAuditBustedServiceResult,
+    PoliceAuditClearServiceResult,
+)
 from backend.app.services.ids import to_uuid
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
@@ -146,15 +151,15 @@ def purchase_fake_diploma(db: Session, player_id: str) -> dict:
     db.add(record)
     db.commit()
 
-    return {
-        "success": True,
-        "message": "Ви придбали підроблений диплом під прилавком! Тепер ви можете влаштуватись на кращу роботу. Але стережіться перевірок Поліції...",
-        "player": {
+    return FakeDiplomaPurchaseServiceResult(
+        success=True,
+        message="Ви придбали підроблений диплом під прилавком! Тепер ви можете влаштуватись на кращу роботу. Але стережіться перевірок Поліції...",
+        player={
             "balance": float(player.balance),
             "education_level": player.education_level,
             "diploma_verified": player.diploma_verified
-        }
-    }
+        },
+    ).model_dump()
 
 def run_police_audit(db: Session, player_id: str) -> dict:
     """ШІ-Поліція проводить випадковий аудит резюме гравця (наприклад, при спробі підвищення)"""
@@ -196,13 +201,16 @@ def run_police_audit(db: Session, player_id: str) -> dict:
         record.status = "fined"
         db.commit()
         
-        return {
-            "busted": True,
-            "message": f"🚨 ПОЛІЦІЯ! Ваше резюме пройшло аудит. Виявлено підроблений диплом! Стягнуто штраф {collected_fine:.2f} ₴, а диплом анульовано.",
-            "player": {
+        return PoliceAuditBustedServiceResult(
+            busted=True,
+            message=f"🚨 ПОЛІЦІЯ! Ваше резюме пройшло аудит. Виявлено підроблений диплом! Стягнуто штраф {collected_fine:.2f} ₴, а диплом анульовано.",
+            player={
                 "balance": float(player.balance),
                 "education_level": player.education_level
-            }
-        }
+            },
+        ).model_dump()
     
-    return {"busted": False, "message": "Ваші документи пройшли перевірку успішно."}
+    return PoliceAuditClearServiceResult(
+        busted=False,
+        message="Ваші документи пройшли перевірку успішно.",
+    ).model_dump()

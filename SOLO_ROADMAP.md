@@ -290,6 +290,7 @@ DoD:
 12. ✅ Backend/tests: service result DTO для meal/sports training/exam submit.
 13. ✅ Backend/tests: service result DTO для work/sleep/day tick.
 14. ✅ Backend/tests: service result DTO для sports contract/match simulation.
+15. ✅ Backend/tests: service result DTO для frozen economy diploma/audit/insurance/loans.
 
 ---
 
