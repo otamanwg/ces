@@ -258,7 +258,7 @@ DoD:
 Порядок:
 
 1. ✅ Client: винести action button state у `DashboardActionPresenter`.
-2. ⏳ Client: винести parsing/formatting player snapshot у focused presenter/model.
+2. ✅ Client: винести parsing/formatting player snapshot у focused presenter/model.
 3. ⏳ Client: додати lightweight smoke для status/history formatting, якщо з'явиться тестова інфраструктура C#.
 4. ⏳ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
 

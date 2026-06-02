@@ -543,81 +543,65 @@ public partial class CityDashboardController : Control
 
 	private void UpdatePlayerUI(JsonNode data)
 	{
+		var snapshot = DashboardPlayerSnapshot.FromJson(data);
+
 		if (UsernameLabel != null)
 		{
-			UsernameLabel.Text = data["username"]?.ToString() ?? "Гість";
+			UsernameLabel.Text = snapshot.Username;
 		}
 
 		if (BalanceLabel != null)
 		{
-			double balance = data["balance"]?.GetValue<double>() ?? 0.0;
-			BalanceLabel.Text = $"{balance:N2} ₴";
+			BalanceLabel.Text = $"{snapshot.Balance:N2} ₴";
 		}
 
 		if (EducationLabel != null)
 		{
-			_playerEducation = data["education_level"]?.ToString() ?? "High School";
+			_playerEducation = snapshot.EducationLevel;
 			EducationLabel.Text = _playerEducation;
 		}
 
 		if (CurrentJobLabel != null)
 		{
-			string job = data["job"]?.ToString() ?? "Безробітний";
-			CurrentJobLabel.Text = job;
-			_hasJob = job != "Безробітний";
+			CurrentJobLabel.Text = snapshot.Job;
+			_hasJob = snapshot.HasJob;
 		}
 
 		if (CurrentHostelLabel != null)
 		{
-			CurrentHostelLabel.Text = data["hostel"]?.ToString() ?? "Вулиця";
+			CurrentHostelLabel.Text = snapshot.Hostel;
 		}
 
 		if (OwnedBusinessLabel != null)
 		{
-			var businesses = data["owned_businesses"]?.AsArray();
-			if (businesses == null || businesses.Count == 0)
-			{
-				_ownedBusinessId = "";
-				OwnedBusinessLabel.Text = "Бізнес: немає";
-			}
-			else
-			{
-				_ownedBusinessId = businesses[0]?["id"]?.ToString() ?? "";
-				OwnedBusinessLabel.Text = $"Бізнес: {businesses[0]?["name"]}";
-			}
+			_ownedBusinessId = snapshot.OwnedBusinessId;
+			OwnedBusinessLabel.Text = snapshot.OwnedBusinessText;
 		}
 
 		if (SportsLabel != null)
 		{
-			var sports = data["sports_contract"];
-			SportsLabel.Text = sports == null
-				? "Спорт: немає"
-				: $"Спорт: {sports["club"]} STR {sports["strength"]} / STA {sports["stamina"]}";
+			SportsLabel.Text = snapshot.SportsText;
 		}
 
 		if (EnergyBar != null)
 		{
-			EnergyBar.Value = data["energy"]?.GetValue<int>() ?? 0;
+			EnergyBar.Value = snapshot.Energy;
 		}
 
 		if (MoodBar != null)
 		{
-			MoodBar.Value = data["mood"]?.GetValue<int>() ?? 0;
+			MoodBar.Value = snapshot.Mood;
 		}
 
 		if (HungerBar != null)
 		{
-			HungerBar.Value = data["hunger"]?.GetValue<int>() ?? 0;
+			HungerBar.Value = snapshot.Hunger;
 		}
 
-		UpdateAvailableActions(data["actions"]);
-
-		string playerId = data["id"]?.ToString() ?? "";
-		string username = data["username"]?.ToString() ?? "";
-		string authToken = data["auth_token"]?.ToString() ?? "";
-		if (!string.IsNullOrEmpty(playerId))
+		UpdateAvailableActions(snapshot.Actions);
+		if (!string.IsNullOrEmpty(snapshot.Id))
 		{
-			_session?.SetPlayer(playerId, username, authToken);
+			_session?.SetPlayer(snapshot.Id, snapshot.Username, snapshot.AuthToken);
 		}
 
 		UpdateActionButtons();
