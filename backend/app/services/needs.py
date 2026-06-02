@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from backend.app.models import City, Player
+from backend.app.schemas.service_results import MealPurchaseServiceResult
 from backend.app.services.ids import to_uuid
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
@@ -62,12 +63,12 @@ def process_meal_purchase(db: Session, player_id: str) -> dict:
     )
     db.commit()
 
-    return {
-        "success": True,
-        "message": f"Ви поїли за {MEAL_COST:.2f} ₴. Голод зменшився.",
-        "player": {
+    return MealPurchaseServiceResult(
+        success=True,
+        message=f"Ви поїли за {MEAL_COST:.2f} ₴. Голод зменшився.",
+        player={
             "balance": float(player.balance),
             "hunger": player.hunger,
             "mood": player.mood,
         },
-    }
+    ).model_dump()

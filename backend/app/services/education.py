@@ -9,6 +9,7 @@ from typing import Dict, List
 from sqlalchemy.orm import Session
 
 from backend.app.models import Player, PoliceRecord, City
+from backend.app.schemas.service_results import ExamSubmissionServiceResult
 from backend.app.services.ids import to_uuid
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
@@ -91,17 +92,17 @@ def process_exam_submission(db: Session, player_id: str, submitted_answers: Dict
 
     db.commit()
 
-    return {
-        "success": True,
-        "passed": passed,
-        "score": f"{correct_count}/{total_questions}",
-        "message": message,
-        "details": details,
-        "player": {
+    return ExamSubmissionServiceResult(
+        success=True,
+        passed=passed,
+        score=f"{correct_count}/{total_questions}",
+        message=message,
+        details=details,
+        player={
             "balance": float(player.balance),
             "education_level": player.education_level
-        }
-    }
+        },
+    ).model_dump()
 
 def purchase_fake_diploma(db: Session, player_id: str) -> dict:
     """Тіньова купівля підробленого диплома Коледжу (Швидко, але небезпечно)"""

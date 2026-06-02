@@ -4,7 +4,13 @@ from decimal import Decimal
 import pytest
 
 from backend.app.models import Business, City, Hostel, Job, Player, SportsClub, TransactionModelLog
-from backend.app.schemas.service_results import BusinessDividendServiceResult, BusinessPurchaseServiceResult
+from backend.app.schemas.service_results import (
+    BusinessDividendServiceResult,
+    BusinessPurchaseServiceResult,
+    ExamSubmissionServiceResult,
+    MealPurchaseServiceResult,
+    SportsTrainServiceResult,
+)
 from backend.app.seed import seed_initial_data
 from backend.app.services.business_market import (
     get_buyable_businesses,
@@ -120,6 +126,7 @@ def test_meal_purchase_reduces_hunger_charges_player_and_logs_food():
         meal_result = process_meal_purchase(db, str(player.id))
 
         assert meal_result["success"] is True
+        MealPurchaseServiceResult.model_validate(meal_result)
         db.refresh(player)
         db.refresh(city)
         assert Decimal(str(player.balance)) == Decimal("75.00")
@@ -301,6 +308,7 @@ def test_gym_training_charges_player_treasury_and_logs_fee():
         result = train_at_gym(db, str(player.id), "strength")
 
         assert result["success"] is True
+        SportsTrainServiceResult.model_validate(result)
         db.refresh(player)
         db.refresh(city)
         assert Decimal(str(player.balance)) == Decimal("60.00")
@@ -533,6 +541,7 @@ def test_starter_balance_reaches_college_after_one_work_sleep_cycle():
 
         exam_result = process_exam_submission(db, str(player.id), answers)
         assert exam_result["success"] is True
+        ExamSubmissionServiceResult.model_validate(exam_result)
         assert exam_result["passed"] is True
         db.refresh(player)
         assert player.education_level == "College"

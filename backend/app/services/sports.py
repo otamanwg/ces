@@ -7,6 +7,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from backend.app.models import Player, SportsClub, PlayerAthleteContract, City
+from backend.app.schemas.service_results import SportsTrainServiceResult
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.ids import to_uuid
 
@@ -70,18 +71,18 @@ def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
     )
 
     db.commit()
-    return {
-        "success": True,
-        "message": message,
-        "player": {
+    return SportsTrainServiceResult(
+        success=True,
+        message=message,
+        player={
             "balance": float(player.balance),
             "energy": player.energy
         },
-        "stats": {
+        stats={
             "strength": contract.strength_stat,
             "stamina": contract.stamina_stat
-        }
-    }
+        },
+    ).model_dump()
 
 def sign_athlete_contract(db: Session, player_id: str, club_id: str, salary: float) -> dict:
     """Підписання контракту спортсмена з клубом"""
