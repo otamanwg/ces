@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from backend.app.models import Business, Building, BuildingApplication, City, Player
 from backend.app.services.ledger import credit, debit, log_transaction
@@ -99,6 +99,37 @@ def get_building_repair_fee(building: Building):
     if building.business_blueprint:
         return max(money(building.business_blueprint.upkeep_daily) * BUILDING_REPAIR_UPKEEP_MULTIPLIER, MIN_BUILDING_REPAIR_FEE)
     return money("50.00")
+
+
+def get_building_upkeep_daily(building: Building):
+    if building.business_blueprint:
+        return money(building.business_blueprint.upkeep_daily)
+    return money("0.00")
+
+
+def get_building_available_actions(building: Building) -> list[str]:
+    if building.status != BUILT:
+        return []
+    if building.operating_status == INACTIVE:
+        return ["open"]
+    if building.operating_status == MAINTENANCE_DUE:
+        return ["repair"]
+    return []
+
+
+def get_player_building_portfolio(db: Session, player: Player) -> list[Building]:
+    return (
+        db.query(Building)
+        .options(
+            joinedload(Building.district),
+            joinedload(Building.land_parcel),
+            joinedload(Building.business_blueprint),
+            joinedload(Building.business),
+        )
+        .filter(Building.city_id == player.city_id, Building.owner_player_id == player.id)
+        .order_by(Building.created_at.desc(), Building.name)
+        .all()
+    )
 
 
 def open_building_operations(db: Session, player: Player, building_id: UUID) -> dict:

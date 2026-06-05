@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 27: Building Portfolio API & Client Prep.**
+**Sprint 28: Godot Building Portfolio Panel.**
 
-Мета: гравець і клієнт мають бачити власні фізичні будівлі, їхній статус, blueprint, fees і доступні дії, перш ніж ми виведемо це в Godot UI.
+Мета: показати гравцю власні будівлі у Godot dashboard і дати перші кнопки `open`/`repair` без перевантаження головного екрану.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -479,11 +479,26 @@ DoD:
 
 Порядок:
 
-1. ⏳ Backend/API: authenticated endpoint для списку будівель гравця.
-2. ⏳ Backend DTO: building + blueprint summary + opening/repair fee + available actions.
-3. ⏳ Backend/tests: owner-only, status/action matrix, DTO validation.
+1. ✅ Backend/API: authenticated endpoint для списку будівель гравця.
+2. ✅ Backend DTO: building + blueprint summary + opening/repair fee + available actions.
+3. ✅ Backend/tests: owner-only, status/action matrix, DTO validation.
 4. ⏳ Client: мінімальний read-only блок "Мої будівлі" у dashboard.
-5. ⏳ Client: repair button тільки для `maintenance_due`.
+5. ⏳ Client: repair/open button тільки коли API повертає відповідну `available_actions`.
+
+---
+
+## Sprint 28 — Godot Building Portfolio Panel
+
+Ціль: dashboard має показувати не тільки баланс і кнопки core loop, а й перший фізичний слід гравця в місті: його будівлі.
+
+Порядок:
+
+1. ⏳ Client: API method для `GET /api/player/{player_id}/buildings`.
+2. ⏳ Client: parser/model для `BuildingPortfolioData`.
+3. ⏳ Client: компактний read-only panel у landscape dashboard.
+4. ⏳ Client: open/repair buttons за `available_actions`.
+5. ⏳ Client tests: parser/action presenter coverage.
+6. ⏳ Godot MCP smoke: scene без Diagnostics errors.
 
 ---
 

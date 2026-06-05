@@ -10,6 +10,7 @@ from backend.app.schemas.mvp import (
     BuildingActivationActionData,
     BuildingApplicationData,
     BuildingOpenActionData,
+    BuildingPortfolioData,
     BuildingRepairActionData,
     BusinessBlueprintsData,
     LandParcelsData,
@@ -18,6 +19,7 @@ from backend.app.schemas.mvp import (
 from backend.app.seed import seed_initial_data
 from backend.app.services.buildings import ACTIVE, BUILDING_REPAIR_PURPOSE, MAINTENANCE_DUE
 from backend.app.services.land import OWNED
+from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE
 from backend.main import app
 from backend.tests.db import make_test_session
 
@@ -417,6 +419,38 @@ def create_openable_commercial_building(test_client, db, player_id: str, token: 
     return activate_res["data"]["building"]["id"]
 
 
+def create_inactive_blueprint_building(test_client, db, player_id: str, token: str):
+    parcel = db.query(LandParcel).filter(LandParcel.code == "bus_station_kiosk_lot").one()
+    blueprint = db.query(BusinessBlueprint).filter(BusinessBlueprint.code == "station_kiosk").one()
+
+    buy_res = test_client.post(
+        "/api/land/buy",
+        json={"player_id": player_id, "land_parcel_id": str(parcel.id)},
+        headers={"X-Player-Token": token, "Idempotency-Key": f"portfolio-land-{player_id}"},
+    ).json()
+    assert buy_res["success"] is True
+
+    application_res = test_client.post(
+        "/api/building/applications",
+        json={
+            "player_id": player_id,
+            "land_parcel_id": str(parcel.id),
+            "business_blueprint_id": str(blueprint.id),
+            "proposed_name": "Портфельний кіоск",
+        },
+        headers={"X-Player-Token": token, "Idempotency-Key": f"portfolio-application-{player_id}"},
+    ).json()
+    assert application_res["success"] is True
+
+    activate_res = test_client.post(
+        f"/api/building/applications/{application_res['data']['id']}/activate",
+        json={"player_id": player_id},
+        headers={"X-Player-Token": token, "Idempotency-Key": f"portfolio-activate-{player_id}"},
+    ).json()
+    assert activate_res["success"] is True
+    return activate_res["data"]["building"]["id"]
+
+
 def create_opened_blueprint_building(test_client, db, player_id: str, token: str):
     parcel = db.query(LandParcel).filter(LandParcel.code == "bus_station_kiosk_lot").one()
     blueprint = db.query(BusinessBlueprint).filter(BusinessBlueprint.code == "station_kiosk").one()
@@ -509,6 +543,99 @@ def test_open_building_charges_fee_links_business_and_is_idempotent(client):
     assert repeat.json() == body
     assert db.query(Business).filter(Business.name == "Вокзальна кав'ярня").count() == 1
     assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "building_opening_fee").count() == 1
+
+
+def test_building_portfolio_returns_empty_list_for_new_player(client):
+    test_client, _db = client
+    player_id, token = register_player(test_client, "empty-building-owner")
+
+    res = test_client.get(
+        f"/api/player/{player_id}/buildings",
+        headers={"X-Player-Token": token},
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is True
+    data = BuildingPortfolioData.model_validate(body["data"])
+    assert data.buildings == []
+
+
+def test_building_portfolio_requires_player_session(client):
+    test_client, _db = client
+    owner_id, _owner_token = register_player(test_client, "portfolio-owner")
+    _intruder_id, intruder_token = register_player(test_client, "portfolio-intruder")
+
+    res = test_client.get(
+        f"/api/player/{owner_id}/buildings",
+        headers={"X-Player-Token": intruder_token},
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is False
+    assert body["message"] == INVALID_PLAYER_SESSION_MESSAGE
+
+
+def test_building_portfolio_exposes_inactive_building_open_action(client):
+    test_client, db = client
+    player_id, token = register_player(test_client, "inactive-portfolio-owner")
+    building_id = create_inactive_blueprint_building(test_client, db, player_id, token)
+
+    res = test_client.get(
+        f"/api/player/{player_id}/buildings",
+        headers={"X-Player-Token": token},
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is True
+    data = BuildingPortfolioData.model_validate(body["data"])
+    assert len(data.buildings) == 1
+    item = data.buildings[0]
+    assert item.id == building_id
+    assert item.district_code == "bus_station"
+    assert item.land_parcel_code == "bus_station_kiosk_lot"
+    assert item.blueprint_code == "station_kiosk"
+    assert item.business_id is None
+    assert item.business_type == "shop"
+    assert item.business_cash_balance is None
+    assert item.operating_status == "inactive"
+    assert item.opening_fee == 100.0
+    assert item.repair_fee == 25.0
+    assert item.upkeep_daily == 8.0
+    assert item.available_actions == ["open"]
+
+
+def test_building_portfolio_exposes_maintenance_due_repair_action(client):
+    test_client, db = client
+    player_id, token = register_player(test_client, "repair-portfolio-owner")
+    building_id = create_opened_blueprint_building(test_client, db, player_id, token)
+    building = db.query(Building).filter(Building.id == building_id).one()
+    business = db.query(Business).filter(Business.id == building.business_id).one()
+    business.cash_balance = Decimal("42.00")
+    building.operating_status = MAINTENANCE_DUE
+    db.commit()
+
+    res = test_client.get(
+        f"/api/player/{player_id}/buildings",
+        headers={"X-Player-Token": token},
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is True
+    data = BuildingPortfolioData.model_validate(body["data"])
+    assert len(data.buildings) == 1
+    item = data.buildings[0]
+    assert item.id == building_id
+    assert item.business_id == str(business.id)
+    assert item.business_type == "shop"
+    assert item.business_cash_balance == 42.0
+    assert item.operating_status == MAINTENANCE_DUE
+    assert item.available_actions == ["repair"]
+    assert item.repair_fee == 25.0
+    assert item.upkeep_daily == 8.0
 
 
 def test_open_building_uses_blueprint_fee_and_business_type(client):

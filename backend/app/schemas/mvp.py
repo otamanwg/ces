@@ -248,6 +248,38 @@ class BuildingRepairActionData(PlayerSnapshotData):
     repair_fee: float
 
 
+class BuildingPortfolioItem(BaseModel):
+    id: str
+    city_id: str
+    district_id: str
+    district_code: str
+    district_name: str
+    land_parcel_id: str
+    land_parcel_code: str
+    land_parcel_label: str
+    source_application_id: str
+    business_blueprint_id: str | None
+    blueprint_code: str | None
+    blueprint_name: str | None
+    blueprint_category: str | None
+    business_id: str | None
+    business_type: str | None
+    business_cash_balance: float | None
+    owner_player_id: str
+    name: str
+    project_type: str
+    status: str
+    operating_status: str
+    opening_fee: float
+    repair_fee: float
+    upkeep_daily: float
+    available_actions: list[str]
+
+
+class BuildingPortfolioData(BaseModel):
+    buildings: list[BuildingPortfolioItem]
+
+
 class DayTickCityData(BaseModel):
     id: str
     inflation_rate: float

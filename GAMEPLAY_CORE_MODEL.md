@@ -226,6 +226,14 @@
 6. після ремонту будівля повертається в `operating_status = active`;
 7. якщо будівля вже `active`, repair не списує гроші повторно.
 
+Перший building portfolio API:
+
+1. `GET /api/player/{player_id}/buildings` повертає тільки будівлі авторизованого гравця;
+2. кожен item містить фізичну будівлю, ділянку, район, blueprint summary, linked business summary;
+3. API повертає `opening_fee`, `repair_fee`, `upkeep_daily`;
+4. `available_actions` показує наступну дію для UI: `open` для `inactive`, `repair` для `maintenance_due`;
+5. portfolio API read-only і не змінює економіку.
+
 AI має виконувати антимонопольні дії. Великі власники землі, бізнесів або районного впливу не повинні назавжди блокувати розвиток міста чи нових гравців.
 
 Покинуті будівлі:

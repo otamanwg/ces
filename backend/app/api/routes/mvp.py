@@ -13,6 +13,8 @@ from backend.app.schemas.mvp import (
     BuildingActivationActionData,
     BuildingItem,
     BuildingOpenActionData,
+    BuildingPortfolioData,
+    BuildingPortfolioItem,
     BuildingRepairActionData,
     BusinessBlueprintItem,
     BusinessBlueprintsData,
@@ -47,7 +49,16 @@ from backend.app.services.business_market import (
     process_business_purchase,
 )
 from backend.app.services.building_applications import create_building_application
-from backend.app.services.buildings import activate_building_application, open_building_operations, repair_building_operations
+from backend.app.services.buildings import (
+    activate_building_application,
+    get_building_available_actions,
+    get_building_opening_fee,
+    get_building_repair_fee,
+    get_building_upkeep_daily,
+    get_player_building_portfolio,
+    open_building_operations,
+    repair_building_operations,
+)
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work, update_inflation_rate
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.ids import to_uuid, try_uuid
@@ -193,6 +204,38 @@ def building_item(building: Building) -> BuildingItem:
         project_type=building.project_type,
         status=building.status,
         operating_status=building.operating_status,
+    )
+
+
+def building_portfolio_item(building: Building) -> BuildingPortfolioItem:
+    blueprint = building.business_blueprint
+    business = building.business
+    return BuildingPortfolioItem(
+        id=str(building.id),
+        city_id=str(building.city_id),
+        district_id=str(building.district_id),
+        district_code=building.district.code,
+        district_name=building.district.name,
+        land_parcel_id=str(building.land_parcel_id),
+        land_parcel_code=building.land_parcel.code,
+        land_parcel_label=building.land_parcel.label,
+        source_application_id=str(building.source_application_id),
+        business_blueprint_id=str(building.business_blueprint_id) if building.business_blueprint_id else None,
+        blueprint_code=blueprint.code if blueprint else None,
+        blueprint_name=blueprint.name if blueprint else None,
+        blueprint_category=blueprint.category if blueprint else None,
+        business_id=str(building.business_id) if building.business_id else None,
+        business_type=business.type if business else (blueprint.business_type if blueprint else None),
+        business_cash_balance=float(business.cash_balance) if business else None,
+        owner_player_id=str(building.owner_player_id),
+        name=building.name,
+        project_type=building.project_type,
+        status=building.status,
+        operating_status=building.operating_status,
+        opening_fee=float(get_building_opening_fee(building)),
+        repair_fee=float(get_building_repair_fee(building)),
+        upkeep_daily=float(get_building_upkeep_daily(building)),
+        available_actions=get_building_available_actions(building),
     )
 
 
@@ -536,6 +579,25 @@ def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
         snapshot,
         effects,
     )
+
+
+@router.get("/player/{player_id}/buildings")
+def get_player_buildings(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    player = require_player(db, player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    data = BuildingPortfolioData(
+        buildings=[
+            building_portfolio_item(building)
+            for building in get_player_building_portfolio(db, player)
+        ]
+    )
+    return api_success("Будівлі гравця.", data.model_dump())
 
 
 @router.get("/player/{player_id}")
