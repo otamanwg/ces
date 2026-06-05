@@ -513,9 +513,9 @@ DoD:
 3. ✅ Client model/parser: starter land options і blueprint catalog presenter.
 4. ✅ Client UI: компактний "Побудувати" flow у dashboard без перевантаження основного екрану.
 5. ✅ Client action: buy recommended starter parcel.
-6. ⏳ Client action: submit blueprint application for owned starter land.
-7. ⏳ Client action: activate approved building.
-8. ⏳ Godot MCP smoke + `scripts/check.ps1` + commit.
+6. ✅ Client action: submit blueprint application for owned starter land.
+7. ✅ Client action: activate approved building.
+8. ✅ Godot MCP smoke + `scripts/check.ps1` + commit.
 
 ---
 

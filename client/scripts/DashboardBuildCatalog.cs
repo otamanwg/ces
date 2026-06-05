@@ -19,6 +19,20 @@ public sealed class DashboardBuildCatalog
 			.FirstOrDefault();
 	}
 
+	public DashboardLandOption? OwnedLandFor(string playerId)
+	{
+		if (string.IsNullOrWhiteSpace(playerId))
+		{
+			return null;
+		}
+
+		return LandOptions
+			.Where(land => land.IsOwnedBy(playerId))
+			.OrderBy(land => land.CurrentPrice)
+			.ThenBy(land => land.AreaHectares)
+			.FirstOrDefault();
+	}
+
 	public IReadOnlyList<DashboardBusinessBlueprintOption> BlueprintsFor(DashboardLandOption land)
 	{
 		return Blueprints
@@ -31,6 +45,23 @@ public sealed class DashboardBuildCatalog
 	public DashboardStarterBuildPlan? StarterPlanFor(double playerBalance)
 	{
 		var land = StarterLandFor(playerBalance);
+		if (land == null)
+		{
+			return null;
+		}
+
+		var blueprint = BlueprintsFor(land).FirstOrDefault();
+		if (blueprint == null)
+		{
+			return null;
+		}
+
+		return new DashboardStarterBuildPlan(land, blueprint);
+	}
+
+	public DashboardStarterBuildPlan? StarterApplicationPlanFor(string playerId)
+	{
+		var land = OwnedLandFor(playerId);
 		if (land == null)
 		{
 			return null;
@@ -58,7 +89,7 @@ public sealed class DashboardBuildCatalog
 			return "Будівництво: бракує коштів або сумісної ділянки";
 		}
 
-		return $"Перший план: {plan.Blueprint.Name} | земля {plan.Land.CurrentPrice:N0} ₴ | будівництво {plan.Blueprint.ConstructionCost:N0} ₴ | відкриття {plan.Blueprint.OpeningFee:N0} ₴ | резерв {plan.Blueprint.RecommendedCashReserve:N0} ₴";
+		return plan.BuySummaryText;
 	}
 
 	public static DashboardBuildCatalog FromJson(JsonNode? landData, JsonNode? blueprintData)
@@ -123,6 +154,7 @@ public sealed class DashboardLandOption
 	public string? OwnerPlayerId { get; init; }
 
 	public bool IsCityOwned => Status == "city_owned" && string.IsNullOrWhiteSpace(OwnerPlayerId);
+	public bool IsOwnedBy(string playerId) => Status == "owned" && OwnerPlayerId == playerId;
 
 	public string SummaryText => $"{Label} | {DistrictName} | {AreaHectares:N2} га | {CurrentPrice:N0} ₴";
 
@@ -224,4 +256,9 @@ public sealed class DashboardBusinessBlueprintOption
 	}
 }
 
-public sealed record DashboardStarterBuildPlan(DashboardLandOption Land, DashboardBusinessBlueprintOption Blueprint);
+public sealed record DashboardStarterBuildPlan(DashboardLandOption Land, DashboardBusinessBlueprintOption Blueprint)
+{
+	public string BuySummaryText => $"Перший план: {Blueprint.Name} | земля {Land.CurrentPrice:N0} ₴ | будівництво {Blueprint.ConstructionCost:N0} ₴ | відкриття {Blueprint.OpeningFee:N0} ₴ | резерв {Blueprint.RecommendedCashReserve:N0} ₴";
+	public string ApplicationSummaryText => $"Заявка: {Blueprint.Name} | {Land.Label} | {Blueprint.ProfitText} | {Blueprint.RiskText}";
+	public string ActivationSummaryText => $"Погоджено: {Blueprint.Name} | можна створити будівлю";
+}

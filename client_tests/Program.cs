@@ -270,7 +270,7 @@ var landCatalogJson = JsonNode.Parse(
 				"area_hectares": 0.50,
 				"current_price": 350.0,
 				"status": "owned",
-				"owner_player_id": "other-player"
+				"owner_player_id": "player-1"
 			}
 		]
 	}
@@ -333,6 +333,9 @@ var starterLand = buildCatalog.StarterLandFor(500)!;
 AssertEqual("land-1", starterLand.Id, "Build catalog chooses affordable city land");
 AssertEqual(true, starterLand.IsCityOwned, "Starter land must be city-owned");
 AssertEqual(null, buildCatalog.StarterLandFor(199), "Build catalog rejects unaffordable land");
+var ownedLand = buildCatalog.OwnedLandFor("player-1")!;
+AssertEqual("land-2", ownedLand.Id, "Build catalog finds owned land");
+AssertEqual(true, ownedLand.IsOwnedBy("player-1"), "Owned land matches player id");
 var compatibleBlueprints = buildCatalog.BlueprintsFor(starterLand);
 AssertEqual(1, compatibleBlueprints.Count, "Build catalog filters incompatible blueprints");
 AssertEqual("station_kiosk", compatibleBlueprints[0].Code, "Build catalog keeps compatible starter blueprint");
@@ -344,6 +347,10 @@ AssertEqual("land-1", starterPlan.Land.Id, "Starter plan land id");
 AssertEqual("blueprint-1", starterPlan.Blueprint.Id, "Starter plan blueprint id");
 AssertEqual(550.0, starterPlan.Blueprint.TotalRecommendedBudget, "Starter blueprint recommended budget");
 AssertEqual("Перший план: Вокзальний кіоск | земля 200 ₴ | будівництво 300 ₴ | відкриття 100 ₴ | резерв 150 ₴", buildCatalog.SummaryFor(500), "Starter plan summary");
+var applicationPlan = buildCatalog.StarterApplicationPlanFor("player-1")!;
+AssertEqual("land-2", applicationPlan.Land.Id, "Application plan uses owned land");
+AssertEqual("Заявка: Вокзальний кіоск | Вже куплена ділянка | 20-55 ₴/день | ризик 1/5", applicationPlan.ApplicationSummaryText, "Application plan summary");
+AssertEqual("Погоджено: Вокзальний кіоск | можна створити будівлю", applicationPlan.ActivationSummaryText, "Activation plan summary");
 AssertEqual("Будівництво: бракує коштів або сумісної ділянки", buildCatalog.SummaryFor(199), "Build catalog explains missing starter plan");
 
 Console.WriteLine("Client logic tests passed.");
