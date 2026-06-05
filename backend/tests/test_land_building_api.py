@@ -10,11 +10,13 @@ from backend.app.schemas.mvp import (
     BuildingActivationActionData,
     BuildingApplicationData,
     BuildingOpenActionData,
+    BuildingRepairActionData,
     BusinessBlueprintsData,
     LandParcelsData,
     LandPurchaseActionData,
 )
 from backend.app.seed import seed_initial_data
+from backend.app.services.buildings import ACTIVE, BUILDING_REPAIR_PURPOSE, MAINTENANCE_DUE
 from backend.app.services.land import OWNED
 from backend.main import app
 from backend.tests.db import make_test_session
@@ -415,6 +417,45 @@ def create_openable_commercial_building(test_client, db, player_id: str, token: 
     return activate_res["data"]["building"]["id"]
 
 
+def create_opened_blueprint_building(test_client, db, player_id: str, token: str):
+    parcel = db.query(LandParcel).filter(LandParcel.code == "bus_station_kiosk_lot").one()
+    blueprint = db.query(BusinessBlueprint).filter(BusinessBlueprint.code == "station_kiosk").one()
+
+    buy_res = test_client.post(
+        "/api/land/buy",
+        json={"player_id": player_id, "land_parcel_id": str(parcel.id)},
+        headers={"X-Player-Token": token, "Idempotency-Key": f"repair-land-{player_id}"},
+    ).json()
+    assert buy_res["success"] is True
+
+    application_res = test_client.post(
+        "/api/building/applications",
+        json={
+            "player_id": player_id,
+            "land_parcel_id": str(parcel.id),
+            "business_blueprint_id": str(blueprint.id),
+            "proposed_name": "Ремонтний кіоск",
+        },
+        headers={"X-Player-Token": token, "Idempotency-Key": f"repair-application-{player_id}"},
+    ).json()
+    assert application_res["success"] is True
+
+    activate_res = test_client.post(
+        f"/api/building/applications/{application_res['data']['id']}/activate",
+        json={"player_id": player_id},
+        headers={"X-Player-Token": token, "Idempotency-Key": f"repair-activate-{player_id}"},
+    ).json()
+    assert activate_res["success"] is True
+
+    open_res = test_client.post(
+        f"/api/buildings/{activate_res['data']['building']['id']}/open",
+        json={"player_id": player_id},
+        headers={"X-Player-Token": token, "Idempotency-Key": f"repair-open-{player_id}"},
+    ).json()
+    assert open_res["success"] is True
+    return activate_res["data"]["building"]["id"]
+
+
 def test_open_building_charges_fee_links_business_and_is_idempotent(client):
     test_client, db = client
     player_id, token = register_player(test_client, "building-operator")
@@ -523,6 +564,126 @@ def test_open_building_uses_blueprint_fee_and_business_type(client):
     business = db.query(Business).filter(Business.id == building.business_id).one()
     assert business.type == "private_hostel"
     assert business.owner_player_id == player.id
+
+
+def test_repair_building_charges_fee_reactivates_and_is_idempotent(client):
+    test_client, db = client
+    player_id, token = register_player(test_client, "repair-operator")
+    player = db.query(Player).filter(Player.id == player_id).one()
+    city = db.query(City).filter(City.id == player.city_id).one()
+    building_id = create_opened_blueprint_building(test_client, db, player_id, token)
+    building = db.query(Building).filter(Building.id == building_id).one()
+    building.operating_status = MAINTENANCE_DUE
+    db.commit()
+    starting_treasury = Decimal(str(city.treasury_balance))
+
+    headers = {"X-Player-Token": token, "Idempotency-Key": "building-repair-1"}
+    res = test_client.post(
+        f"/api/buildings/{building_id}/repair",
+        json={"player_id": player_id},
+        headers=headers,
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is True
+    data = BuildingRepairActionData.model_validate(body["data"])
+    assert data.balance == 175.0
+    assert data.repair_fee == 25.0
+    assert data.building.id == building_id
+    assert data.building.operating_status == ACTIVE
+
+    db.refresh(player)
+    db.refresh(city)
+    db.refresh(building)
+    assert Decimal(str(player.balance)) == Decimal("175.00")
+    assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal("25.00")
+    assert building.operating_status == ACTIVE
+
+    repair_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == BUILDING_REPAIR_PURPOSE).one()
+    assert repair_log.sender_id == player.id
+    assert repair_log.sender_type == "player"
+    assert repair_log.receiver_id == city.id
+    assert repair_log.receiver_type == "treasury"
+    assert repair_log.amount == Decimal("25.00")
+
+    repeat = test_client.post(
+        f"/api/buildings/{building_id}/repair",
+        json={"player_id": player_id},
+        headers=headers,
+    )
+    assert repeat.status_code == 200
+    assert repeat.json() == body
+    assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == BUILDING_REPAIR_PURPOSE).count() == 1
+
+
+def test_repair_building_requires_owner(client):
+    test_client, db = client
+    owner_id, owner_token = register_player(test_client, "repair-owner")
+    intruder_id, intruder_token = register_player(test_client, "repair-intruder")
+    building_id = create_opened_blueprint_building(test_client, db, owner_id, owner_token)
+    building = db.query(Building).filter(Building.id == building_id).one()
+    building.operating_status = MAINTENANCE_DUE
+    db.commit()
+
+    res = test_client.post(
+        f"/api/buildings/{building_id}/repair",
+        json={"player_id": intruder_id},
+        headers={"X-Player-Token": intruder_token},
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is False
+    assert body["message"] == "Ремонтувати можна лише власну будівлю."
+    db.refresh(building)
+    assert building.operating_status == MAINTENANCE_DUE
+    assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == BUILDING_REPAIR_PURPOSE).count() == 0
+
+
+def test_repair_building_requires_enough_money(client):
+    test_client, db = client
+    player_id, token = register_player(test_client, "poor-repair-owner")
+    player = db.query(Player).filter(Player.id == player_id).one()
+    building_id = create_opened_blueprint_building(test_client, db, player_id, token)
+    building = db.query(Building).filter(Building.id == building_id).one()
+    building.operating_status = MAINTENANCE_DUE
+    player.balance = Decimal("10.00")
+    db.commit()
+
+    res = test_client.post(
+        f"/api/buildings/{building_id}/repair",
+        json={"player_id": player_id},
+        headers={"X-Player-Token": token},
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is False
+    assert "Недостатньо коштів для ремонту будівлі" in body["message"]
+    db.refresh(player)
+    db.refresh(building)
+    assert Decimal(str(player.balance)) == Decimal("10.00")
+    assert building.operating_status == MAINTENANCE_DUE
+    assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == BUILDING_REPAIR_PURPOSE).count() == 0
+
+
+def test_repair_building_rejects_already_active(client):
+    test_client, db = client
+    player_id, token = register_player(test_client, "active-repair-owner")
+    building_id = create_opened_blueprint_building(test_client, db, player_id, token)
+
+    res = test_client.post(
+        f"/api/buildings/{building_id}/repair",
+        json={"player_id": player_id},
+        headers={"X-Player-Token": token},
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is False
+    assert body["message"] == "Будівля вже працює."
+    assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == BUILDING_REPAIR_PURPOSE).count() == 0
 
 
 def test_open_building_requires_owner(client):

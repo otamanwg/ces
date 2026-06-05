@@ -13,6 +13,7 @@ from backend.app.schemas.mvp import (
     BuildingActivationActionData,
     BuildingItem,
     BuildingOpenActionData,
+    BuildingRepairActionData,
     BusinessBlueprintItem,
     BusinessBlueprintsData,
     BusinessMarketData,
@@ -46,7 +47,7 @@ from backend.app.services.business_market import (
     process_business_purchase,
 )
 from backend.app.services.building_applications import create_building_application
-from backend.app.services.buildings import activate_building_application, open_building_operations
+from backend.app.services.buildings import activate_building_application, open_building_operations, repair_building_operations
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work, update_inflation_rate
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.ids import to_uuid, try_uuid
@@ -106,6 +107,10 @@ class BuildingApplicationActivate(BaseModel):
 
 
 class BuildingOpen(BaseModel):
+    player_id: str
+
+
+class BuildingRepair(BaseModel):
     player_id: str
 
 
@@ -432,6 +437,44 @@ def open_building(
         BuildingOpenActionData,
         building=building_item(res["building"]),
         opening_fee=res["opening_fee"],
+    )
+
+
+@router.post("/buildings/{building_id}/repair")
+def repair_building(
+    building_id: str,
+    data: BuildingRepair,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db),
+):
+    player = require_player(db, data.player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    cached = get_idempotent_response(db, "building_repair", idempotency_key, data.player_id)
+    if cached:
+        return cached
+
+    building_uuid = try_uuid(building_id)
+    if building_uuid is None:
+        return api_error("Будівлю не знайдено.")
+
+    res = repair_building_operations(db, player, building_uuid)
+    if not res["success"]:
+        return api_error(res["message"])
+
+    db.refresh(player)
+    return save_player_action_response(
+        db,
+        "building_repair",
+        idempotency_key,
+        data.player_id,
+        player,
+        res["message"],
+        BuildingRepairActionData,
+        building=building_item(res["building"]),
+        repair_fee=res["repair_fee"],
     )
 
 

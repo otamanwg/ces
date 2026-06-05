@@ -243,6 +243,11 @@ class BuildingOpenActionData(PlayerSnapshotData):
     opening_fee: float
 
 
+class BuildingRepairActionData(PlayerSnapshotData):
+    building: BuildingItem
+    repair_fee: float
+
+
 class DayTickCityData(BaseModel):
     id: str
     inflation_rate: float

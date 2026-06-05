@@ -14,6 +14,9 @@ MAINTENANCE_DUE = "maintenance_due"
 APPLICATION_ACTIVATED = "activated"
 PARCEL_BUILT = "built"
 BUILDING_UPKEEP_PURPOSE = "building_upkeep"
+BUILDING_REPAIR_PURPOSE = "building_repair_fee"
+MIN_BUILDING_REPAIR_FEE = money("25.00")
+BUILDING_REPAIR_UPKEEP_MULTIPLIER = money("2.00")
 BUSINESS_PROJECT_TYPES = {
     "commercial": "shop",
     "industrial": "factory",
@@ -92,6 +95,12 @@ def get_building_opening_fee(building: Building):
     return BUILDING_OPENING_FEES.get(building.project_type, money("100.00"))
 
 
+def get_building_repair_fee(building: Building):
+    if building.business_blueprint:
+        return max(money(building.business_blueprint.upkeep_daily) * BUILDING_REPAIR_UPKEEP_MULTIPLIER, MIN_BUILDING_REPAIR_FEE)
+    return money("50.00")
+
+
 def open_building_operations(db: Session, player: Player, building_id: UUID) -> dict:
     building = db.query(Building).filter(Building.id == building_id).with_for_update().first()
     if not building or building.city_id != player.city_id:
@@ -163,6 +172,60 @@ def open_building_operations(db: Session, player: Player, building_id: UUID) -> 
         "message": f"Будівлю '{building.name}' відкрито для роботи.",
         "building": building,
         "opening_fee": float(fee),
+    }
+
+
+def repair_building_operations(db: Session, player: Player, building_id: UUID) -> dict:
+    building = db.query(Building).filter(Building.id == building_id).with_for_update().first()
+    if not building or building.city_id != player.city_id:
+        return {"success": False, "message": "Будівлю не знайдено."}
+
+    if building.owner_player_id != player.id:
+        return {"success": False, "message": "Ремонтувати можна лише власну будівлю."}
+
+    if building.status != BUILT:
+        return {"success": False, "message": "Ремонтувати можна лише готову будівлю."}
+
+    if building.operating_status == ACTIVE:
+        return {"success": False, "message": "Будівля вже працює."}
+
+    if building.operating_status == INACTIVE:
+        return {"success": False, "message": "Будівля ще не відкрита для роботи."}
+
+    if building.operating_status != MAINTENANCE_DUE:
+        return {"success": False, "message": "Будівля зараз не потребує ремонту."}
+
+    fee = get_building_repair_fee(building)
+    if money(player.balance) < fee:
+        return {"success": False, "message": f"Недостатньо коштів для ремонту будівлі! Потрібно: {fee:.2f} ₴."}
+
+    city = db.query(City).filter(City.id == player.city_id).first()
+    if not city:
+        return {"success": False, "message": "Місто не знайдено"}
+
+    debit(db, player, "balance", fee)
+    credit(db, city, "treasury_balance", fee)
+    log_transaction(
+        db,
+        city.id,
+        sender_id=player.id,
+        sender_type="player",
+        receiver_id=city.id,
+        receiver_type="treasury",
+        amount=float(fee),
+        tax=0.0,
+        purpose=BUILDING_REPAIR_PURPOSE,
+    )
+    building.operating_status = ACTIVE
+
+    db.commit()
+    db.refresh(building)
+
+    return {
+        "success": True,
+        "message": f"Будівлю '{building.name}' відремонтовано і повернуто в роботу.",
+        "building": building,
+        "repair_fee": float(fee),
     }
 
 

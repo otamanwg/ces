@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 26: Building Repair/Reopen Path.**
+**Sprint 27: Building Portfolio API & Client Prep.**
 
-Мета: якщо active building перейшла в `maintenance_due`, гравець має отримати зрозумілий шлях повернення будівлі в роботу, перш ніж ми додамо банкрутство чи аукціони.
+Мета: гравець і клієнт мають бачити власні фізичні будівлі, їхній статус, blueprint, fees і доступні дії, перш ніж ми виведемо це в Godot UI.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -464,11 +464,26 @@ DoD:
 
 Порядок:
 
-1. ⏳ Backend: визначити repair fee для `maintenance_due` building.
-2. ⏳ Backend/API: authenticated repair/reopen endpoint тільки для власника.
-3. ⏳ Backend: ledger purpose `building_repair_fee`.
-4. ⏳ Backend/tests: owner/status/money/idempotency coverage.
+1. ✅ Backend: визначити repair fee для `maintenance_due` building.
+2. ✅ Backend/API: authenticated repair/reopen endpoint тільки для власника.
+3. ✅ Backend: ledger purpose `building_repair_fee`.
+4. ✅ Backend/tests: owner/status/money/idempotency coverage.
 5. ⏳ Client later: показ проблемної будівлі й кнопка ремонту.
+6. ⏳ Наступний backend крок: building portfolio API для власних будівель.
+
+---
+
+## Sprint 27 — Building Portfolio API & Client Prep
+
+Ціль: створити контракт, з якого Godot зможе показати гравцю його ділянки/будівлі, активний/проблемний стан, repair fee і наступну дію.
+
+Порядок:
+
+1. ⏳ Backend/API: authenticated endpoint для списку будівель гравця.
+2. ⏳ Backend DTO: building + blueprint summary + opening/repair fee + available actions.
+3. ⏳ Backend/tests: owner-only, status/action matrix, DTO validation.
+4. ⏳ Client: мінімальний read-only блок "Мої будівлі" у dashboard.
+5. ⏳ Client: repair button тільки для `maintenance_due`.
 
 ---
 
