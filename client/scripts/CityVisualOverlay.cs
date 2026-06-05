@@ -28,6 +28,7 @@ public partial class CityVisualOverlay : Control
 	};
 
 	private DashboardCityVisualModel _model = DashboardCityVisualModel.Empty;
+	private bool _streetFocus;
 
 	public override void _Ready()
 	{
@@ -47,6 +48,15 @@ public partial class CityVisualOverlay : Control
 		QueueRedraw();
 	}
 
+	public string ToggleFocusMode()
+	{
+		_streetFocus = !_streetFocus;
+		QueueRedraw();
+		return FocusButtonText;
+	}
+
+	public string FocusButtonText => _streetFocus ? "Огляд" : "Вулиця";
+
 	public override void _Draw()
 	{
 		Vector2 size = Size;
@@ -56,10 +66,89 @@ public partial class CityVisualOverlay : Control
 		}
 
 		DrawRect(new Rect2(Vector2.Zero, size), new Color(0.02f, 0.03f, 0.04f, 0.20f), true);
+		if (_streetFocus)
+		{
+			DrawStreetFocus(size);
+			return;
+		}
+
 		DrawRoadNetwork(size);
 		DrawDistricts(size);
 		DrawPlayerAssets(size);
 		DrawLegend(size);
+	}
+
+	private void DrawStreetFocus(Vector2 size)
+	{
+		Font font = GetThemeDefaultFont();
+		DrawRect(new Rect2(Vector2.Zero, size), new Color(0.03f, 0.04f, 0.05f, 0.30f), true);
+
+		Rect2 street = new(new Vector2(0, size.Y * 0.70f), new Vector2(size.X, size.Y * 0.30f));
+		DrawRect(street, new Color(0.05f, 0.055f, 0.06f, 0.86f), true);
+		DrawLine(new Vector2(24, street.Position.Y + street.Size.Y * 0.48f), new Vector2(size.X - 24, street.Position.Y + street.Size.Y * 0.48f), new Color(0.90f, 0.82f, 0.52f, 0.65f), 3.0f, true);
+		DrawLine(new Vector2(0, street.Position.Y), new Vector2(size.X, street.Position.Y), new Color(0.70f, 0.72f, 0.66f, 0.72f), 7.0f, true);
+
+		DrawString(font, new Vector2(22, 32), "Street focus: вокзал / комерційне ядро", HorizontalAlignment.Left, size.X - 44, 15, new Color(0.98f, 0.97f, 0.90f, 0.96f));
+		DrawString(font, new Vector2(22, 54), _model.HeadlineText, HorizontalAlignment.Left, size.X - 44, 13, new Color(0.88f, 0.90f, 0.84f, 0.82f));
+
+		var buildings = _model.Buildings.Take(5).ToArray();
+		if (buildings.Length == 0)
+		{
+			DrawEmptyStreetLots(size, font);
+			return;
+		}
+
+		float lotWidth = Math.Min(112.0f, (size.X - 90.0f) / buildings.Length);
+		float startX = (size.X - (lotWidth * buildings.Length + 14.0f * (buildings.Length - 1))) / 2.0f;
+		for (int index = 0; index < buildings.Length; index++)
+		{
+			Rect2 lot = new(
+				new Vector2(startX + index * (lotWidth + 14.0f), size.Y * 0.38f),
+				new Vector2(lotWidth, size.Y * 0.28f)
+			);
+			DrawStreetBuilding(buildings[index], lot, font);
+		}
+	}
+
+	private void DrawEmptyStreetLots(Vector2 size, Font font)
+	{
+		string[] labels = { "Вокзал", "Вільна земля", "Мерія", "Комерція" };
+		float lotWidth = Math.Min(118.0f, (size.X - 110.0f) / labels.Length);
+		float startX = (size.X - (lotWidth * labels.Length + 14.0f * (labels.Length - 1))) / 2.0f;
+		for (int index = 0; index < labels.Length; index++)
+		{
+			Rect2 lot = new(
+				new Vector2(startX + index * (lotWidth + 14.0f), size.Y * 0.40f),
+				new Vector2(lotWidth, size.Y * 0.24f)
+			);
+			DrawRect(lot, new Color(0.22f, 0.28f, 0.30f, 0.72f), true);
+			DrawRect(lot, new Color(1.0f, 1.0f, 1.0f, 0.18f), false, 2.0f);
+			DrawString(font, lot.Position + new Vector2(8, lot.Size.Y - 16), labels[index], HorizontalAlignment.Left, lot.Size.X - 16, 12, new Color(0.96f, 0.96f, 0.90f, 0.86f));
+		}
+	}
+
+	private void DrawStreetBuilding(DashboardCityVisualBuilding building, Rect2 lot, Font font)
+	{
+		Color fill = BuildingColor(building.BlueprintCode, building.ProjectType);
+		if (building.OperatingStatus == "inactive")
+		{
+			fill.A = 0.62f;
+		}
+
+		DrawRect(lot, fill, true);
+		DrawRect(lot, building.OperatingStatus == "maintenance_due" ? new Color(0.98f, 0.23f, 0.18f, 0.96f) : new Color(1.0f, 1.0f, 1.0f, 0.24f), false, 2.0f);
+
+		for (int floor = 0; floor < 2; floor++)
+		{
+			for (int window = 0; window < 3; window++)
+			{
+				Vector2 windowPos = lot.Position + new Vector2(12 + window * 28, 14 + floor * 26);
+				DrawRect(new Rect2(windowPos, new Vector2(16, 14)), new Color(1.0f, 0.90f, 0.54f, 0.42f), true);
+			}
+		}
+
+		DrawString(font, lot.Position + new Vector2(0, lot.Size.Y - 30), building.ArchetypeLabel, HorizontalAlignment.Center, lot.Size.X, 16, new Color(0.98f, 0.98f, 0.94f, 0.94f));
+		DrawString(font, lot.Position + new Vector2(8, lot.Size.Y - 10), building.OperatingStatus, HorizontalAlignment.Left, lot.Size.X - 16, 11, new Color(0.96f, 0.96f, 0.90f, 0.82f));
 	}
 
 	private void DrawRoadNetwork(Vector2 size)

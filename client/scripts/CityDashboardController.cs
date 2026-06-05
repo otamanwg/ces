@@ -47,6 +47,7 @@ public partial class CityDashboardController : Control
 	private Button _openBuildingButton;
 	private Button _repairBuildingButton;
 	private Button _buyStarterLandButton;
+	private Button _visualFocusButton;
 	private DashboardStatusPresenter _statusPresenter;
 	private DashboardActionPresenter _actionPresenter;
 	private bool _applyFirstVacancy;
@@ -115,6 +116,14 @@ public partial class CityDashboardController : Control
 		if (_buyStarterLandButton != null)
 		{
 			_buyStarterLandButton.Pressed += OnBuyStarterLandButtonPressed;
+		}
+		if (_visualFocusButton != null)
+		{
+			_visualFocusButton.Pressed += OnVisualFocusButtonPressed;
+			if (_cityVisualOverlay != null)
+			{
+				_visualFocusButton.Text = _cityVisualOverlay.FocusButtonText;
+			}
 		}
 
 		_apiClient = GetNodeOrNull<ApiClient>("/root/ApiClient");
@@ -196,6 +205,7 @@ public partial class CityDashboardController : Control
 		_openBuildingButton ??= GetNodeOrNull<Button>("%OpenBuildingButton");
 		_repairBuildingButton ??= GetNodeOrNull<Button>("%RepairBuildingButton");
 		_buyStarterLandButton ??= GetNodeOrNull<Button>("%BuyStarterLandButton");
+		_visualFocusButton ??= GetNodeOrNull<Button>("%VisualFocusButton");
 	}
 
 	private void OnApiRequestFinished(string endpoint, bool success, string jsonBody)
@@ -1572,6 +1582,20 @@ public partial class CityDashboardController : Control
 			_apiClient?.GetAuthorized($"/api/player/{_session.PlayerId}", _session.AuthToken);
 			RefreshBuildingPortfolio();
 			RefreshBuildCatalog(forceLandRefresh: true);
+		}
+	}
+
+	public void OnVisualFocusButtonPressed()
+	{
+		if (_cityVisualOverlay == null)
+		{
+			return;
+		}
+
+		string nextText = _cityVisualOverlay.ToggleFocusMode();
+		if (_visualFocusButton != null)
+		{
+			_visualFocusButton.Text = nextText;
 		}
 	}
 

@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 31: Building Archetype Markers.**
+**Sprint 32: Overview / Street Focus Toggle.**
 
-Мета: створені гравцем будівлі мають відображатися на visual map як фізичні маркери з archetype і operating status, а не тільки як число в portfolio.
+Мета: дати гравцю перше відчуття zoom-поведінки: overview для міста-сервера і street-focus для стартової зони/активів без зміни backend mechanics.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -553,9 +553,28 @@ DoD:
 
 Наступний visual крок після Sprint 31:
 
-1. Overview/street-focus toggle.
-2. Легка анімація міського шару без зміни gameplay state.
-3. Підготовка style-token palette для майбутніх visual packs.
+1. ✅ Overview/street-focus toggle.
+2. ⏳ Легка анімація міського шару без зміни gameplay state.
+3. ⏳ Підготовка style-token palette для майбутніх visual packs.
+
+---
+
+## Sprint 32 — Overview / Street Focus Toggle
+
+Ціль: центральна visual panel має перемикатися між картою районів і ближчим street-focus шаром, щоб майбутній zoom не вимагав переписування сцени.
+
+Порядок:
+
+1. ✅ `CityVisualOverlay`: focus mode і street-focus drawing.
+2. ✅ Scene: кнопка `VisualFocusButton` у visual panel.
+3. ✅ Controller: handler перемикає режим overlay і текст кнопки.
+4. ✅ Godot MCP smoke + `scripts/check.ps1` + commit.
+
+Наступний visual крок після Sprint 32:
+
+1. Легка idle-анімація overlay: traffic pulse, asset attention pulse.
+2. Style-token palette для майбутніх visual packs.
+3. Підготовка screenshot/playtest script для швидкого показу результату.
 
 ---
 
