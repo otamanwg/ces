@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="..\client\scripts\DashboardActionState.cs" Link="DashboardActionState.cs" />
     <Compile Include="..\client\scripts\DashboardActionViewModel.cs" Link="DashboardActionViewModel.cs" />
+    <Compile Include="..\client\scripts\DashboardBuildCatalog.cs" Link="DashboardBuildCatalog.cs" />
     <Compile Include="..\client\scripts\DashboardBuildingPortfolio.cs" Link="DashboardBuildingPortfolio.cs" />
     <Compile Include="..\client\scripts\DashboardEventHistory.cs" Link="DashboardEventHistory.cs" />
     <Compile Include="..\client\scripts\DashboardPlayerSnapshot.cs" Link="DashboardPlayerSnapshot.cs" />

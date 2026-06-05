@@ -244,4 +244,106 @@ AssertEqual("building-2", repairPortfolio.RepairCandidate!.Id, "Portfolio repair
 AssertEqual(null, repairPortfolio.OpenCandidate, "Maintenance building has no open candidate");
 AssertEqual("1 будівля: Портфельний кіоск | потрібен ремонт 25 ₴ | Автовокзал | upkeep 8 ₴", repairPortfolio.SummaryText, "Repair portfolio summary");
 
+var landCatalogJson = JsonNode.Parse(
+	"""
+	{
+		"parcels": [
+			{
+				"id": "land-1",
+				"code": "bus_station_kiosk_lot",
+				"label": "Мала ділянка біля вокзалу",
+				"district_name": "Автовокзал",
+				"land_type": "in_city",
+				"zoning_type": "commercial",
+				"area_hectares": 0.20,
+				"current_price": 200.0,
+				"status": "city_owned",
+				"owner_player_id": null
+			},
+			{
+				"id": "land-2",
+				"code": "owned_lot",
+				"label": "Вже куплена ділянка",
+				"district_name": "Комерційний центр",
+				"land_type": "in_city",
+				"zoning_type": "commercial",
+				"area_hectares": 0.50,
+				"current_price": 350.0,
+				"status": "owned",
+				"owner_player_id": "other-player"
+			}
+		]
+	}
+	"""
+)!;
+var blueprintCatalogJson = JsonNode.Parse(
+	"""
+	{
+		"blueprints": [
+			{
+				"id": "blueprint-1",
+				"code": "station_kiosk",
+				"name": "Вокзальний кіоск",
+				"category": "starter_retail",
+				"project_type": "commercial",
+				"description": "Малий торговий кіоск біля вокзалу.",
+				"difficulty": "easy",
+				"allowed_land_types": ["in_city"],
+				"allowed_zoning_types": ["commercial"],
+				"min_area_hectares": 0.20,
+				"construction_cost": 300.0,
+				"opening_fee": 100.0,
+				"recommended_cash_reserve": 150.0,
+				"daily_profit_min": 20.0,
+				"daily_profit_max": 55.0,
+				"upkeep_daily": 8.0,
+				"risk_level": 1,
+				"risks": ["Низька маржа."],
+				"player_hints": ["Підходить як перший бізнес."]
+			},
+			{
+				"id": "blueprint-2",
+				"code": "coffee_shop",
+				"name": "Кав'ярня району",
+				"category": "food_service",
+				"project_type": "commercial",
+				"description": "Невелика кав'ярня.",
+				"difficulty": "easy",
+				"allowed_land_types": ["in_city"],
+				"allowed_zoning_types": ["commercial"],
+				"min_area_hectares": 0.35,
+				"construction_cost": 650.0,
+				"opening_fee": 120.0,
+				"recommended_cash_reserve": 300.0,
+				"daily_profit_min": 30.0,
+				"daily_profit_max": 85.0,
+				"upkeep_daily": 15.0,
+				"risk_level": 2,
+				"risks": [],
+				"player_hints": []
+			}
+		]
+	}
+	"""
+)!;
+var buildCatalog = DashboardBuildCatalog.FromJson(landCatalogJson, blueprintCatalogJson);
+AssertEqual(2, buildCatalog.LandOptions.Count, "Build catalog parses land options");
+AssertEqual(2, buildCatalog.Blueprints.Count, "Build catalog parses blueprints");
+var starterLand = buildCatalog.StarterLandFor(500)!;
+AssertEqual("land-1", starterLand.Id, "Build catalog chooses affordable city land");
+AssertEqual(true, starterLand.IsCityOwned, "Starter land must be city-owned");
+AssertEqual(null, buildCatalog.StarterLandFor(199), "Build catalog rejects unaffordable land");
+var compatibleBlueprints = buildCatalog.BlueprintsFor(starterLand);
+AssertEqual(1, compatibleBlueprints.Count, "Build catalog filters incompatible blueprints");
+AssertEqual("station_kiosk", compatibleBlueprints[0].Code, "Build catalog keeps compatible starter blueprint");
+AssertEqual("20-55 ₴/день", compatibleBlueprints[0].ProfitText, "Blueprint profit text");
+AssertEqual("ризик 1/5", compatibleBlueprints[0].RiskText, "Blueprint risk text");
+AssertSequence(new[] { "Низька маржа." }, compatibleBlueprints[0].Risks.ToArray(), "Blueprint risks parsed");
+var starterPlan = buildCatalog.StarterPlanFor(500)!;
+AssertEqual("land-1", starterPlan.Land.Id, "Starter plan land id");
+AssertEqual("blueprint-1", starterPlan.Blueprint.Id, "Starter plan blueprint id");
+AssertEqual(550.0, starterPlan.Blueprint.TotalRecommendedBudget, "Starter blueprint recommended budget");
+AssertEqual("Перший план: Вокзальний кіоск | земля 200 ₴ | будівництво 300 ₴ | відкриття 100 ₴ | резерв 150 ₴", buildCatalog.SummaryFor(500), "Starter plan summary");
+AssertEqual("Будівництво: бракує коштів або сумісної ділянки", buildCatalog.SummaryFor(199), "Build catalog explains missing starter plan");
+
 Console.WriteLine("Client logic tests passed.");
