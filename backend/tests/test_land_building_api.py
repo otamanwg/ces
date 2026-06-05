@@ -5,8 +5,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.app.database import get_db
-from backend.app.models import BuildingApplication, City, LandParcel, Player, TransactionModelLog
-from backend.app.schemas.mvp import BuildingApplicationData, LandParcelsData, LandPurchaseActionData
+from backend.app.models import Building, BuildingApplication, City, LandParcel, Player, TransactionModelLog
+from backend.app.schemas.mvp import (
+    BuildingActivationActionData,
+    BuildingApplicationData,
+    LandParcelsData,
+    LandPurchaseActionData,
+)
 from backend.app.seed import seed_initial_data
 from backend.app.services.land import OWNED
 from backend.main import app
@@ -217,6 +222,144 @@ def test_building_application_uses_ai_mayor_policy_and_is_idempotent(client):
     assert repeat.status_code == 200
     assert repeat.json() == body
     assert db.query(BuildingApplication).count() == 1
+
+
+def test_approved_building_application_activation_creates_building_and_is_idempotent(client):
+    test_client, db = client
+    player_id, token = register_player(test_client, "approved-builder")
+    parcel = db.query(LandParcel).filter(LandParcel.code == "bus_station_kiosk_lot").one()
+
+    buy_res = test_client.post(
+        "/api/land/buy",
+        json={"player_id": player_id, "land_parcel_id": str(parcel.id)},
+        headers={"X-Player-Token": token, "Idempotency-Key": "activation-land-buy"},
+    ).json()
+    assert buy_res["success"] is True
+
+    application_res = test_client.post(
+        "/api/building/applications",
+        json={
+            "player_id": player_id,
+            "land_parcel_id": str(parcel.id),
+            "proposed_name": "Вокзальний кіоск",
+            "project_type": "commercial",
+            "expected_jobs": 2,
+            "traffic_load": 3,
+            "service_load": 2,
+            "medical_load": 1,
+        },
+        headers={"X-Player-Token": token, "Idempotency-Key": "activation-application"},
+    ).json()
+    assert application_res["success"] is True
+    application_id = application_res["data"]["id"]
+    assert application_res["data"]["status"] == "approved"
+
+    activate_headers = {"X-Player-Token": token, "Idempotency-Key": "activation-1"}
+    activate_res = test_client.post(
+        f"/api/building/applications/{application_id}/activate",
+        json={"player_id": player_id},
+        headers=activate_headers,
+    )
+
+    assert activate_res.status_code == 200
+    body = activate_res.json()
+    assert body["success"] is True
+    data = BuildingActivationActionData.model_validate(body["data"])
+    assert data.building.name == "Вокзальний кіоск"
+    assert data.building.status == "built"
+    assert data.building.operating_status == "inactive"
+    assert data.building.owner_player_id == player_id
+
+    db.refresh(parcel)
+    application = db.query(BuildingApplication).filter(BuildingApplication.id == application_id).one()
+    assert parcel.status == "built"
+    assert application.status == "activated"
+    assert db.query(Building).count() == 1
+
+    repeat = test_client.post(
+        f"/api/building/applications/{application_id}/activate",
+        json={"player_id": player_id},
+        headers=activate_headers,
+    )
+    assert repeat.status_code == 200
+    assert repeat.json() == body
+    assert db.query(Building).count() == 1
+
+
+def test_revision_building_application_cannot_be_activated(client):
+    test_client, db = client
+    player_id, token = register_player(test_client, "revision-builder")
+    parcel = db.query(LandParcel).filter(LandParcel.code == "bus_station_kiosk_lot").one()
+    buy_res = test_client.post(
+        "/api/land/buy",
+        json={"player_id": player_id, "land_parcel_id": str(parcel.id)},
+        headers={"X-Player-Token": token},
+    ).json()
+    assert buy_res["success"] is True
+
+    application_res = test_client.post(
+        "/api/building/applications",
+        json={
+            "player_id": player_id,
+            "land_parcel_id": str(parcel.id),
+            "proposed_name": "Промисловий цех біля вокзалу",
+            "project_type": "industrial",
+            "expected_jobs": 5,
+        },
+        headers={"X-Player-Token": token},
+    ).json()
+    assert application_res["success"] is True
+    assert application_res["data"]["status"] == "revision_required"
+
+    activate = test_client.post(
+        f"/api/building/applications/{application_res['data']['id']}/activate",
+        json={"player_id": player_id},
+        headers={"X-Player-Token": token},
+    )
+
+    assert activate.status_code == 200
+    body = activate.json()
+    assert body["success"] is False
+    assert body["message"] == "Активувати можна лише погоджену AI-мером заявку."
+    assert db.query(Building).count() == 0
+
+
+def test_building_application_activation_requires_applicant(client):
+    test_client, db = client
+    owner_id, owner_token = register_player(test_client, "activation-owner")
+    intruder_id, intruder_token = register_player(test_client, "activation-intruder")
+    parcel = db.query(LandParcel).filter(LandParcel.code == "bus_station_kiosk_lot").one()
+    buy_res = test_client.post(
+        "/api/land/buy",
+        json={"player_id": owner_id, "land_parcel_id": str(parcel.id)},
+        headers={"X-Player-Token": owner_token},
+    ).json()
+    assert buy_res["success"] is True
+
+    application_res = test_client.post(
+        "/api/building/applications",
+        json={
+            "player_id": owner_id,
+            "land_parcel_id": str(parcel.id),
+            "proposed_name": "Магазин власника",
+            "project_type": "commercial",
+            "expected_jobs": 3,
+        },
+        headers={"X-Player-Token": owner_token},
+    ).json()
+    assert application_res["success"] is True
+
+    activate = test_client.post(
+        f"/api/building/applications/{application_res['data']['id']}/activate",
+        json={"player_id": intruder_id},
+        headers={"X-Player-Token": intruder_token},
+    )
+
+    assert activate.status_code == 200
+    body = activate.json()
+    assert body["success"] is False
+    assert body["message"] == "Активувати можна лише власну будівельну заявку."
+    assert db.query(Building).count() == 0
 
 
 def test_building_application_can_return_revision_questions(client):

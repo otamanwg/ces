@@ -184,8 +184,25 @@ class BuildingApplicationData(BaseModel):
     mayor_questions: list[str]
 
 
+class BuildingItem(BaseModel):
+    id: str
+    city_id: str
+    district_id: str
+    land_parcel_id: str
+    source_application_id: str
+    owner_player_id: str
+    name: str
+    project_type: str
+    status: str
+    operating_status: str
+
+
 class LandPurchaseActionData(PlayerSnapshotData):
     land_parcel: LandParcelItem
+
+
+class BuildingActivationActionData(PlayerSnapshotData):
+    building: BuildingItem
 
 
 class DayTickCityData(BaseModel):

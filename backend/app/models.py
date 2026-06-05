@@ -45,6 +45,11 @@ class City(Base):
         back_populates="city",
         cascade="all, delete-orphan",
     )
+    buildings: Mapped[List["Building"]] = relationship(
+        "Building",
+        back_populates="city",
+        cascade="all, delete-orphan",
+    )
 
 
 class CityDistrict(Base):
@@ -82,6 +87,11 @@ class CityDistrict(Base):
         back_populates="district",
         cascade="all, delete-orphan",
     )
+    buildings: Mapped[List["Building"]] = relationship(
+        "Building",
+        back_populates="district",
+        cascade="all, delete-orphan",
+    )
 
 
 class LandParcel(Base):
@@ -112,6 +122,7 @@ class LandParcel(Base):
         back_populates="land_parcel",
         cascade="all, delete-orphan",
     )
+    building: Mapped[Optional["Building"]] = relationship("Building", back_populates="land_parcel", uselist=False)
 
 
 class BuildingApplication(Base):
@@ -141,6 +152,36 @@ class BuildingApplication(Base):
     district: Mapped["CityDistrict"] = relationship("CityDistrict", back_populates="building_applications")
     land_parcel: Mapped["LandParcel"] = relationship("LandParcel", back_populates="building_applications")
     applicant: Mapped["Player"] = relationship("Player", back_populates="building_applications")
+    building: Mapped[Optional["Building"]] = relationship("Building", back_populates="source_application", uselist=False)
+
+
+class Building(Base):
+    __tablename__ = "buildings"
+    __table_args__ = (
+        UniqueConstraint("land_parcel_id", name="uq_buildings_land_parcel_id"),
+        UniqueConstraint("source_application_id", name="uq_buildings_source_application_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    district_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False)
+    land_parcel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("land_parcels.id", ondelete="CASCADE"), nullable=False)
+    source_application_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("building_applications.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    owner_player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    project_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="built")
+    operating_status: Mapped[str] = mapped_column(String(30), default="inactive")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    city: Mapped["City"] = relationship("City", back_populates="buildings")
+    district: Mapped["CityDistrict"] = relationship("CityDistrict", back_populates="buildings")
+    land_parcel: Mapped["LandParcel"] = relationship("LandParcel", back_populates="building")
+    source_application: Mapped["BuildingApplication"] = relationship("BuildingApplication", back_populates="building")
+    owner: Mapped["Player"] = relationship("Player", back_populates="buildings")
 
 # 2. МОДЕЛЬ ГРАВЦЯ
 class Player(Base):
@@ -173,6 +214,7 @@ class Player(Base):
         "BuildingApplication",
         back_populates="applicant",
     )
+    buildings: Mapped[List["Building"]] = relationship("Building", back_populates="owner")
 
 # 3. МОДЕЛЬ ПІДПРИЄМСТВА (БІЗНЕСУ)
 class Business(Base):

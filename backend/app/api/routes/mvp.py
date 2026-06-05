@@ -7,9 +7,11 @@ from sqlalchemy.orm import Session
 from backend.app.core.config import settings
 from backend.app.api.responses import build_player_action_response, save_player_action_response
 from backend.app.database import get_db
-from backend.app.models import BuildingApplication, City, Hostel, LandParcel, Player, SportsClub
+from backend.app.models import Building, BuildingApplication, City, Hostel, LandParcel, Player, SportsClub
 from backend.app.schemas.mvp import (
     BuildingApplicationData,
+    BuildingActivationActionData,
+    BuildingItem,
     BusinessMarketData,
     BusinessMarketItem,
     BusinessBuyActionData,
@@ -40,6 +42,7 @@ from backend.app.services.business_market import (
     process_business_purchase,
 )
 from backend.app.services.building_applications import create_building_application
+from backend.app.services.buildings import activate_building_application
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work, update_inflation_rate
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.ids import to_uuid, try_uuid
@@ -91,6 +94,10 @@ class BuildingApplicationCreate(BaseModel):
     service_load: int = 0
     medical_load: int = 0
     public_benefit: int = 0
+
+
+class BuildingApplicationActivate(BaseModel):
+    player_id: str
 
 
 class SportsContractJoin(BaseModel):
@@ -154,6 +161,21 @@ def building_application_data(application: BuildingApplication) -> BuildingAppli
             for issue in application.mayor_issues
         ],
         mayor_questions=list(application.mayor_questions),
+    )
+
+
+def building_item(building: Building) -> BuildingItem:
+    return BuildingItem(
+        id=str(building.id),
+        city_id=str(building.city_id),
+        district_id=str(building.district_id),
+        land_parcel_id=str(building.land_parcel_id),
+        source_application_id=str(building.source_application_id),
+        owner_player_id=str(building.owner_player_id),
+        name=building.name,
+        project_type=building.project_type,
+        status=building.status,
+        operating_status=building.operating_status,
     )
 
 
@@ -281,6 +303,43 @@ def submit_building_application(
         building_application_data(res["application"]).model_dump(),
     )
     return save_idempotent_response(db, "building_application", idempotency_key, data.player_id, response)
+
+
+@router.post("/building/applications/{application_id}/activate")
+def activate_approved_building_application(
+    application_id: str,
+    data: BuildingApplicationActivate,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db),
+):
+    player = require_player(db, data.player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    cached = get_idempotent_response(db, "building_application_activate", idempotency_key, data.player_id)
+    if cached:
+        return cached
+
+    application_uuid = try_uuid(application_id)
+    if application_uuid is None:
+        return api_error("Будівельну заявку не знайдено.")
+
+    res = activate_building_application(db, player, application_uuid)
+    if not res["success"]:
+        return api_error(res["message"])
+
+    db.refresh(player)
+    return save_player_action_response(
+        db,
+        "building_application_activate",
+        idempotency_key,
+        data.player_id,
+        player,
+        res["message"],
+        BuildingActivationActionData,
+        building=building_item(res["building"]),
+    )
 
 
 @router.post("/city/tick-day")

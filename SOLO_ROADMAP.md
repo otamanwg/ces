@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 22: Building Activation.**
+**Sprint 23: Building Operations.**
 
-Мета: після купівлі землі й погодженої заявки підготувати створення реального building/asset, але без поспішного UI.
+Мета: перетворити створену будівлю з пасивного запису в керований економічний актив.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -403,10 +403,24 @@ DoD:
 
 Порядок:
 
-1. ⏳ Backend: визначити мінімальну `Building`/asset model.
-2. ⏳ Backend: activation endpoint тільки для `approved` applications.
-3. ⏳ Backend: parcel status переходить із `owned` у `under_construction` або `built`.
-4. ⏳ Backend/tests: approved/revision/ownership/idempotency coverage.
+1. ✅ Backend: визначити мінімальну `Building`/asset model.
+2. ✅ Backend: activation endpoint тільки для `approved` applications.
+3. ✅ Backend: parcel status переходить із `owned` у `built`.
+4. ✅ Backend/tests: approved/revision/ownership/idempotency coverage.
+5. ✅ Backend: `Building` стартує як `built` + `inactive`.
+
+---
+
+## Sprint 23 — Building Operations
+
+Ціль: будівля після activation має мати зрозумілий шлях до операційної економіки, але без включення повної симуляції одразу.
+
+Порядок:
+
+1. ⏳ Backend: endpoint для opening/activation operating status.
+2. ⏳ Backend: визначити мінімальні правила upkeep для `inactive`/`active`.
+3. ⏳ Backend: зв'язати commercial building із бізнес-можливістю або rental slot.
+4. ⏳ Backend/tests: ownership, status transition, ledger coverage.
 
 ---
 
