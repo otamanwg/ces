@@ -191,4 +191,57 @@ AssertEqual("", defaultSnapshot.OwnedBusinessId, "Snapshot default owned busines
 AssertEqual("Бізнес: немає", defaultSnapshot.OwnedBusinessText, "Snapshot default owned business text");
 AssertEqual("Спорт: немає", defaultSnapshot.SportsText, "Snapshot default sports text");
 
+var emptyPortfolio = DashboardBuildingPortfolio.FromJson(JsonNode.Parse("""{"buildings": []}""")!);
+AssertEqual(0, emptyPortfolio.Buildings.Count, "Empty building portfolio count");
+AssertEqual("Будівлі: немає", emptyPortfolio.SummaryText, "Empty building portfolio summary");
+AssertEqual(null, emptyPortfolio.OpenCandidate, "Empty building portfolio open action");
+AssertEqual(null, emptyPortfolio.RepairCandidate, "Empty building portfolio repair action");
+
+var activePortfolioJson = JsonNode.Parse(
+	"""
+	{
+		"buildings": [
+			{
+				"id": "building-1",
+				"name": "Вокзальний кіоск",
+				"district_name": "Автовокзал",
+				"operating_status": "inactive",
+				"blueprint_name": "Вокзальний кіоск",
+				"opening_fee": 100.0,
+				"repair_fee": 25.0,
+				"upkeep_daily": 8.0,
+				"available_actions": ["open"]
+			}
+		]
+	}
+	"""
+)!;
+var activePortfolio = DashboardBuildingPortfolio.FromJson(activePortfolioJson);
+AssertEqual(1, activePortfolio.Buildings.Count, "Portfolio parses building count");
+AssertEqual("building-1", activePortfolio.OpenCandidate!.Id, "Portfolio open candidate id");
+AssertEqual(null, activePortfolio.RepairCandidate, "Inactive building has no repair candidate");
+AssertEqual("1 будівля: Вокзальний кіоск | не відкрита, відкриття 100 ₴ | Автовокзал | upkeep 8 ₴", activePortfolio.SummaryText, "Inactive portfolio summary");
+
+var repairPortfolioJson = JsonNode.Parse(
+	"""
+	{
+		"buildings": [
+			{
+				"id": "building-2",
+				"name": "Портфельний кіоск",
+				"district_name": "Автовокзал",
+				"operating_status": "maintenance_due",
+				"repair_fee": 25.0,
+				"upkeep_daily": 8.0,
+				"available_actions": ["repair"]
+			}
+		]
+	}
+	"""
+)!;
+var repairPortfolio = DashboardBuildingPortfolio.FromJson(repairPortfolioJson);
+AssertEqual("building-2", repairPortfolio.RepairCandidate!.Id, "Portfolio repair candidate id");
+AssertEqual(null, repairPortfolio.OpenCandidate, "Maintenance building has no open candidate");
+AssertEqual("1 будівля: Портфельний кіоск | потрібен ремонт 25 ₴ | Автовокзал | upkeep 8 ₴", repairPortfolio.SummaryText, "Repair portfolio summary");
+
 Console.WriteLine("Client logic tests passed.");

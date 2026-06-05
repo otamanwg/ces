@@ -328,6 +328,48 @@ text = "Наступний крок: —"
 autowrap_mode = 3
 text_overrun_behavior = 3
 
+[node name="BuildingPortfolioPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BuildingPortfolioBox" type="VBoxContainer" parent="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BuildingPortfolioTitle" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox"]
+layout_mode = 2
+text = "Мої будівлі"
+horizontal_alignment = 1
+
+[node name="BuildingPortfolioLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Будівлі: немає"
+autowrap_mode = 3
+text_overrun_behavior = 3
+
+[node name="BuildingPortfolioActions" type="HBoxContainer" parent="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="OpenBuildingButton" type="Button" parent="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Відкрити"
+text_overrun_behavior = 3
+
+[node name="RepairBuildingButton" type="Button" parent="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Ремонт"
+text_overrun_behavior = 3
+
 [node name="GoalPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -526,6 +568,8 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Закрити"
 
+[connection signal="pressed" from="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/OpenBuildingButton" to="." method="OnOpenBuildingButtonPressed"]
+[connection signal="pressed" from="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/RepairBuildingButton" to="." method="OnRepairBuildingButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/ApplyJobButton" to="." method="OnApplyJobButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/WorkButton" to="." method="OnWorkButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/SleepButton" to="." method="OnSleepButtonPressed"]

@@ -17,6 +17,7 @@ public partial class CityDashboardController : Control
 	[Export] public Label EffectsLabel;
 	[Export] public Label ErrorStateLabel;
 	[Export] public Label EventHistoryLabel;
+	[Export] public Label BuildingPortfolioLabel;
 	[Export] public Label GoalLabel;
 	[Export] public Label NextActionLabel;
 	[Export] public ProgressBar GoalProgressBar;
@@ -41,6 +42,8 @@ public partial class CityDashboardController : Control
 	private Button _trainSportsButton;
 	private Button _examButton;
 	private Button _refreshButton;
+	private Button _openBuildingButton;
+	private Button _repairBuildingButton;
 	private DashboardStatusPresenter _statusPresenter;
 	private DashboardActionPresenter _actionPresenter;
 	private bool _applyFirstVacancy;
@@ -51,6 +54,7 @@ public partial class CityDashboardController : Control
 	private bool _pendingSportsClubs;
 	private bool _pendingExamInfo;
 	private bool _pendingRefresh;
+	private bool _pendingBuildingPortfolio;
 	private bool _bootstrapPending = true;
 	private bool _hasJob;
 	private bool _canApplyJob;
@@ -72,6 +76,10 @@ public partial class CityDashboardController : Control
 	private string _pendingSportsJoinKey = "";
 	private string _pendingSportsTrainKey = "";
 	private string _pendingExamKey = "";
+	private string _pendingBuildingOpenKey = "";
+	private string _pendingBuildingRepairKey = "";
+	private string _portfolioOpenBuildingId = "";
+	private string _portfolioRepairBuildingId = "";
 
 	public override void _Ready()
 	{
@@ -143,6 +151,7 @@ public partial class CityDashboardController : Control
 		EffectsLabel ??= GetNodeOrNull<Label>("%EffectsLabel");
 		ErrorStateLabel ??= GetNodeOrNull<Label>("%ErrorStateLabel");
 		EventHistoryLabel ??= GetNodeOrNull<Label>("%EventHistoryLabel");
+		BuildingPortfolioLabel ??= GetNodeOrNull<Label>("%BuildingPortfolioLabel");
 		GoalLabel ??= GetNodeOrNull<Label>("%GoalLabel");
 		NextActionLabel ??= GetNodeOrNull<Label>("%NextActionLabel");
 		GoalProgressBar ??= GetNodeOrNull<ProgressBar>("%GoalProgressBar");
@@ -162,6 +171,8 @@ public partial class CityDashboardController : Control
 		_trainSportsButton ??= GetNodeOrNull<Button>("%TrainSportsButton");
 		_examButton ??= GetNodeOrNull<Button>("%ExamButton");
 		_refreshButton ??= GetNodeOrNull<Button>("%RefreshButton");
+		_openBuildingButton ??= GetNodeOrNull<Button>("%OpenBuildingButton");
+		_repairBuildingButton ??= GetNodeOrNull<Button>("%RepairBuildingButton");
 	}
 
 	private void OnApiRequestFinished(string endpoint, bool success, string jsonBody)
@@ -207,6 +218,12 @@ public partial class CityDashboardController : Control
 		if (endpoint == "/api/education/exam/info")
 		{
 			HandleExamInfo(root);
+			return;
+		}
+
+		if (IsBuildingPortfolioEndpoint(endpoint))
+		{
+			HandleBuildingPortfolio(root);
 			return;
 		}
 
@@ -288,6 +305,7 @@ public partial class CityDashboardController : Control
 		_pendingSportsClubs = false;
 		_pendingExamInfo = false;
 		_pendingRefresh = false;
+		_pendingBuildingPortfolio = false;
 		ClearPendingAction(endpoint);
 		_examPanel?.SetSubmitEnabled(true);
 
@@ -333,6 +351,7 @@ public partial class CityDashboardController : Control
 		_canJoinSports = false;
 		_canTrainSports = false;
 		_canTakeExam = false;
+		ClearBuildingPortfolio();
 		SetErrorState($"{message} Створюємо нового гравця...");
 		UpdateActionButtons();
 		RegisterNewPlayer();
@@ -503,6 +522,36 @@ public partial class CityDashboardController : Control
 		UpdateActionButtons();
 	}
 
+	private void HandleBuildingPortfolio(JsonNode root)
+	{
+		_pendingBuildingPortfolio = false;
+		if (root["success"]?.GetValue<bool>() != true)
+		{
+			string message = root["message"]?.ToString() ?? "Не вдалось завантажити будівлі.";
+			if (IsSessionError(message))
+			{
+				HandleInvalidSession(message);
+			}
+			else
+			{
+				SetErrorState(message);
+			}
+
+			UpdateBuildingPortfolioButtons();
+			return;
+		}
+
+		var portfolio = DashboardBuildingPortfolio.FromJson(root["data"]);
+		if (BuildingPortfolioLabel != null)
+		{
+			BuildingPortfolioLabel.Text = portfolio.SummaryText;
+		}
+
+		_portfolioOpenBuildingId = portfolio.OpenCandidate?.Id ?? "";
+		_portfolioRepairBuildingId = portfolio.RepairCandidate?.Id ?? "";
+		UpdateBuildingPortfolioButtons();
+	}
+
 	private void OnExamSubmitRequested(string answersJson)
 	{
 		if (_session == null || !_session.HasAuthenticatedPlayer)
@@ -602,9 +651,34 @@ public partial class CityDashboardController : Control
 		if (!string.IsNullOrEmpty(snapshot.Id))
 		{
 			_session?.SetPlayer(snapshot.Id, snapshot.Username, snapshot.AuthToken);
+			RefreshBuildingPortfolio();
 		}
 
 		UpdateActionButtons();
+	}
+
+	private void RefreshBuildingPortfolio()
+	{
+		if (_session == null || !_session.HasAuthenticatedPlayer || _pendingBuildingPortfolio)
+		{
+			return;
+		}
+
+		_pendingBuildingPortfolio = true;
+		UpdateBuildingPortfolioButtons();
+		_apiClient?.GetAuthorized($"/api/player/{_session.PlayerId}/buildings", _session.AuthToken);
+	}
+
+	private void ClearBuildingPortfolio()
+	{
+		_pendingBuildingPortfolio = false;
+		_portfolioOpenBuildingId = "";
+		_portfolioRepairBuildingId = "";
+		if (BuildingPortfolioLabel != null)
+		{
+			BuildingPortfolioLabel.Text = "Будівлі: немає";
+		}
+		UpdateBuildingPortfolioButtons();
 	}
 
 	private void UpdateAvailableActions(JsonNode actions)
@@ -830,6 +904,31 @@ public partial class CityDashboardController : Control
 				_canTrainSports,
 				_canTakeExam,
 				!string.IsNullOrEmpty(_ownedBusinessId)));
+		UpdateBuildingPortfolioButtons();
+	}
+
+	private void UpdateBuildingPortfolioButtons()
+	{
+		bool hasPlayer = _session != null && _session.HasAuthenticatedPlayer;
+		bool busy = _bootstrapPending || _pendingBuildingPortfolio || !string.IsNullOrEmpty(_pendingBuildingOpenKey) || !string.IsNullOrEmpty(_pendingBuildingRepairKey);
+
+		if (_openBuildingButton != null)
+		{
+			_openBuildingButton.Text = !string.IsNullOrEmpty(_pendingBuildingOpenKey) ? "Відкриваємо..." : "Відкрити";
+			_openBuildingButton.Disabled = !hasPlayer || busy || string.IsNullOrEmpty(_portfolioOpenBuildingId);
+			_openBuildingButton.TooltipText = _openBuildingButton.Disabled
+				? (_pendingBuildingPortfolio ? "Оновлюємо список будівель." : "Немає будівлі, готової до відкриття.")
+				: "Відкрити вибрану готову будівлю.";
+		}
+
+		if (_repairBuildingButton != null)
+		{
+			_repairBuildingButton.Text = !string.IsNullOrEmpty(_pendingBuildingRepairKey) ? "Ремонтуємо..." : "Ремонт";
+			_repairBuildingButton.Disabled = !hasPlayer || busy || string.IsNullOrEmpty(_portfolioRepairBuildingId);
+			_repairBuildingButton.TooltipText = _repairBuildingButton.Disabled
+				? (_pendingBuildingPortfolio ? "Оновлюємо список будівель." : "Немає будівлі, що потребує ремонту.")
+				: "Повернути проблемну будівлю в роботу.";
+		}
 	}
 
 	private void SetStatus(string message, bool addToHistory = false)
@@ -917,12 +1016,29 @@ public partial class CityDashboardController : Control
 		{
 			_pendingRefresh = false;
 		}
+		else if (endpoint.StartsWith("/api/buildings/") && endpoint.EndsWith("/open"))
+		{
+			_pendingBuildingOpenKey = "";
+		}
+		else if (endpoint.StartsWith("/api/buildings/") && endpoint.EndsWith("/repair"))
+		{
+			_pendingBuildingRepairKey = "";
+		}
+		else if (IsBuildingPortfolioEndpoint(endpoint))
+		{
+			_pendingBuildingPortfolio = false;
+		}
 		else if (endpoint.StartsWith("/api/jobs/apply"))
 		{
 			_pendingApply = false;
 		}
 
 		UpdateActionButtons();
+	}
+
+	private static bool IsBuildingPortfolioEndpoint(string endpoint)
+	{
+		return endpoint.StartsWith("/api/player/") && endpoint.EndsWith("/buildings");
 	}
 
 	public void OnApplyJobButtonPressed()
@@ -1141,6 +1257,63 @@ public partial class CityDashboardController : Control
 		if (_session != null && _session.HasAuthenticatedPlayer)
 		{
 			_apiClient?.GetAuthorized($"/api/player/{_session.PlayerId}", _session.AuthToken);
+			RefreshBuildingPortfolio();
 		}
+	}
+
+	public void OnOpenBuildingButtonPressed()
+	{
+		if (_session == null || !_session.HasAuthenticatedPlayer)
+		{
+			SetStatus("Немає активного гравця.");
+			return;
+		}
+
+		if (string.IsNullOrEmpty(_portfolioOpenBuildingId))
+		{
+			SetStatus("Немає будівлі, готової до відкриття.");
+			return;
+		}
+
+		if (!string.IsNullOrEmpty(_pendingBuildingOpenKey))
+		{
+			SetStatus("Відкриття будівлі вже обробляється...");
+			return;
+		}
+
+		string payload = ApiClient.BuildJson(new { player_id = _session.PlayerId });
+		_pendingBuildingOpenKey = BuildActionKey("building-open");
+		UpdateBuildingPortfolioButtons();
+		ClearErrorState();
+		SetStatus("Відкриваємо будівлю...");
+		_apiClient?.PostAuthorizedIdempotent($"/api/buildings/{_portfolioOpenBuildingId}/open", _session.AuthToken, _pendingBuildingOpenKey, payload);
+	}
+
+	public void OnRepairBuildingButtonPressed()
+	{
+		if (_session == null || !_session.HasAuthenticatedPlayer)
+		{
+			SetStatus("Немає активного гравця.");
+			return;
+		}
+
+		if (string.IsNullOrEmpty(_portfolioRepairBuildingId))
+		{
+			SetStatus("Немає будівлі, що потребує ремонту.");
+			return;
+		}
+
+		if (!string.IsNullOrEmpty(_pendingBuildingRepairKey))
+		{
+			SetStatus("Ремонт будівлі вже обробляється...");
+			return;
+		}
+
+		string payload = ApiClient.BuildJson(new { player_id = _session.PlayerId });
+		_pendingBuildingRepairKey = BuildActionKey("building-repair");
+		UpdateBuildingPortfolioButtons();
+		ClearErrorState();
+		SetStatus("Ремонтуємо будівлю...");
+		_apiClient?.PostAuthorizedIdempotent($"/api/buildings/{_portfolioRepairBuildingId}/repair", _session.AuthToken, _pendingBuildingRepairKey, payload);
 	}
 }

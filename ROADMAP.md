@@ -18,6 +18,7 @@ Goal: проєкт має запускатися, тестуватися і бу
 Goal: гравець за 5 хвилин проходить зрозумілий шлях "старт -> робота -> сон -> освіта -> краща робота".
 
 - REST API для команд: register, get player, vacancies, apply job, work shift, sleep, exam info, submit exam.
+- REST API для першої забудови: city land parcels, business blueprints, building applications, activation, portfolio, open/repair actions.
 - WebSocket тільки для live-подій: чат, міські новини, події економіки, broadcast змін.
 - Єдиний формат відповіді API: `success`, `message`, `data`, `effects`.
 - Усі грошові операції проводити через ledger/service, який робить debit/credit/log в одній DB-транзакції.
@@ -57,6 +58,7 @@ Goal: клієнт показує реальну петлю гри, а не ті
 - Додати autoload `NetworkManager`.
 - Додати REST-клієнт для команд і WebSocket-клієнт для live-подій.
 - Екрани MVP: dashboard, jobs, hostel/sleep, education exam.
+- Dashboard показує перший фізичний asset гравця: building portfolio, статуси, fees і доступні open/repair дії з backend.
 - Локальний dev-профіль: `http://127.0.0.1:8000` і `ws://127.0.0.1:8000`.
 
 ## Phase 5 - Multiplayer Readiness

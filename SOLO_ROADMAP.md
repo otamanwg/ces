@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 28: Godot Building Portfolio Panel.**
+**Sprint 29: Player Building Creation Flow.**
 
-Мета: показати гравцю власні будівлі у Godot dashboard і дати перші кнопки `open`/`repair` без перевантаження головного екрану.
+Мета: зв'язати вже готові backend-контракти землі, бізнес-шаблонів, заявок і activation в перший зрозумілий шлях "купив ділянку -> обрав бізнес -> отримав погодження -> створив будівлю".
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -468,8 +468,8 @@ DoD:
 2. ✅ Backend/API: authenticated repair/reopen endpoint тільки для власника.
 3. ✅ Backend: ledger purpose `building_repair_fee`.
 4. ✅ Backend/tests: owner/status/money/idempotency coverage.
-5. ⏳ Client later: показ проблемної будівлі й кнопка ремонту.
-6. ⏳ Наступний backend крок: building portfolio API для власних будівель.
+5. ✅ Client later: показ проблемної будівлі й кнопка ремонту.
+6. ✅ Наступний backend крок: building portfolio API для власних будівель.
 
 ---
 
@@ -482,8 +482,8 @@ DoD:
 1. ✅ Backend/API: authenticated endpoint для списку будівель гравця.
 2. ✅ Backend DTO: building + blueprint summary + opening/repair fee + available actions.
 3. ✅ Backend/tests: owner-only, status/action matrix, DTO validation.
-4. ⏳ Client: мінімальний read-only блок "Мої будівлі" у dashboard.
-5. ⏳ Client: repair/open button тільки коли API повертає відповідну `available_actions`.
+4. ✅ Client: мінімальний read-only блок "Мої будівлі" у dashboard.
+5. ✅ Client: repair/open button тільки коли API повертає відповідну `available_actions`.
 
 ---
 
@@ -493,12 +493,27 @@ DoD:
 
 Порядок:
 
-1. ⏳ Client: API method для `GET /api/player/{player_id}/buildings`.
-2. ⏳ Client: parser/model для `BuildingPortfolioData`.
-3. ⏳ Client: компактний read-only panel у landscape dashboard.
-4. ⏳ Client: open/repair buttons за `available_actions`.
-5. ⏳ Client tests: parser/action presenter coverage.
-6. ⏳ Godot MCP smoke: scene без Diagnostics errors.
+1. ✅ Client: API method для `GET /api/player/{player_id}/buildings`.
+2. ✅ Client: parser/model для `BuildingPortfolioData`.
+3. ✅ Client: компактний read-only panel у landscape dashboard.
+4. ✅ Client: open/repair buttons за `available_actions`.
+5. ✅ Client tests: parser/action presenter coverage.
+6. ✅ Godot MCP smoke: scene без Diagnostics errors.
+
+---
+
+## Sprint 29 — Player Building Creation Flow
+
+Ціль: дати гравцю перший шлях до фізичної будівлі на сервері без ручного seed/debug сценарію.
+
+Порядок:
+
+1. ⏳ Backend/API audit: перевірити існуючі endpoints землі, blueprints, заявок і activation.
+2. ⏳ Backend/tests: додати наскрізний smoke `land purchase -> blueprint application -> approval -> activation -> portfolio`.
+3. ⏳ Client model/parser: starter land options і blueprint catalog presenter.
+4. ⏳ Client UI: компактний "Побудувати" flow у dashboard або окремій panel без перевантаження основного екрану.
+5. ⏳ Client actions: buy parcel, submit blueprint application, activate approved building.
+6. ⏳ Godot MCP smoke + `scripts/check.ps1` + commit.
 
 ---
 
