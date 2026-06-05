@@ -508,8 +508,8 @@ DoD:
 
 Порядок:
 
-1. ⏳ Backend/API audit: перевірити існуючі endpoints землі, blueprints, заявок і activation.
-2. ⏳ Backend/tests: додати наскрізний smoke `land purchase -> blueprint application -> approval -> activation -> portfolio`.
+1. ✅ Backend/API audit: перевірити існуючі endpoints землі, blueprints, заявок і activation.
+2. ✅ Backend/tests: додати наскрізний smoke `land purchase -> blueprint application -> approval -> activation -> portfolio`.
 3. ⏳ Client model/parser: starter land options і blueprint catalog presenter.
 4. ⏳ Client UI: компактний "Побудувати" flow у dashboard або окремій panel без перевантаження основного екрану.
 5. ⏳ Client actions: buy parcel, submit blueprint application, activate approved building.

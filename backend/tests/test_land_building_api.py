@@ -93,6 +93,87 @@ def test_business_blueprints_endpoint_returns_starter_catalog(client):
     assert blueprints["private_hostel"].business_type == "private_hostel"
 
 
+def test_player_can_create_first_physical_building_from_public_catalog(client):
+    test_client, db = client
+    player_id, token = register_player(test_client, "first-physical-builder")
+
+    parcels_res = test_client.get("/api/land/parcels")
+    assert parcels_res.status_code == 200
+    parcels = LandParcelsData.model_validate(parcels_res.json()["data"]).parcels
+    parcel = next(parcel for parcel in parcels if parcel.code == "bus_station_kiosk_lot")
+
+    blueprints_res = test_client.get("/api/business/blueprints")
+    assert blueprints_res.status_code == 200
+    blueprints = BusinessBlueprintsData.model_validate(blueprints_res.json()["data"]).blueprints
+    blueprint = next(blueprint for blueprint in blueprints if blueprint.code == "station_kiosk")
+
+    headers = {"X-Player-Token": token, "Idempotency-Key": "first-building-land"}
+    buy_res = test_client.post(
+        "/api/land/buy",
+        json={"player_id": player_id, "land_parcel_id": parcel.id},
+        headers=headers,
+    )
+    assert buy_res.status_code == 200
+    buy_body = buy_res.json()
+    assert buy_body["success"] is True
+    buy_data = LandPurchaseActionData.model_validate(buy_body["data"])
+    assert buy_data.land_parcel.id == parcel.id
+    assert buy_data.land_parcel.status == "owned"
+
+    application_res = test_client.post(
+        "/api/building/applications",
+        json={
+            "player_id": player_id,
+            "land_parcel_id": parcel.id,
+            "business_blueprint_id": blueprint.id,
+        },
+        headers={"X-Player-Token": token, "Idempotency-Key": "first-building-application"},
+    )
+    assert application_res.status_code == 200
+    application_body = application_res.json()
+    assert application_body["success"] is True
+    application = BuildingApplicationData.model_validate(application_body["data"])
+    assert application.status == "approved"
+    assert application.business_blueprint_id == blueprint.id
+    assert application.proposed_name == blueprint.name
+    assert application.project_type == blueprint.project_type
+
+    activation_res = test_client.post(
+        f"/api/building/applications/{application.id}/activate",
+        json={"player_id": player_id},
+        headers={"X-Player-Token": token, "Idempotency-Key": "first-building-activation"},
+    )
+    assert activation_res.status_code == 200
+    activation_body = activation_res.json()
+    assert activation_body["success"] is True
+    activation = BuildingActivationActionData.model_validate(activation_body["data"])
+    assert activation.building.land_parcel_id == parcel.id
+    assert activation.building.business_blueprint_id == blueprint.id
+    assert activation.building.status == "built"
+    assert activation.building.operating_status == "inactive"
+
+    portfolio_res = test_client.get(
+        f"/api/player/{player_id}/buildings",
+        headers={"X-Player-Token": token},
+    )
+    assert portfolio_res.status_code == 200
+    portfolio_body = portfolio_res.json()
+    assert portfolio_body["success"] is True
+    portfolio = BuildingPortfolioData.model_validate(portfolio_body["data"])
+    assert len(portfolio.buildings) == 1
+    item = portfolio.buildings[0]
+    assert item.id == activation.building.id
+    assert item.land_parcel_id == parcel.id
+    assert item.blueprint_code == blueprint.code
+    assert item.blueprint_name == blueprint.name
+    assert item.opening_fee == blueprint.opening_fee
+    assert item.upkeep_daily == blueprint.upkeep_daily
+    assert item.available_actions == ["open"]
+
+    db_parcel = db.query(LandParcel).filter(LandParcel.id == parcel.id).one()
+    assert db_parcel.status == "built"
+
+
 def test_land_purchase_transfers_money_to_treasury_assigns_owner_and_is_idempotent(client):
     test_client, db = client
     player_id, token = register_player(test_client, "land-buyer")
