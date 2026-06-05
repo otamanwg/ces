@@ -511,9 +511,11 @@ DoD:
 1. ✅ Backend/API audit: перевірити існуючі endpoints землі, blueprints, заявок і activation.
 2. ✅ Backend/tests: додати наскрізний smoke `land purchase -> blueprint application -> approval -> activation -> portfolio`.
 3. ✅ Client model/parser: starter land options і blueprint catalog presenter.
-4. ⏳ Client UI: компактний "Побудувати" flow у dashboard або окремій panel без перевантаження основного екрану.
-5. ⏳ Client actions: buy parcel, submit blueprint application, activate approved building.
-6. ⏳ Godot MCP smoke + `scripts/check.ps1` + commit.
+4. ✅ Client UI: компактний "Побудувати" flow у dashboard без перевантаження основного екрану.
+5. ✅ Client action: buy recommended starter parcel.
+6. ⏳ Client action: submit blueprint application for owned starter land.
+7. ⏳ Client action: activate approved building.
+8. ⏳ Godot MCP smoke + `scripts/check.ps1` + commit.
 
 ---
 

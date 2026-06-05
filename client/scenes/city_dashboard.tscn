@@ -370,6 +370,39 @@ disabled = true
 text = "Ремонт"
 text_overrun_behavior = 3
 
+[node name="BuildFlowPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BuildFlowBox" type="VBoxContainer" parent="RootMargin/LandscapeGrid/CenterStage/BuildFlowPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BuildFlowTitle" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/BuildFlowPanel/BuildFlowBox"]
+layout_mode = 2
+text = "Побудувати"
+horizontal_alignment = 1
+
+[node name="BuildPlanLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/BuildFlowPanel/BuildFlowBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Будівництво: завантаження каталогу..."
+autowrap_mode = 3
+text_overrun_behavior = 3
+
+[node name="BuildFlowActions" type="HBoxContainer" parent="RootMargin/LandscapeGrid/CenterStage/BuildFlowPanel/BuildFlowBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BuyStarterLandButton" type="Button" parent="RootMargin/LandscapeGrid/CenterStage/BuildFlowPanel/BuildFlowBox/BuildFlowActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Купити землю"
+text_overrun_behavior = 3
+
 [node name="GoalPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
 layout_mode = 2
 size_flags_horizontal = 3

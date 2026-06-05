@@ -18,6 +18,7 @@ public partial class CityDashboardController : Control
 	[Export] public Label ErrorStateLabel;
 	[Export] public Label EventHistoryLabel;
 	[Export] public Label BuildingPortfolioLabel;
+	[Export] public Label BuildPlanLabel;
 	[Export] public Label GoalLabel;
 	[Export] public Label NextActionLabel;
 	[Export] public ProgressBar GoalProgressBar;
@@ -44,6 +45,7 @@ public partial class CityDashboardController : Control
 	private Button _refreshButton;
 	private Button _openBuildingButton;
 	private Button _repairBuildingButton;
+	private Button _buyStarterLandButton;
 	private DashboardStatusPresenter _statusPresenter;
 	private DashboardActionPresenter _actionPresenter;
 	private bool _applyFirstVacancy;
@@ -55,6 +57,8 @@ public partial class CityDashboardController : Control
 	private bool _pendingExamInfo;
 	private bool _pendingRefresh;
 	private bool _pendingBuildingPortfolio;
+	private bool _pendingBuildLandCatalog;
+	private bool _pendingBuildBlueprintCatalog;
 	private bool _bootstrapPending = true;
 	private bool _hasJob;
 	private bool _canApplyJob;
@@ -78,8 +82,13 @@ public partial class CityDashboardController : Control
 	private string _pendingExamKey = "";
 	private string _pendingBuildingOpenKey = "";
 	private string _pendingBuildingRepairKey = "";
+	private string _pendingLandBuyKey = "";
 	private string _portfolioOpenBuildingId = "";
 	private string _portfolioRepairBuildingId = "";
+	private string _starterLandId = "";
+	private double _playerBalance;
+	private JsonNode _landCatalogData;
+	private JsonNode _blueprintCatalogData;
 
 	public override void _Ready()
 	{
@@ -96,6 +105,10 @@ public partial class CityDashboardController : Control
 			_trainSportsButton,
 			_examButton,
 			_refreshButton);
+		if (_buyStarterLandButton != null)
+		{
+			_buyStarterLandButton.Pressed += OnBuyStarterLandButtonPressed;
+		}
 
 		_apiClient = GetNodeOrNull<ApiClient>("/root/ApiClient");
 		_session = GetNodeOrNull<GameSession>("/root/GameSession");
@@ -152,6 +165,7 @@ public partial class CityDashboardController : Control
 		ErrorStateLabel ??= GetNodeOrNull<Label>("%ErrorStateLabel");
 		EventHistoryLabel ??= GetNodeOrNull<Label>("%EventHistoryLabel");
 		BuildingPortfolioLabel ??= GetNodeOrNull<Label>("%BuildingPortfolioLabel");
+		BuildPlanLabel ??= GetNodeOrNull<Label>("%BuildPlanLabel");
 		GoalLabel ??= GetNodeOrNull<Label>("%GoalLabel");
 		NextActionLabel ??= GetNodeOrNull<Label>("%NextActionLabel");
 		GoalProgressBar ??= GetNodeOrNull<ProgressBar>("%GoalProgressBar");
@@ -173,6 +187,7 @@ public partial class CityDashboardController : Control
 		_refreshButton ??= GetNodeOrNull<Button>("%RefreshButton");
 		_openBuildingButton ??= GetNodeOrNull<Button>("%OpenBuildingButton");
 		_repairBuildingButton ??= GetNodeOrNull<Button>("%RepairBuildingButton");
+		_buyStarterLandButton ??= GetNodeOrNull<Button>("%BuyStarterLandButton");
 	}
 
 	private void OnApiRequestFinished(string endpoint, bool success, string jsonBody)
@@ -194,6 +209,18 @@ public partial class CityDashboardController : Control
 		if (endpoint == "/api/city/status")
 		{
 			HandleCityStatus(root);
+			return;
+		}
+
+		if (endpoint == "/api/land/parcels")
+		{
+			HandleLandParcels(root);
+			return;
+		}
+
+		if (endpoint == "/api/business/blueprints")
+		{
+			HandleBusinessBlueprints(root);
 			return;
 		}
 
@@ -268,6 +295,11 @@ public partial class CityDashboardController : Control
 			UpdatePlayerUI(data);
 		}
 
+		if (endpoint == "/api/land/buy")
+		{
+			RefreshBuildCatalog(forceLandRefresh: true);
+		}
+
 		if (data != null && data["name"] != null && data["treasury_balance"] != null)
 		{
 			UpdateCityUI(data);
@@ -306,6 +338,9 @@ public partial class CityDashboardController : Control
 		_pendingExamInfo = false;
 		_pendingRefresh = false;
 		_pendingBuildingPortfolio = false;
+		_pendingBuildLandCatalog = false;
+		_pendingBuildBlueprintCatalog = false;
+		_pendingLandBuyKey = "";
 		ClearPendingAction(endpoint);
 		_examPanel?.SetSubmitEnabled(true);
 
@@ -351,7 +386,9 @@ public partial class CityDashboardController : Control
 		_canJoinSports = false;
 		_canTrainSports = false;
 		_canTakeExam = false;
+		_playerBalance = 0.0;
 		ClearBuildingPortfolio();
+		ClearBuildFlow();
 		SetErrorState($"{message} Створюємо нового гравця...");
 		UpdateActionButtons();
 		RegisterNewPlayer();
@@ -552,6 +589,36 @@ public partial class CityDashboardController : Control
 		UpdateBuildingPortfolioButtons();
 	}
 
+	private void HandleLandParcels(JsonNode root)
+	{
+		_pendingBuildLandCatalog = false;
+		if (root["success"]?.GetValue<bool>() != true)
+		{
+			_landCatalogData = null;
+			SetErrorState(root["message"]?.ToString() ?? "Не вдалось завантажити землю.");
+			UpdateBuildFlowUi();
+			return;
+		}
+
+		_landCatalogData = root["data"]?.DeepClone();
+		UpdateBuildFlowUi();
+	}
+
+	private void HandleBusinessBlueprints(JsonNode root)
+	{
+		_pendingBuildBlueprintCatalog = false;
+		if (root["success"]?.GetValue<bool>() != true)
+		{
+			_blueprintCatalogData = null;
+			SetErrorState(root["message"]?.ToString() ?? "Не вдалось завантажити бізнес-шаблони.");
+			UpdateBuildFlowUi();
+			return;
+		}
+
+		_blueprintCatalogData = root["data"]?.DeepClone();
+		UpdateBuildFlowUi();
+	}
+
 	private void OnExamSubmitRequested(string answersJson)
 	{
 		if (_session == null || !_session.HasAuthenticatedPlayer)
@@ -599,6 +666,7 @@ public partial class CityDashboardController : Control
 			UsernameLabel.Text = snapshot.Username;
 		}
 
+		_playerBalance = snapshot.Balance;
 		if (BalanceLabel != null)
 		{
 			BalanceLabel.Text = $"{snapshot.Balance:N2} ₴";
@@ -652,6 +720,7 @@ public partial class CityDashboardController : Control
 		{
 			_session?.SetPlayer(snapshot.Id, snapshot.Username, snapshot.AuthToken);
 			RefreshBuildingPortfolio();
+			RefreshBuildCatalog();
 		}
 
 		UpdateActionButtons();
@@ -667,6 +736,66 @@ public partial class CityDashboardController : Control
 		_pendingBuildingPortfolio = true;
 		UpdateBuildingPortfolioButtons();
 		_apiClient?.GetAuthorized($"/api/player/{_session.PlayerId}/buildings", _session.AuthToken);
+	}
+
+	private void RefreshBuildCatalog(bool forceLandRefresh = false)
+	{
+		if (forceLandRefresh)
+		{
+			_landCatalogData = null;
+		}
+
+		if (_landCatalogData == null && !_pendingBuildLandCatalog)
+		{
+			_pendingBuildLandCatalog = true;
+			_apiClient?.Get("/api/land/parcels");
+		}
+
+		if (_blueprintCatalogData == null && !_pendingBuildBlueprintCatalog)
+		{
+			_pendingBuildBlueprintCatalog = true;
+			_apiClient?.Get("/api/business/blueprints");
+		}
+
+		UpdateBuildFlowUi();
+	}
+
+	private void ClearBuildFlow()
+	{
+		_pendingBuildLandCatalog = false;
+		_pendingBuildBlueprintCatalog = false;
+		_pendingLandBuyKey = "";
+		_starterLandId = "";
+		if (BuildPlanLabel != null)
+		{
+			BuildPlanLabel.Text = "Будівництво: каталог недоступний";
+		}
+		UpdateBuildFlowButtons();
+	}
+
+	private void UpdateBuildFlowUi()
+	{
+		if (_pendingBuildLandCatalog || _pendingBuildBlueprintCatalog)
+		{
+			if (BuildPlanLabel != null)
+			{
+				BuildPlanLabel.Text = "Будівництво: завантаження каталогу...";
+			}
+
+			_starterLandId = "";
+			UpdateBuildFlowButtons();
+			return;
+		}
+
+		var catalog = DashboardBuildCatalog.FromJson(_landCatalogData, _blueprintCatalogData);
+		var plan = catalog.StarterPlanFor(_playerBalance);
+		_starterLandId = plan?.Land.Id ?? "";
+		if (BuildPlanLabel != null)
+		{
+			BuildPlanLabel.Text = catalog.SummaryFor(_playerBalance);
+		}
+
+		UpdateBuildFlowButtons();
 	}
 
 	private void ClearBuildingPortfolio()
@@ -905,6 +1034,7 @@ public partial class CityDashboardController : Control
 				_canTakeExam,
 				!string.IsNullOrEmpty(_ownedBusinessId)));
 		UpdateBuildingPortfolioButtons();
+		UpdateBuildFlowButtons();
 	}
 
 	private void UpdateBuildingPortfolioButtons()
@@ -928,6 +1058,24 @@ public partial class CityDashboardController : Control
 			_repairBuildingButton.TooltipText = _repairBuildingButton.Disabled
 				? (_pendingBuildingPortfolio ? "Оновлюємо список будівель." : "Немає будівлі, що потребує ремонту.")
 				: "Повернути проблемну будівлю в роботу.";
+		}
+	}
+
+	private void UpdateBuildFlowButtons()
+	{
+		bool hasPlayer = _session != null && _session.HasAuthenticatedPlayer;
+		bool busy = _bootstrapPending
+			|| _pendingBuildLandCatalog
+			|| _pendingBuildBlueprintCatalog
+			|| !string.IsNullOrEmpty(_pendingLandBuyKey);
+
+		if (_buyStarterLandButton != null)
+		{
+			_buyStarterLandButton.Text = !string.IsNullOrEmpty(_pendingLandBuyKey) ? "Купуємо..." : "Купити землю";
+			_buyStarterLandButton.Disabled = !hasPlayer || busy || string.IsNullOrEmpty(_starterLandId);
+			_buyStarterLandButton.TooltipText = _buyStarterLandButton.Disabled
+				? (busy ? "Каталог або купівля ще обробляється." : "Немає доступної стартової ділянки.")
+				: "Купити рекомендовану стартову ділянку у мерії.";
 		}
 	}
 
@@ -1027,6 +1175,18 @@ public partial class CityDashboardController : Control
 		else if (IsBuildingPortfolioEndpoint(endpoint))
 		{
 			_pendingBuildingPortfolio = false;
+		}
+		else if (endpoint == "/api/land/parcels")
+		{
+			_pendingBuildLandCatalog = false;
+		}
+		else if (endpoint == "/api/business/blueprints")
+		{
+			_pendingBuildBlueprintCatalog = false;
+		}
+		else if (endpoint == "/api/land/buy")
+		{
+			_pendingLandBuyKey = "";
 		}
 		else if (endpoint.StartsWith("/api/jobs/apply"))
 		{
@@ -1258,7 +1418,37 @@ public partial class CityDashboardController : Control
 		{
 			_apiClient?.GetAuthorized($"/api/player/{_session.PlayerId}", _session.AuthToken);
 			RefreshBuildingPortfolio();
+			RefreshBuildCatalog(forceLandRefresh: true);
 		}
+	}
+
+	public void OnBuyStarterLandButtonPressed()
+	{
+		if (_session == null || !_session.HasAuthenticatedPlayer)
+		{
+			SetStatus("Немає активного гравця.");
+			return;
+		}
+
+		if (string.IsNullOrEmpty(_starterLandId))
+		{
+			SetStatus("Немає доступної стартової ділянки.");
+			RefreshBuildCatalog();
+			return;
+		}
+
+		if (!string.IsNullOrEmpty(_pendingLandBuyKey))
+		{
+			SetStatus("Купівля землі вже обробляється...");
+			return;
+		}
+
+		string payload = ApiClient.BuildJson(new { player_id = _session.PlayerId, land_parcel_id = _starterLandId });
+		_pendingLandBuyKey = BuildActionKey("land-buy");
+		UpdateBuildFlowButtons();
+		ClearErrorState();
+		SetStatus("Купуємо стартову ділянку...");
+		_apiClient?.PostAuthorizedIdempotent("/api/land/buy", _session.AuthToken, _pendingLandBuyKey, payload);
 	}
 
 	public void OnOpenBuildingButtonPressed()
