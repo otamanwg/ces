@@ -126,4 +126,24 @@ def build_day_tick_news(stats: dict, max_items: int = 4) -> list[dict]:
                 80,
             )
         )
+    if stats.get("buildings_upkeep_failed", 0) > 0:
+        news.append(
+            _news_item(
+                "building_upkeep",
+                "Утримання будівель",
+                f"Будівель із простроченим утриманням: {stats['buildings_upkeep_failed']}.",
+                "warning",
+                75,
+            )
+        )
+    if stats.get("building_upkeep_charged", 0.0) > 0:
+        news.append(
+            _news_item(
+                "building_upkeep",
+                "Утримання будівель",
+                f"Списано на утримання активних будівель: {stats['building_upkeep_charged']:.2f} ₴.",
+                "info",
+                35,
+            )
+        )
     return _limit_news(news, max_items)

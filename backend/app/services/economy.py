@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from backend.app.models import Player, City, Job, Hostel, TransactionModelLog, Business
 from backend.app.schemas.service_results import DayTickServiceResult, RentPaymentServiceResult, WorkShiftServiceResult
+from backend.app.services.buildings import process_daily_building_upkeep
 from backend.app.services.ids import to_uuid
 from backend.app.services.job_queries import get_active_job
 from backend.app.services.ledger import credit, debit, log_transaction
@@ -217,6 +218,9 @@ def game_day_tick(db: Session, city_id: str) -> dict:
             homeless_players += 1
             player.mood = max(10, player.mood - 8)
 
+    building_upkeep_stats = process_daily_building_upkeep(db, city)
+    db.flush()
+
     active_after = _active_money_supply(db, city_uuid)
     player_count = max(1, len(players))
     target_circulation = money(player_count * 600)
@@ -241,6 +245,9 @@ def game_day_tick(db: Session, city_id: str) -> dict:
             "rent_collected": 0.0,
             "homeless_players": homeless_players,
             "hungry_players": hungry_players,
+            "building_upkeep_charged": building_upkeep_stats["building_upkeep_charged"],
+            "buildings_upkeep_charged": building_upkeep_stats["buildings_upkeep_charged"],
+            "buildings_upkeep_failed": building_upkeep_stats["buildings_upkeep_failed"],
             "active_money_before": float(active_before),
             "active_money_after": float(active_after),
         },

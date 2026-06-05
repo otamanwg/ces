@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 25: Building Upkeep & Passive Cashflow Guards.**
+**Sprint 26: Building Repair/Reopen Path.**
 
-Мета: активна будівля має мати мінімальну щоденну відповідальність через upkeep, але без повної симуляції товарів, клієнтів і складного cashflow.
+Мета: якщо active building перейшла в `maintenance_due`, гравець має отримати зрозумілий шлях повернення будівлі в роботу, перш ніж ми додамо банкрутство чи аукціони.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -449,11 +449,26 @@ DoD:
 
 Порядок:
 
-1. ⏳ Backend: визначити MVP правило upkeep для `Building.operating_status = active`.
-2. ⏳ Backend: списувати `upkeep_daily` з linked business cash або власника за безпечним правилом.
-3. ⏳ Backend: якщо upkeep не сплачено, переводити будівлю у м'який проблемний стан без миттєвого знищення активу.
-4. ⏳ Backend/tests: day tick coverage для active building upkeep, недостатніх коштів і ledger.
-5. ⏳ Docs: описати, як upkeep переходить у майбутні правила банкрутства/аукціону.
+1. ✅ Backend: визначити MVP правило upkeep для `Building.operating_status = active`.
+2. ✅ Backend: списувати `upkeep_daily` з linked business cash або власника за безпечним правилом.
+3. ✅ Backend: якщо upkeep не сплачено, переводити будівлю у м'який проблемний стан без миттєвого знищення активу.
+4. ✅ Backend/tests: day tick coverage для active building upkeep, недостатніх коштів і ledger.
+5. ✅ Docs: описати, як upkeep переходить у майбутні правила банкрутства/аукціону.
+6. ⏳ Наступний backend крок: repair/reopen endpoint для `maintenance_due`.
+
+---
+
+## Sprint 26 — Building Repair/Reopen Path
+
+Ціль: `maintenance_due` має бути зрозумілим тимчасовим станом, а не пасткою. Гравець повинен бачити, скільки треба сплатити, і мати дію для повернення будівлі в `active`.
+
+Порядок:
+
+1. ⏳ Backend: визначити repair fee для `maintenance_due` building.
+2. ⏳ Backend/API: authenticated repair/reopen endpoint тільки для власника.
+3. ⏳ Backend: ledger purpose `building_repair_fee`.
+4. ⏳ Backend/tests: owner/status/money/idempotency coverage.
+5. ⏳ Client later: показ проблемної будівлі й кнопка ремонту.
 
 ---
 

@@ -10,8 +10,10 @@ from backend.app.services.money import money
 BUILT = "built"
 INACTIVE = "inactive"
 ACTIVE = "active"
+MAINTENANCE_DUE = "maintenance_due"
 APPLICATION_ACTIVATED = "activated"
 PARCEL_BUILT = "built"
+BUILDING_UPKEEP_PURPOSE = "building_upkeep"
 BUSINESS_PROJECT_TYPES = {
     "commercial": "shop",
     "industrial": "factory",
@@ -162,3 +164,62 @@ def open_building_operations(db: Session, player: Player, building_id: UUID) -> 
         "building": building,
         "opening_fee": float(fee),
     }
+
+
+def process_daily_building_upkeep(db: Session, city: City) -> dict:
+    stats = {
+        "building_upkeep_charged": 0.0,
+        "buildings_upkeep_charged": 0,
+        "buildings_upkeep_failed": 0,
+    }
+
+    buildings = (
+        db.query(Building)
+        .filter(
+            Building.city_id == city.id,
+            Building.status == BUILT,
+            Building.operating_status == ACTIVE,
+        )
+        .all()
+    )
+
+    for building in buildings:
+        blueprint = building.business_blueprint
+        if not blueprint:
+            continue
+
+        upkeep = money(blueprint.upkeep_daily)
+        if upkeep <= money("0.00"):
+            continue
+
+        sender = None
+        sender_type = ""
+        if building.business and money(building.business.cash_balance) >= upkeep:
+            sender = building.business
+            sender_type = "business"
+            debit(db, building.business, "cash_balance", upkeep)
+        elif building.owner and money(building.owner.balance) >= upkeep:
+            sender = building.owner
+            sender_type = "player"
+            debit(db, building.owner, "balance", upkeep)
+        else:
+            building.operating_status = MAINTENANCE_DUE
+            stats["buildings_upkeep_failed"] += 1
+            continue
+
+        credit(db, city, "treasury_balance", upkeep)
+        log_transaction(
+            db,
+            city.id,
+            sender_id=sender.id,
+            sender_type=sender_type,
+            receiver_id=city.id,
+            receiver_type="treasury",
+            amount=float(upkeep),
+            tax=0.0,
+            purpose=BUILDING_UPKEEP_PURPOSE,
+        )
+        stats["building_upkeep_charged"] = float(money(stats["building_upkeep_charged"]) + upkeep)
+        stats["buildings_upkeep_charged"] += 1
+
+    return stats

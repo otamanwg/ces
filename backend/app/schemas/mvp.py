@@ -254,6 +254,9 @@ class DayTickStatsData(BaseModel):
     rent_collected: float
     homeless_players: int
     hungry_players: int
+    building_upkeep_charged: float
+    buildings_upkeep_charged: int
+    buildings_upkeep_failed: int
     active_money_before: float
     active_money_after: float
 

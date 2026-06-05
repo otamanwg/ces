@@ -3,7 +3,20 @@ from decimal import Decimal
 
 import pytest
 
-from backend.app.models import Business, BusinessBlueprint, City, CityDistrict, Hostel, Job, LandParcel, Player, SportsClub, TransactionModelLog
+from backend.app.models import (
+    Business,
+    Building,
+    BuildingApplication,
+    BusinessBlueprint,
+    City,
+    CityDistrict,
+    Hostel,
+    Job,
+    LandParcel,
+    Player,
+    SportsClub,
+    TransactionModelLog,
+)
 from backend.app.schemas.service_results import (
     BusinessDividendServiceResult,
     BusinessPurchaseServiceResult,
@@ -22,6 +35,7 @@ from backend.app.services.business_market import (
     process_business_dividend_collection,
     process_business_purchase,
 )
+from backend.app.services.buildings import ACTIVE, BUILDING_UPKEEP_PURPOSE, BUILT, MAINTENANCE_DUE
 from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.needs import process_meal_purchase
@@ -35,6 +49,72 @@ pytestmark = pytest.mark.skipif(
     not TEST_DATABASE_URL,
     reason="Set CITY_TEST_DATABASE_URL to run PostgreSQL integration tests.",
 )
+
+
+def create_active_blueprint_building(
+    db,
+    city: City,
+    owner: Player,
+    blueprint_code: str = "station_kiosk",
+    business_cash: Decimal = Decimal("0.00"),
+):
+    blueprint = db.query(BusinessBlueprint).filter(BusinessBlueprint.code == blueprint_code).one()
+    parcel = db.query(LandParcel).filter(LandParcel.code == "bus_station_kiosk_lot").one()
+    parcel.owner_player_id = owner.id
+    parcel.status = BUILT
+
+    metrics = blueprint.metric_effects
+    application = BuildingApplication(
+        city_id=city.id,
+        district_id=parcel.district_id,
+        land_parcel_id=parcel.id,
+        business_blueprint_id=blueprint.id,
+        applicant_player_id=owner.id,
+        proposed_name=blueprint.name,
+        project_type=blueprint.project_type,
+        land_area_hectares=parcel.area_hectares,
+        expected_jobs=metrics["expected_jobs"],
+        traffic_load=metrics["traffic_load"],
+        service_load=metrics["service_load"],
+        medical_load=metrics["medical_load"],
+        public_benefit=metrics["public_benefit"],
+        status="activated",
+        mayor_score=100,
+        mayor_summary="AI-мер погоджує заявку для наступного етапу.",
+        mayor_issues=[],
+        mayor_questions=[],
+    )
+    db.add(application)
+    db.flush()
+
+    business = Business(
+        city_id=city.id,
+        name=blueprint.name,
+        type=blueprint.business_type,
+        owner_player_id=owner.id,
+        owner_share_pct=Decimal("100.00"),
+        cash_balance=business_cash,
+        status="active",
+    )
+    db.add(business)
+    db.flush()
+
+    building = Building(
+        city_id=city.id,
+        district_id=parcel.district_id,
+        land_parcel_id=parcel.id,
+        source_application_id=application.id,
+        business_blueprint_id=blueprint.id,
+        business_id=business.id,
+        owner_player_id=owner.id,
+        name=blueprint.name,
+        project_type=blueprint.project_type,
+        status=BUILT,
+        operating_status=ACTIVE,
+    )
+    db.add(building)
+    db.commit()
+    return blueprint, business, building
 
 
 def test_seed_creates_core_city_data():
@@ -524,6 +604,153 @@ def test_sleep_then_tick_does_not_double_charge_rent():
         assert player.balance == balance_after_sleep
         assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "rent").count() == 1
         assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "daily_rent").count() == 0
+    finally:
+        db.close()
+
+
+def test_game_day_tick_charges_building_upkeep_from_business_cash():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="upkeep-business-owner",
+            balance=Decimal("500.00"),
+            energy=100,
+            mood=100,
+            hunger=0,
+            education_level="High School",
+        )
+        db.add(player)
+        db.flush()
+        blueprint, business, building = create_active_blueprint_building(
+            db,
+            city,
+            player,
+            business_cash=Decimal("50.00"),
+        )
+        starting_treasury = Decimal(str(city.treasury_balance))
+
+        result = game_day_tick(db, str(city.id))
+
+        assert result["success"] is True
+        DayTickServiceResult.model_validate(result)
+        assert result["stats"]["building_upkeep_charged"] == 8.0
+        assert result["stats"]["buildings_upkeep_charged"] == 1
+        assert result["stats"]["buildings_upkeep_failed"] == 0
+        assert result["stats"]["active_money_before"] == 550.0
+        assert result["stats"]["active_money_after"] == 542.0
+
+        db.refresh(player)
+        db.refresh(city)
+        db.refresh(business)
+        db.refresh(building)
+        assert Decimal(str(player.balance)) == Decimal("500.00")
+        assert Decimal(str(business.cash_balance)) == Decimal("42.00")
+        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal(str(blueprint.upkeep_daily))
+        assert building.operating_status == ACTIVE
+
+        upkeep_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == BUILDING_UPKEEP_PURPOSE).one()
+        assert upkeep_log.sender_id == business.id
+        assert upkeep_log.sender_type == "business"
+        assert upkeep_log.receiver_id == city.id
+        assert upkeep_log.receiver_type == "treasury"
+        assert upkeep_log.amount == Decimal("8.00")
+    finally:
+        db.close()
+
+
+def test_game_day_tick_falls_back_to_owner_balance_for_building_upkeep():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="upkeep-player-owner",
+            balance=Decimal("500.00"),
+            energy=100,
+            mood=100,
+            hunger=0,
+            education_level="High School",
+        )
+        db.add(player)
+        db.flush()
+        _blueprint, business, building = create_active_blueprint_building(
+            db,
+            city,
+            player,
+            business_cash=Decimal("0.00"),
+        )
+
+        result = game_day_tick(db, str(city.id))
+
+        assert result["success"] is True
+        DayTickServiceResult.model_validate(result)
+        assert result["stats"]["building_upkeep_charged"] == 8.0
+        assert result["stats"]["buildings_upkeep_charged"] == 1
+        assert result["stats"]["buildings_upkeep_failed"] == 0
+        assert result["stats"]["active_money_before"] == 500.0
+        assert result["stats"]["active_money_after"] == 492.0
+
+        db.refresh(player)
+        db.refresh(business)
+        db.refresh(building)
+        assert Decimal(str(player.balance)) == Decimal("492.00")
+        assert Decimal(str(business.cash_balance)) == Decimal("0.00")
+        assert building.operating_status == ACTIVE
+
+        upkeep_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == BUILDING_UPKEEP_PURPOSE).one()
+        assert upkeep_log.sender_id == player.id
+        assert upkeep_log.sender_type == "player"
+    finally:
+        db.close()
+
+
+def test_game_day_tick_marks_building_maintenance_due_when_upkeep_cannot_be_paid():
+    db = make_test_session(TEST_DATABASE_URL)
+    try:
+        seed_initial_data(db)
+
+        city = db.query(City).first()
+        player = Player(
+            city_id=city.id,
+            username="upkeep-broke-owner",
+            balance=Decimal("1.00"),
+            energy=100,
+            mood=100,
+            hunger=0,
+            education_level="High School",
+        )
+        db.add(player)
+        db.flush()
+        _blueprint, business, building = create_active_blueprint_building(
+            db,
+            city,
+            player,
+            business_cash=Decimal("0.00"),
+        )
+
+        result = game_day_tick(db, str(city.id))
+
+        assert result["success"] is True
+        DayTickServiceResult.model_validate(result)
+        assert result["stats"]["building_upkeep_charged"] == 0.0
+        assert result["stats"]["buildings_upkeep_charged"] == 0
+        assert result["stats"]["buildings_upkeep_failed"] == 1
+        assert result["stats"]["active_money_before"] == 1.0
+        assert result["stats"]["active_money_after"] == 1.0
+
+        db.refresh(player)
+        db.refresh(business)
+        db.refresh(building)
+        assert Decimal(str(player.balance)) == Decimal("1.00")
+        assert Decimal(str(business.cash_balance)) == Decimal("0.00")
+        assert building.operating_status == MAINTENANCE_DUE
+        assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == BUILDING_UPKEEP_PURPOSE).count() == 0
     finally:
         db.close()
 
