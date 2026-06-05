@@ -2,6 +2,7 @@ import logging
 from sqlalchemy.orm import Session
 
 from backend.app.models import Business, City, Hostel, Job, SportsClub
+from backend.app.services.business_blueprints import ensure_business_blueprints
 from backend.app.services.land import ensure_starter_land_parcels
 
 
@@ -10,6 +11,8 @@ logger = logging.getLogger("CityServer")
 
 def seed_initial_data(db: Session) -> None:
     """Create the neutral MVP city and starter gameplay data when DB is empty."""
+    ensure_business_blueprints(db)
+
     existing_cities = db.query(City).all()
     if existing_cities:
         for city in existing_cities:

@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from backend.app.models import Business, City, CityDistrict, Hostel, Job, LandParcel, Player, SportsClub, TransactionModelLog
+from backend.app.models import Business, BusinessBlueprint, City, CityDistrict, Hostel, Job, LandParcel, Player, SportsClub, TransactionModelLog
 from backend.app.schemas.service_results import (
     BusinessDividendServiceResult,
     BusinessPurchaseServiceResult,
@@ -43,6 +43,7 @@ def test_seed_creates_core_city_data():
         seed_initial_data(db)
 
         assert db.query(City).count() == 1
+        assert db.query(BusinessBlueprint).count() == 7
         assert db.query(CityDistrict).count() == 6
         assert db.query(LandParcel).count() == 6
         assert db.query(Job).count() == 3
@@ -77,8 +78,10 @@ def test_seed_backfills_districts_for_existing_city():
         seed_initial_data(db)
 
         assert db.query(City).count() == 1
+        assert db.query(BusinessBlueprint).count() == 7
         assert db.query(CityDistrict).count() == 6
         seed_initial_data(db)
+        assert db.query(BusinessBlueprint).count() == 7
         assert db.query(CityDistrict).count() == 6
         assert db.query(LandParcel).count() == 6
 

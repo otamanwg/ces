@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 23: Building Operations & Upkeep.**
+**Sprint 25: Building Upkeep & Passive Cashflow Guards.**
 
-Мета: додати мінімальні правила утримання активної будівлі, не перетворюючи її ще на повну симуляцію бізнесу.
+Мета: активна будівля має мати мінімальну щоденну відповідальність через upkeep, але без повної симуляції товарів, клієнтів і складного cashflow.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -422,7 +422,38 @@ DoD:
 3. ✅ Backend: commercial building створює linked `shop` business.
 4. ✅ Backend: industrial building створює linked `factory` business.
 5. ✅ Backend/tests: ownership, status transition, ledger, idempotency coverage.
-6. ⏳ Наступний backend крок: визначити мінімальні правила upkeep для `inactive`/`active`.
+6. ✅ Наступний backend крок перед upkeep: винести business choices у blueprint catalog.
+
+---
+
+## Sprint 24 — Business Blueprint Catalog & Metrics
+
+Ціль: гравець має відкривати бізнес із зрозумілого каталогу, а backend має використовувати один source-of-truth для типу бізнесу, типу забудови, opening fee, ризиків і city metric effects.
+
+Порядок:
+
+1. ✅ Backend: `BusinessBlueprint` model/table + Alembic migration.
+2. ✅ Backend: starter catalog із 7 бізнесів: кіоск, кав'ярня, міні-маркет, майстерня, хостел, аптека, мала фабрика.
+3. ✅ Backend/API: `/api/business/blueprints` повертає опис, вартість, profit range, ризики, allowed land/zoning, metric effects і visual tags.
+4. ✅ Backend: `BuildingApplication` приймає `business_blueprint_id`, валідує ділянку і бере метрики з blueprint замість клієнтських цифр.
+5. ✅ Backend: activation копіює blueprint у `Building`.
+6. ✅ Backend: opening бере `opening_fee` і linked `Business.type` з blueprint, fallback лишається для legacy/manual заявок.
+7. ✅ Backend/tests: seed/API/application/opening coverage для blueprint і metric source-of-truth.
+8. ✅ Наступний backend крок визначено: мінімальний daily upkeep для active buildings на основі `upkeep_daily`.
+
+---
+
+## Sprint 25 — Building Upkeep & Passive Cashflow Guards
+
+Ціль: активна player-built будівля не має бути безкоштовним вічним активом. Вона повинна мати легку щоденну вартість утримання, яка пізніше стане основою для прибутковості, банкрутства, аукціонів і керуючих компаній.
+
+Порядок:
+
+1. ⏳ Backend: визначити MVP правило upkeep для `Building.operating_status = active`.
+2. ⏳ Backend: списувати `upkeep_daily` з linked business cash або власника за безпечним правилом.
+3. ⏳ Backend: якщо upkeep не сплачено, переводити будівлю у м'який проблемний стан без миттєвого знищення активу.
+4. ⏳ Backend/tests: day tick coverage для active building upkeep, недостатніх коштів і ledger.
+5. ⏳ Docs: описати, як upkeep переходить у майбутні правила банкрутства/аукціону.
 
 ---
 

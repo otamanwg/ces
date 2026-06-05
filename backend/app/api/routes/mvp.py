@@ -7,12 +7,14 @@ from sqlalchemy.orm import Session
 from backend.app.core.config import settings
 from backend.app.api.responses import build_player_action_response, save_player_action_response
 from backend.app.database import get_db
-from backend.app.models import Building, BuildingApplication, City, Hostel, LandParcel, Player, SportsClub
+from backend.app.models import Building, BuildingApplication, BusinessBlueprint, City, Hostel, LandParcel, Player, SportsClub
 from backend.app.schemas.mvp import (
     BuildingApplicationData,
     BuildingActivationActionData,
     BuildingItem,
     BuildingOpenActionData,
+    BusinessBlueprintItem,
+    BusinessBlueprintsData,
     BusinessMarketData,
     BusinessMarketItem,
     BusinessBuyActionData,
@@ -36,6 +38,7 @@ from backend.app.schemas.mvp import (
 )
 from backend.app.schemas.response import api_error, api_success
 from backend.app.services.auth import get_authorized_player, new_player_token
+from backend.app.services.business_blueprints import get_active_business_blueprints
 from backend.app.services.business_market import (
     get_business_price,
     get_buyable_businesses,
@@ -88,8 +91,9 @@ class LandBuy(BaseModel):
 class BuildingApplicationCreate(BaseModel):
     player_id: str
     land_parcel_id: str
-    proposed_name: str
-    project_type: str
+    business_blueprint_id: str | None = None
+    proposed_name: str = ""
+    project_type: str = ""
     expected_jobs: int = 0
     traffic_load: int = 0
     service_load: int = 0
@@ -149,6 +153,7 @@ def building_application_data(application: BuildingApplication) -> BuildingAppli
         city_id=str(application.city_id),
         district_id=str(application.district_id),
         land_parcel_id=str(application.land_parcel_id),
+        business_blueprint_id=str(application.business_blueprint_id) if application.business_blueprint_id else None,
         applicant_player_id=str(application.applicant_player_id),
         proposed_name=application.proposed_name,
         project_type=application.project_type,
@@ -176,12 +181,41 @@ def building_item(building: Building) -> BuildingItem:
         district_id=str(building.district_id),
         land_parcel_id=str(building.land_parcel_id),
         source_application_id=str(building.source_application_id),
+        business_blueprint_id=str(building.business_blueprint_id) if building.business_blueprint_id else None,
         business_id=str(building.business_id) if building.business_id else None,
         owner_player_id=str(building.owner_player_id),
         name=building.name,
         project_type=building.project_type,
         status=building.status,
         operating_status=building.operating_status,
+    )
+
+
+def business_blueprint_item(blueprint: BusinessBlueprint) -> BusinessBlueprintItem:
+    return BusinessBlueprintItem(
+        id=str(blueprint.id),
+        code=blueprint.code,
+        name=blueprint.name,
+        category=blueprint.category,
+        business_type=blueprint.business_type,
+        project_type=blueprint.project_type,
+        description=blueprint.description,
+        difficulty=blueprint.difficulty,
+        allowed_land_types=list(blueprint.allowed_land_types or []),
+        allowed_zoning_types=list(blueprint.allowed_zoning_types or []),
+        min_area_hectares=float(blueprint.min_area_hectares),
+        construction_cost=float(blueprint.construction_cost),
+        opening_fee=float(blueprint.opening_fee),
+        recommended_cash_reserve=float(blueprint.recommended_cash_reserve),
+        daily_profit_min=float(blueprint.daily_profit_min),
+        daily_profit_max=float(blueprint.daily_profit_max),
+        upkeep_daily=float(blueprint.upkeep_daily),
+        risk_level=blueprint.risk_level,
+        risks=list(blueprint.risks or []),
+        metric_effects={key: int(value) for key, value in (blueprint.metric_effects or {}).items()},
+        visual_archetype=blueprint.visual_archetype,
+        style_tags=list(blueprint.style_tags or []),
+        player_hints=list(blueprint.player_hints or []),
     )
 
 
@@ -232,6 +266,14 @@ def get_public_land_parcels(db: Session = Depends(get_db)):
 
     data = LandParcelsData(parcels=[land_parcel_item(parcel) for parcel in get_land_parcels(db, city.id)])
     return api_success("Доступні земельні ділянки.", data.model_dump())
+
+
+@router.get("/business/blueprints")
+def get_business_blueprints(db: Session = Depends(get_db)):
+    data = BusinessBlueprintsData(
+        blueprints=[business_blueprint_item(blueprint) for blueprint in get_active_business_blueprints(db)]
+    )
+    return api_success("Доступні бізнес-шаблони.", data.model_dump())
 
 
 @router.post("/land/buy")
@@ -289,10 +331,17 @@ def submit_building_application(
     if land_parcel_uuid is None:
         return api_error("Ділянку не знайдено.")
 
+    blueprint_uuid = None
+    if data.business_blueprint_id:
+        blueprint_uuid = try_uuid(data.business_blueprint_id)
+        if blueprint_uuid is None:
+            return api_error("Бізнес-шаблон не знайдено.")
+
     res = create_building_application(
         db,
         player,
         land_parcel_uuid,
+        business_blueprint_id=blueprint_uuid,
         proposed_name=data.proposed_name,
         project_type=data.project_type,
         expected_jobs=data.expected_jobs,

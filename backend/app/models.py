@@ -132,6 +132,7 @@ class BuildingApplication(Base):
     city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
     district_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False)
     land_parcel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("land_parcels.id", ondelete="CASCADE"), nullable=False)
+    business_blueprint_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("business_blueprints.id", ondelete="SET NULL"))
     applicant_player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     proposed_name: Mapped[str] = mapped_column(String(120), nullable=False)
     project_type: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -151,6 +152,7 @@ class BuildingApplication(Base):
     city: Mapped["City"] = relationship("City", back_populates="building_applications")
     district: Mapped["CityDistrict"] = relationship("CityDistrict", back_populates="building_applications")
     land_parcel: Mapped["LandParcel"] = relationship("LandParcel", back_populates="building_applications")
+    business_blueprint: Mapped[Optional["BusinessBlueprint"]] = relationship("BusinessBlueprint", back_populates="applications")
     applicant: Mapped["Player"] = relationship("Player", back_populates="building_applications")
     building: Mapped[Optional["Building"]] = relationship("Building", back_populates="source_application", uselist=False)
 
@@ -170,6 +172,7 @@ class Building(Base):
         ForeignKey("building_applications.id", ondelete="CASCADE"),
         nullable=False,
     )
+    business_blueprint_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("business_blueprints.id", ondelete="SET NULL"))
     business_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("businesses.id", ondelete="SET NULL"), unique=True)
     owner_player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
@@ -182,8 +185,48 @@ class Building(Base):
     district: Mapped["CityDistrict"] = relationship("CityDistrict", back_populates="buildings")
     land_parcel: Mapped["LandParcel"] = relationship("LandParcel", back_populates="building")
     source_application: Mapped["BuildingApplication"] = relationship("BuildingApplication", back_populates="building")
+    business_blueprint: Mapped[Optional["BusinessBlueprint"]] = relationship("BusinessBlueprint", back_populates="buildings")
     owner: Mapped["Player"] = relationship("Player", back_populates="buildings")
     business: Mapped[Optional["Business"]] = relationship("Business", back_populates="building")
+
+
+class BusinessBlueprint(Base):
+    __tablename__ = "business_blueprints"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    code: Mapped[str] = mapped_column(String(70), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    category: Mapped[str] = mapped_column(String(50), nullable=False)
+    business_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    project_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    description: Mapped[str] = mapped_column(String(600), nullable=False)
+    difficulty: Mapped[str] = mapped_column(String(30), nullable=False)
+    allowed_land_types: Mapped[list] = mapped_column(JSON, default=list)
+    allowed_zoning_types: Mapped[list] = mapped_column(JSON, default=list)
+    min_area_hectares: Mapped[float] = mapped_column(Decimal(10, 2), default=0.00)
+    construction_cost: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+    opening_fee: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+    recommended_cash_reserve: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+    daily_profit_min: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+    daily_profit_max: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+    upkeep_daily: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+    risk_level: Mapped[int] = mapped_column(Integer, default=1)
+    risks: Mapped[list] = mapped_column(JSON, default=list)
+    metric_effects: Mapped[dict] = mapped_column(JSON, default=dict)
+    visual_archetype: Mapped[str] = mapped_column(String(80), nullable=False)
+    style_tags: Mapped[list] = mapped_column(JSON, default=list)
+    player_hints: Mapped[list] = mapped_column(JSON, default=list)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    applications: Mapped[List["BuildingApplication"]] = relationship(
+        "BuildingApplication",
+        back_populates="business_blueprint",
+    )
+    buildings: Mapped[List["Building"]] = relationship(
+        "Building",
+        back_populates="business_blueprint",
+    )
 
 # 2. МОДЕЛЬ ГРАВЦЯ
 class Player(Base):

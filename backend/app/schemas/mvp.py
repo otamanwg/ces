@@ -28,6 +28,36 @@ class BusinessMarketData(BaseModel):
     businesses: list[BusinessMarketItem]
 
 
+class BusinessBlueprintItem(BaseModel):
+    id: str
+    code: str
+    name: str
+    category: str
+    business_type: str
+    project_type: str
+    description: str
+    difficulty: str
+    allowed_land_types: list[str]
+    allowed_zoning_types: list[str]
+    min_area_hectares: float
+    construction_cost: float
+    opening_fee: float
+    recommended_cash_reserve: float
+    daily_profit_min: float
+    daily_profit_max: float
+    upkeep_daily: float
+    risk_level: int
+    risks: list[str]
+    metric_effects: dict[str, int]
+    visual_archetype: str
+    style_tags: list[str]
+    player_hints: list[str]
+
+
+class BusinessBlueprintsData(BaseModel):
+    blueprints: list[BusinessBlueprintItem]
+
+
 class SportsClubItem(BaseModel):
     id: str
     name: str
@@ -168,6 +198,7 @@ class BuildingApplicationData(BaseModel):
     city_id: str
     district_id: str
     land_parcel_id: str
+    business_blueprint_id: str | None
     applicant_player_id: str
     proposed_name: str
     project_type: str
@@ -190,6 +221,7 @@ class BuildingItem(BaseModel):
     district_id: str
     land_parcel_id: str
     source_application_id: str
+    business_blueprint_id: str | None
     business_id: str | None
     owner_player_id: str
     name: str

@@ -5,11 +5,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.app.database import get_db
-from backend.app.models import Business, Building, BuildingApplication, City, LandParcel, Player, TransactionModelLog
+from backend.app.models import Business, Building, BuildingApplication, BusinessBlueprint, City, LandParcel, Player, TransactionModelLog
 from backend.app.schemas.mvp import (
     BuildingActivationActionData,
     BuildingApplicationData,
     BuildingOpenActionData,
+    BusinessBlueprintsData,
     LandParcelsData,
     LandPurchaseActionData,
 )
@@ -68,6 +69,24 @@ def test_land_parcels_endpoint_returns_seeded_city_land(client):
     assert parcels[0]["current_price"] == 200.0
     assert parcels[-1]["code"] == "outer_expansion_lot"
     assert parcels[-1]["land_type"] == "near_city"
+
+
+def test_business_blueprints_endpoint_returns_starter_catalog(client):
+    test_client, _db = client
+
+    res = test_client.get("/api/business/blueprints")
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is True
+    data = BusinessBlueprintsData.model_validate(body["data"])
+    blueprints = {blueprint.code: blueprint for blueprint in data.blueprints}
+    assert len(blueprints) == 7
+    assert blueprints["station_kiosk"].project_type == "commercial"
+    assert blueprints["station_kiosk"].business_type == "shop"
+    assert blueprints["station_kiosk"].metric_effects["expected_jobs"] == 2
+    assert blueprints["small_factory"].risk_level == 5
+    assert blueprints["private_hostel"].business_type == "private_hostel"
 
 
 def test_land_purchase_transfers_money_to_treasury_assigns_owner_and_is_idempotent(client):
@@ -225,6 +244,81 @@ def test_building_application_uses_ai_mayor_policy_and_is_idempotent(client):
     assert db.query(BuildingApplication).count() == 1
 
 
+def test_building_application_blueprint_is_metric_source_of_truth(client):
+    test_client, db = client
+    player_id, token = register_player(test_client, "blueprint-builder")
+    parcel = db.query(LandParcel).filter(LandParcel.code == "bus_station_kiosk_lot").one()
+    blueprint = db.query(BusinessBlueprint).filter(BusinessBlueprint.code == "station_kiosk").one()
+
+    buy_res = test_client.post(
+        "/api/land/buy",
+        json={"player_id": player_id, "land_parcel_id": str(parcel.id)},
+        headers={"X-Player-Token": token, "Idempotency-Key": "blueprint-land-buy"},
+    ).json()
+    assert buy_res["success"] is True
+
+    res = test_client.post(
+        "/api/building/applications",
+        json={
+            "player_id": player_id,
+            "land_parcel_id": str(parcel.id),
+            "business_blueprint_id": str(blueprint.id),
+            "proposed_name": "",
+            "project_type": "industrial",
+            "expected_jobs": 99,
+            "traffic_load": 99,
+            "service_load": 99,
+            "medical_load": 99,
+            "public_benefit": 0,
+        },
+        headers={"X-Player-Token": token, "Idempotency-Key": "blueprint-application"},
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is True
+    data = BuildingApplicationData.model_validate(body["data"])
+    assert data.business_blueprint_id == str(blueprint.id)
+    assert data.proposed_name == "Вокзальний кіоск"
+    assert data.project_type == "commercial"
+    assert data.expected_jobs == 2
+    assert data.traffic_load == 3
+    assert data.service_load == 2
+    assert data.medical_load == 1
+    assert data.public_benefit == 5
+    assert data.status == "approved"
+
+
+def test_building_application_blueprint_validates_land_requirements(client):
+    test_client, db = client
+    player_id, token = register_player(test_client, "wrong-blueprint-builder")
+    parcel = db.query(LandParcel).filter(LandParcel.code == "bus_station_kiosk_lot").one()
+    blueprint = db.query(BusinessBlueprint).filter(BusinessBlueprint.code == "coffee_shop").one()
+
+    buy_res = test_client.post(
+        "/api/land/buy",
+        json={"player_id": player_id, "land_parcel_id": str(parcel.id)},
+        headers={"X-Player-Token": token},
+    ).json()
+    assert buy_res["success"] is True
+
+    res = test_client.post(
+        "/api/building/applications",
+        json={
+            "player_id": player_id,
+            "land_parcel_id": str(parcel.id),
+            "business_blueprint_id": str(blueprint.id),
+        },
+        headers={"X-Player-Token": token},
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is False
+    assert "потрібна ділянка" in body["message"]
+    assert db.query(BuildingApplication).count() == 0
+
+
 def test_approved_building_application_activation_creates_building_and_is_idempotent(client):
     test_client, db = client
     player_id, token = register_player(test_client, "approved-builder")
@@ -374,6 +468,61 @@ def test_open_building_charges_fee_links_business_and_is_idempotent(client):
     assert repeat.json() == body
     assert db.query(Business).filter(Business.name == "Вокзальна кав'ярня").count() == 1
     assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "building_opening_fee").count() == 1
+
+
+def test_open_building_uses_blueprint_fee_and_business_type(client):
+    test_client, db = client
+    player_id, token = register_player(test_client, "hostel-operator")
+    player = db.query(Player).filter(Player.id == player_id).one()
+    player.balance = Decimal("1000.00")
+    parcel = db.query(LandParcel).filter(LandParcel.code == "residential_hostel_lot").one()
+    parcel.owner_player_id = player.id
+    parcel.status = OWNED
+    blueprint = db.query(BusinessBlueprint).filter(BusinessBlueprint.code == "private_hostel").one()
+    db.commit()
+
+    application_res = test_client.post(
+        "/api/building/applications",
+        json={
+            "player_id": player_id,
+            "land_parcel_id": str(parcel.id),
+            "business_blueprint_id": str(blueprint.id),
+            "proposed_name": "Хостел гравця",
+        },
+        headers={"X-Player-Token": token, "Idempotency-Key": "hostel-blueprint-application"},
+    ).json()
+    assert application_res["success"] is True
+    assert application_res["data"]["project_type"] == "residential"
+    assert application_res["data"]["business_blueprint_id"] == str(blueprint.id)
+
+    activate_res = test_client.post(
+        f"/api/building/applications/{application_res['data']['id']}/activate",
+        json={"player_id": player_id},
+        headers={"X-Player-Token": token, "Idempotency-Key": "hostel-blueprint-activate"},
+    ).json()
+    assert activate_res["success"] is True
+    building_id = activate_res["data"]["building"]["id"]
+    assert activate_res["data"]["building"]["business_blueprint_id"] == str(blueprint.id)
+
+    open_res = test_client.post(
+        f"/api/buildings/{building_id}/open",
+        json={"player_id": player_id},
+        headers={"X-Player-Token": token, "Idempotency-Key": "hostel-blueprint-open"},
+    )
+
+    assert open_res.status_code == 200
+    body = open_res.json()
+    assert body["success"] is True
+    data = BuildingOpenActionData.model_validate(body["data"])
+    assert data.opening_fee == 160.0
+    assert data.balance == 840.0
+    assert data.building.business_blueprint_id == str(blueprint.id)
+    assert data.building.business_id is not None
+
+    building = db.query(Building).filter(Building.id == building_id).one()
+    business = db.query(Business).filter(Business.id == building.business_id).one()
+    assert business.type == "private_hostel"
+    assert business.owner_player_id == player.id
 
 
 def test_open_building_requires_owner(client):

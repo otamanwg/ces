@@ -64,6 +64,7 @@ def activate_building_application(db: Session, player: Player, application_id: U
         district_id=application.district_id,
         land_parcel_id=application.land_parcel_id,
         source_application_id=application.id,
+        business_blueprint_id=application.business_blueprint_id,
         owner_player_id=player.id,
         name=application.proposed_name,
         project_type=application.project_type,
@@ -84,6 +85,8 @@ def activate_building_application(db: Session, player: Player, application_id: U
 
 
 def get_building_opening_fee(building: Building):
+    if building.business_blueprint:
+        return money(building.business_blueprint.opening_fee)
     return BUILDING_OPENING_FEES.get(building.project_type, money("100.00"))
 
 
@@ -128,7 +131,11 @@ def open_building_operations(db: Session, player: Player, building_id: UUID) -> 
         )
 
     business = building.business
-    business_type = BUSINESS_PROJECT_TYPES.get(building.project_type)
+    business_type = (
+        building.business_blueprint.business_type
+        if building.business_blueprint
+        else BUSINESS_PROJECT_TYPES.get(building.project_type)
+    )
     if business is None and business_type is not None:
         business = Business(
             city_id=building.city_id,
