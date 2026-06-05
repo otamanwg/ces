@@ -33,6 +33,7 @@ public partial class CityDashboardController : Control
 	private GameSession _session;
 	private NetworkManager _networkManager;
 	private ExamPanelController _examPanel;
+	private CityVisualOverlay _cityVisualOverlay;
 	private Button _applyJobButton;
 	private Button _workButton;
 	private Button _sleepButton;
@@ -94,6 +95,7 @@ public partial class CityDashboardController : Control
 	private double _playerBalance;
 	private JsonNode _landCatalogData;
 	private JsonNode _blueprintCatalogData;
+	private DashboardCityVisualModel _cityVisualModel = DashboardCityVisualModel.Empty;
 
 	public override void _Ready()
 	{
@@ -180,6 +182,7 @@ public partial class CityDashboardController : Control
 		CityNameLabel ??= GetNodeOrNull<Label>("%CityNameLabel");
 		TreasuryLabel ??= GetNodeOrNull<Label>("%TreasuryLabel");
 		InflationLabel ??= GetNodeOrNull<Label>("%InflationLabel");
+		_cityVisualOverlay ??= GetNodeOrNull<CityVisualOverlay>("%CityVisualOverlay");
 		_applyJobButton ??= GetNodeOrNull<Button>("%ApplyJobButton");
 		_workButton ??= GetNodeOrNull<Button>("%WorkButton");
 		_sleepButton ??= GetNodeOrNull<Button>("%SleepButton");
@@ -431,6 +434,7 @@ public partial class CityDashboardController : Control
 		}
 
 		UpdateCityUI(data);
+		UpdateCityVisual(data);
 		AddNewsToHistory(data);
 		_pendingRefresh = false;
 		string cityId = data["id"]?.ToString() ?? "";
@@ -603,6 +607,8 @@ public partial class CityDashboardController : Control
 		{
 			BuildingPortfolioLabel.Text = portfolio.SummaryText;
 		}
+
+		_cityVisualOverlay?.SetBuildingPortfolio(portfolio);
 
 		_portfolioOpenBuildingId = portfolio.OpenCandidate?.Id ?? "";
 		_portfolioRepairBuildingId = portfolio.RepairCandidate?.Id ?? "";
@@ -897,6 +903,7 @@ public partial class CityDashboardController : Control
 		{
 			BuildingPortfolioLabel.Text = "Будівлі: немає";
 		}
+		_cityVisualOverlay?.SetBuildingPortfolio(new DashboardBuildingPortfolio());
 		UpdateBuildingPortfolioButtons();
 	}
 
@@ -945,6 +952,12 @@ public partial class CityDashboardController : Control
 			double inflation = data["inflation_rate"]?.GetValue<double>() ?? 0.0;
 			InflationLabel.Text = $"{inflation:F1}%";
 		}
+	}
+
+	private void UpdateCityVisual(JsonNode data)
+	{
+		_cityVisualModel = DashboardCityVisualModel.FromCityStatus(data);
+		_cityVisualOverlay?.SetCityModel(_cityVisualModel);
 	}
 
 	private void AddNewsToHistory(JsonNode data)

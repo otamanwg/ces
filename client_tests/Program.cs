@@ -191,6 +191,46 @@ AssertEqual("", defaultSnapshot.OwnedBusinessId, "Snapshot default owned busines
 AssertEqual("Бізнес: немає", defaultSnapshot.OwnedBusinessText, "Snapshot default owned business text");
 AssertEqual("Спорт: немає", defaultSnapshot.SportsText, "Snapshot default sports text");
 
+var visualCityJson = JsonNode.Parse(
+	"""
+	{
+		"name": "Тестове місто",
+		"districts": [
+			{
+				"code": "bus_station",
+				"name": "Автовокзал",
+				"rent_level": 20,
+				"job_supply": 15,
+				"crime_risk": 12,
+				"traffic": 45,
+				"service_coverage": 70,
+				"medical_coverage": 55,
+				"land_value": 60,
+				"desirability": 62
+			},
+			{
+				"code": "industrial_edge",
+				"name": "Промзона",
+				"rent_level": 10,
+				"job_supply": 35,
+				"crime_risk": 22,
+				"traffic": 70,
+				"service_coverage": 50,
+				"medical_coverage": 40,
+				"land_value": 45,
+				"desirability": 38
+			}
+		]
+	}
+	"""
+)!;
+var visualModel = DashboardCityVisualModel.FromCityStatus(visualCityJson);
+AssertEqual("Тестове місто", visualModel.CityName, "Visual model city name");
+AssertEqual(2, visualModel.Districts.Count, "Visual model district count");
+AssertEqual("Вокзал", visualModel.Districts[0].ShortLabel, "Visual model short district label");
+AssertEqual(122, visualModel.Districts[1].PressureScore, "Visual model pressure score");
+AssertEqual("Тестове місто: 2 районів | робота 50 | злочинність max 22", visualModel.HeadlineText, "Visual model headline");
+
 var emptyPortfolio = DashboardBuildingPortfolio.FromJson(JsonNode.Parse("""{"buildings": []}""")!);
 AssertEqual(0, emptyPortfolio.Buildings.Count, "Empty building portfolio count");
 AssertEqual("Будівлі: немає", emptyPortfolio.SummaryText, "Empty building portfolio summary");
@@ -243,6 +283,10 @@ var repairPortfolio = DashboardBuildingPortfolio.FromJson(repairPortfolioJson);
 AssertEqual("building-2", repairPortfolio.RepairCandidate!.Id, "Portfolio repair candidate id");
 AssertEqual(null, repairPortfolio.OpenCandidate, "Maintenance building has no open candidate");
 AssertEqual("1 будівля: Портфельний кіоск | потрібен ремонт 25 ₴ | Автовокзал | upkeep 8 ₴", repairPortfolio.SummaryText, "Repair portfolio summary");
+var visualWithPortfolio = visualModel.WithPortfolio(repairPortfolio);
+AssertEqual(1, visualWithPortfolio.BuildingCount, "Visual model portfolio building count");
+AssertEqual(1, visualWithPortfolio.ProblemBuildingCount, "Visual model problem building count");
+AssertEqual(0, visualWithPortfolio.ActiveBuildingCount, "Visual model active building count");
 
 var landCatalogJson = JsonNode.Parse(
 	"""

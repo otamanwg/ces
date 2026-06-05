@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 29: Player Building Creation Flow.**
+**Sprint 30: Core City Visual Layer.**
 
-Мета: зв'язати вже готові backend-контракти землі, бізнес-шаблонів, заявок і activation в перший зрозумілий шлях "купив ділянку -> обрав бізнес -> отримав погодження -> створив будівлю".
+Мета: зробити dashboard візуально схожим на живе місто, а не на звіт: райони, дороги, навантаження, активи гравця і майбутні style packs мають жити поверх одного data-aware visual layer.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -516,6 +516,26 @@ DoD:
 6. ✅ Client action: submit blueprint application for owned starter land.
 7. ✅ Client action: activate approved building.
 8. ✅ Godot MCP smoke + `scripts/check.ps1` + commit.
+
+---
+
+## Sprint 30 — Core City Visual Layer
+
+Ціль: перетворити центральний visual panel на читабельну карту міста-сервера, прив'язану до реальних district metrics і building portfolio.
+
+Порядок:
+
+1. ✅ Client model: `DashboardCityVisualModel` для city districts і building counts.
+2. ✅ Godot scene: `CityVisualOverlay` поверх core backdrop.
+3. ✅ Controller wiring: `/api/city/status` оновлює райони, portfolio оновлює активи гравця.
+4. ✅ Client tests: district parsing, pressure score, headline, portfolio counts.
+5. ✅ Godot MCP smoke + `scripts/check.ps1` + commit.
+
+Наступний visual крок після Sprint 30:
+
+1. Building archetype markers: kiosk, coffee, hostel, pharmacy, workshop, factory.
+2. Видимий стан будівлі: inactive/active/maintenance_due.
+3. Легке zoom-перемикання між overview і street-focus без зміни backend mechanics.
 
 ---
 
