@@ -51,9 +51,13 @@ public sealed class DashboardBuildingItem
 {
 	public string Id { get; init; } = "";
 	public string DisplayName { get; init; } = "Будівля";
+	public string DistrictCode { get; init; } = "";
 	public string DistrictName { get; init; } = "Район";
 	public string OperatingStatus { get; init; } = "";
+	public string BlueprintCode { get; init; } = "";
 	public string BlueprintName { get; init; } = "";
+	public string BlueprintCategory { get; init; } = "";
+	public string ProjectType { get; init; } = "";
 	public double OpeningFee { get; init; }
 	public double RepairFee { get; init; }
 	public double UpkeepDaily { get; init; }
@@ -78,9 +82,13 @@ public sealed class DashboardBuildingItem
 		{
 			Id = data["id"]?.ToString() ?? "",
 			DisplayName = data["name"]?.ToString() ?? data["blueprint_name"]?.ToString() ?? "Будівля",
+			DistrictCode = data["district_code"]?.ToString() ?? "",
 			DistrictName = data["district_name"]?.ToString() ?? "Район",
 			OperatingStatus = data["operating_status"]?.ToString() ?? "",
+			BlueprintCode = data["blueprint_code"]?.ToString() ?? "",
 			BlueprintName = data["blueprint_name"]?.ToString() ?? "",
+			BlueprintCategory = data["blueprint_category"]?.ToString() ?? "",
+			ProjectType = data["project_type"]?.ToString() ?? "",
 			OpeningFee = data["opening_fee"]?.GetValue<double>() ?? 0.0,
 			RepairFee = data["repair_fee"]?.GetValue<double>() ?? 0.0,
 			UpkeepDaily = data["upkeep_daily"]?.GetValue<double>() ?? 0.0,

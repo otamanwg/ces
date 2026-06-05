@@ -11,6 +11,7 @@ public sealed class DashboardCityVisualModel
 
 	public string CityName { get; init; } = "Місто";
 	public IReadOnlyList<DashboardCityVisualDistrict> Districts { get; init; } = Array.Empty<DashboardCityVisualDistrict>();
+	public IReadOnlyList<DashboardCityVisualBuilding> Buildings { get; init; } = Array.Empty<DashboardCityVisualBuilding>();
 	public int BuildingCount { get; init; }
 	public int ActiveBuildingCount { get; init; }
 	public int InactiveBuildingCount { get; init; }
@@ -37,6 +38,7 @@ public sealed class DashboardCityVisualModel
 		{
 			CityName = CityName,
 			Districts = Districts,
+			Buildings = portfolio.Buildings.Select(DashboardCityVisualBuilding.FromPortfolioItem).ToArray(),
 			BuildingCount = portfolio.Buildings.Count,
 			ActiveBuildingCount = portfolio.Buildings.Count(building => building.OperatingStatus == "active"),
 			InactiveBuildingCount = portfolio.Buildings.Count(building => building.OperatingStatus == "inactive"),
@@ -110,6 +112,39 @@ public sealed record DashboardCityVisualDistrict(
 			MedicalCoverage: data["medical_coverage"]?.GetValue<int>() ?? 0,
 			LandValue: data["land_value"]?.GetValue<int>() ?? 0,
 			Desirability: data["desirability"]?.GetValue<int>() ?? 0
+		);
+	}
+}
+
+public sealed record DashboardCityVisualBuilding(
+	string Id,
+	string Name,
+	string DistrictCode,
+	string BlueprintCode,
+	string ProjectType,
+	string OperatingStatus)
+{
+	public string ArchetypeLabel => BlueprintCode switch
+	{
+		"station_kiosk" => "K",
+		"coffee_shop" => "C",
+		"neighborhood_market" => "M",
+		"repair_workshop" => "W",
+		"private_hostel" => "H",
+		"pharmacy" => "P",
+		"small_factory" => "F",
+		_ => ProjectType.Length > 0 ? ProjectType[..1].ToUpperInvariant() : "B",
+	};
+
+	public static DashboardCityVisualBuilding FromPortfolioItem(DashboardBuildingItem item)
+	{
+		return new DashboardCityVisualBuilding(
+			item.Id,
+			item.DisplayName,
+			item.DistrictCode,
+			item.BlueprintCode,
+			item.ProjectType,
+			item.OperatingStatus
 		);
 	}
 }

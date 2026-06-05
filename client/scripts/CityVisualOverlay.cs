@@ -135,12 +135,77 @@ public partial class CityVisualOverlay : Control
 		DrawCircle(marker, 15.0f, new Color(0.0f, 0.0f, 0.0f, 0.42f));
 		DrawCircle(marker, 11.0f, markerColor);
 		DrawCircle(marker, 4.0f, new Color(1.0f, 1.0f, 1.0f, 0.9f));
+		DrawBuildingMarkers(size);
 
 		Font font = GetThemeDefaultFont();
 		string assetText = _model.BuildingCount > 0
 			? $"Активи: {_model.BuildingCount} | active {_model.ActiveBuildingCount} | repair {_model.ProblemBuildingCount}"
 			: "Активи: ще немає";
 		DrawString(font, new Vector2(size.X - 250, 28), assetText, HorizontalAlignment.Left, 230, 13, new Color(0.96f, 0.96f, 0.91f, 0.92f));
+	}
+
+	private void DrawBuildingMarkers(Vector2 size)
+	{
+		if (_model.Buildings.Count == 0)
+		{
+			return;
+		}
+
+		Font font = GetThemeDefaultFont();
+		int count = Math.Min(_model.Buildings.Count, 8);
+		for (int index = 0; index < count; index++)
+		{
+			var building = _model.Buildings[index];
+			Vector2 position = BuildingMarkerPosition(building, index, size);
+			DrawBuildingMarker(building, position, font);
+		}
+	}
+
+	private void DrawBuildingMarker(DashboardCityVisualBuilding building, Vector2 position, Font font)
+	{
+		Vector2 markerSize = new(24, 24);
+		Rect2 rect = new(position - markerSize / 2.0f, markerSize);
+		Color fill = BuildingColor(building.BlueprintCode, building.ProjectType);
+		if (building.OperatingStatus == "inactive")
+		{
+			fill.A = 0.58f;
+		}
+
+		Color border = building.OperatingStatus == "maintenance_due"
+			? new Color(0.98f, 0.23f, 0.18f, 0.96f)
+			: new Color(1.0f, 1.0f, 1.0f, 0.72f);
+
+		DrawRect(new Rect2(rect.Position + new Vector2(2, 3), rect.Size), new Color(0.0f, 0.0f, 0.0f, 0.32f), true);
+		DrawRect(rect, fill, true);
+		DrawRect(rect, border, false, 2.0f);
+		DrawString(font, rect.Position + new Vector2(0, 17), building.ArchetypeLabel, HorizontalAlignment.Center, rect.Size.X, 13, new Color(0.98f, 0.98f, 0.94f, 0.96f));
+	}
+
+	private static Vector2 BuildingMarkerPosition(DashboardCityVisualBuilding building, int index, Vector2 size)
+	{
+		string districtCode = DistrictRects.ContainsKey(building.DistrictCode)
+			? building.DistrictCode
+			: building.ProjectType switch
+			{
+				"industrial" => "industrial_edge",
+				"residential" => "highrise_residential",
+				"medical" => "commercial_core",
+				_ => "commercial_core",
+			};
+
+		Vector2 center = CenterOf(districtCode, size);
+		Vector2[] offsets =
+		{
+			new(-34, -14),
+			new(0, -20),
+			new(34, -10),
+			new(-22, 20),
+			new(24, 22),
+			new(-50, 14),
+			new(52, 16),
+			new(0, 34),
+		};
+		return center + offsets[index % offsets.Length];
 	}
 
 	private void DrawLegend(Vector2 size)
@@ -180,6 +245,27 @@ public partial class CityVisualOverlay : Control
 			"suburb_private_sector" => new Color(0.36f, 0.66f, 0.42f, 0.75f),
 			"outer_land" => new Color(0.26f, 0.52f, 0.31f, 0.75f),
 			_ => new Color(0.34f, 0.40f, 0.46f, 0.75f),
+		};
+	}
+
+	private static Color BuildingColor(string blueprintCode, string projectType)
+	{
+		return blueprintCode switch
+		{
+			"station_kiosk" => new Color(0.92f, 0.62f, 0.22f, 0.94f),
+			"coffee_shop" => new Color(0.56f, 0.36f, 0.24f, 0.94f),
+			"neighborhood_market" => new Color(0.22f, 0.64f, 0.42f, 0.94f),
+			"repair_workshop" => new Color(0.46f, 0.50f, 0.56f, 0.94f),
+			"private_hostel" => new Color(0.42f, 0.52f, 0.82f, 0.94f),
+			"pharmacy" => new Color(0.20f, 0.72f, 0.76f, 0.94f),
+			"small_factory" => new Color(0.62f, 0.44f, 0.34f, 0.94f),
+			_ => projectType switch
+			{
+				"industrial" => new Color(0.50f, 0.50f, 0.52f, 0.94f),
+				"residential" => new Color(0.42f, 0.52f, 0.78f, 0.94f),
+				"medical" => new Color(0.20f, 0.72f, 0.76f, 0.94f),
+				_ => new Color(0.34f, 0.58f, 0.82f, 0.94f),
+			},
 		};
 	}
 }

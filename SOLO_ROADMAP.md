@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 30: Core City Visual Layer.**
+**Sprint 31: Building Archetype Markers.**
 
-Мета: зробити dashboard візуально схожим на живе місто, а не на звіт: райони, дороги, навантаження, активи гравця і майбутні style packs мають жити поверх одного data-aware visual layer.
+Мета: створені гравцем будівлі мають відображатися на visual map як фізичні маркери з archetype і operating status, а не тільки як число в portfolio.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -533,9 +533,29 @@ DoD:
 
 Наступний visual крок після Sprint 30:
 
-1. Building archetype markers: kiosk, coffee, hostel, pharmacy, workshop, factory.
-2. Видимий стан будівлі: inactive/active/maintenance_due.
-3. Легке zoom-перемикання між overview і street-focus без зміни backend mechanics.
+1. ✅ Building archetype markers: kiosk, coffee, hostel, pharmacy, workshop, factory.
+2. ✅ Видимий стан будівлі: inactive/active/maintenance_due.
+3. ⏳ Легке zoom-перемикання між overview і street-focus без зміни backend mechanics.
+
+---
+
+## Sprint 31 — Building Archetype Markers
+
+Ціль: portfolio має передавати візуальному шару не тільки кількість будівель, а й тип, район і стан кожного активу.
+
+Порядок:
+
+1. ✅ Client parser: `DashboardBuildingItem` зберігає `district_code`, `blueprint_code`, `project_type`.
+2. ✅ Visual model: `DashboardCityVisualBuilding` і archetype label.
+3. ✅ Godot overlay: окремі маркери будівель з кольором archetype і рамкою стану.
+4. ✅ Client tests: parser fields і visual building mapping.
+5. ✅ Godot MCP smoke + `scripts/check.ps1` + commit.
+
+Наступний visual крок після Sprint 31:
+
+1. Overview/street-focus toggle.
+2. Легка анімація міського шару без зміни gameplay state.
+3. Підготовка style-token palette для майбутніх visual packs.
 
 ---
 

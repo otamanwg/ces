@@ -244,9 +244,13 @@ var activePortfolioJson = JsonNode.Parse(
 			{
 				"id": "building-1",
 				"name": "Вокзальний кіоск",
+				"district_code": "bus_station",
 				"district_name": "Автовокзал",
 				"operating_status": "inactive",
+				"blueprint_code": "station_kiosk",
 				"blueprint_name": "Вокзальний кіоск",
+				"blueprint_category": "starter_retail",
+				"project_type": "commercial",
 				"opening_fee": 100.0,
 				"repair_fee": 25.0,
 				"upkeep_daily": 8.0,
@@ -259,6 +263,9 @@ var activePortfolioJson = JsonNode.Parse(
 var activePortfolio = DashboardBuildingPortfolio.FromJson(activePortfolioJson);
 AssertEqual(1, activePortfolio.Buildings.Count, "Portfolio parses building count");
 AssertEqual("building-1", activePortfolio.OpenCandidate!.Id, "Portfolio open candidate id");
+AssertEqual("bus_station", activePortfolio.Buildings[0].DistrictCode, "Portfolio district code");
+AssertEqual("station_kiosk", activePortfolio.Buildings[0].BlueprintCode, "Portfolio blueprint code");
+AssertEqual("commercial", activePortfolio.Buildings[0].ProjectType, "Portfolio project type");
 AssertEqual(null, activePortfolio.RepairCandidate, "Inactive building has no repair candidate");
 AssertEqual("1 будівля: Вокзальний кіоск | не відкрита, відкриття 100 ₴ | Автовокзал | upkeep 8 ₴", activePortfolio.SummaryText, "Inactive portfolio summary");
 
@@ -269,8 +276,11 @@ var repairPortfolioJson = JsonNode.Parse(
 			{
 				"id": "building-2",
 				"name": "Портфельний кіоск",
+				"district_code": "bus_station",
 				"district_name": "Автовокзал",
 				"operating_status": "maintenance_due",
+				"blueprint_code": "station_kiosk",
+				"project_type": "commercial",
 				"repair_fee": 25.0,
 				"upkeep_daily": 8.0,
 				"available_actions": ["repair"]
@@ -287,6 +297,8 @@ var visualWithPortfolio = visualModel.WithPortfolio(repairPortfolio);
 AssertEqual(1, visualWithPortfolio.BuildingCount, "Visual model portfolio building count");
 AssertEqual(1, visualWithPortfolio.ProblemBuildingCount, "Visual model problem building count");
 AssertEqual(0, visualWithPortfolio.ActiveBuildingCount, "Visual model active building count");
+AssertEqual("K", visualWithPortfolio.Buildings[0].ArchetypeLabel, "Visual model building archetype label");
+AssertEqual("bus_station", visualWithPortfolio.Buildings[0].DistrictCode, "Visual model building district code");
 
 var landCatalogJson = JsonNode.Parse(
 	"""
