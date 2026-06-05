@@ -5,10 +5,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.app.database import get_db
-from backend.app.models import Building, BuildingApplication, City, LandParcel, Player, TransactionModelLog
+from backend.app.models import Business, Building, BuildingApplication, City, LandParcel, Player, TransactionModelLog
 from backend.app.schemas.mvp import (
     BuildingActivationActionData,
     BuildingApplicationData,
+    BuildingOpenActionData,
     LandParcelsData,
     LandPurchaseActionData,
 )
@@ -284,6 +285,141 @@ def test_approved_building_application_activation_creates_building_and_is_idempo
     assert repeat.status_code == 200
     assert repeat.json() == body
     assert db.query(Building).count() == 1
+
+
+def create_openable_commercial_building(test_client, db, player_id: str, token: str):
+    parcel = db.query(LandParcel).filter(LandParcel.code == "bus_station_kiosk_lot").one()
+    buy_res = test_client.post(
+        "/api/land/buy",
+        json={"player_id": player_id, "land_parcel_id": str(parcel.id)},
+        headers={"X-Player-Token": token, "Idempotency-Key": f"open-land-{player_id}"},
+    ).json()
+    assert buy_res["success"] is True
+
+    application_res = test_client.post(
+        "/api/building/applications",
+        json={
+            "player_id": player_id,
+            "land_parcel_id": str(parcel.id),
+            "proposed_name": "Вокзальна кав'ярня",
+            "project_type": "commercial",
+            "expected_jobs": 3,
+            "traffic_load": 3,
+            "service_load": 2,
+            "medical_load": 1,
+        },
+        headers={"X-Player-Token": token, "Idempotency-Key": f"open-application-{player_id}"},
+    ).json()
+    assert application_res["success"] is True
+
+    activate_res = test_client.post(
+        f"/api/building/applications/{application_res['data']['id']}/activate",
+        json={"player_id": player_id},
+        headers={"X-Player-Token": token, "Idempotency-Key": f"open-activate-{player_id}"},
+    ).json()
+    assert activate_res["success"] is True
+    return activate_res["data"]["building"]["id"]
+
+
+def test_open_building_charges_fee_links_business_and_is_idempotent(client):
+    test_client, db = client
+    player_id, token = register_player(test_client, "building-operator")
+    player = db.query(Player).filter(Player.id == player_id).one()
+    city = db.query(City).filter(City.id == player.city_id).one()
+    building_id = create_openable_commercial_building(test_client, db, player_id, token)
+    starting_treasury = Decimal(str(city.treasury_balance))
+
+    headers = {"X-Player-Token": token, "Idempotency-Key": "building-open-1"}
+    res = test_client.post(
+        f"/api/buildings/{building_id}/open",
+        json={"player_id": player_id},
+        headers=headers,
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is True
+    data = BuildingOpenActionData.model_validate(body["data"])
+    assert data.balance == 200.0
+    assert data.opening_fee == 100.0
+    assert data.building.id == building_id
+    assert data.building.operating_status == "active"
+    assert data.building.business_id is not None
+    assert data.owned_businesses[0].name == "Вокзальна кав'ярня"
+
+    db.refresh(player)
+    db.refresh(city)
+    building = db.query(Building).filter(Building.id == building_id).one()
+    business = db.query(Business).filter(Business.id == building.business_id).one()
+    assert Decimal(str(player.balance)) == Decimal("200.00")
+    assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal("100.00")
+    assert building.operating_status == "active"
+    assert business.owner_player_id == player.id
+    assert business.type == "shop"
+    assert business.cash_balance == Decimal("0.00")
+
+    opening_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "building_opening_fee").one()
+    assert opening_log.sender_id == player.id
+    assert opening_log.sender_type == "player"
+    assert opening_log.receiver_id == city.id
+    assert opening_log.receiver_type == "treasury"
+    assert opening_log.amount == Decimal("100.00")
+
+    repeat = test_client.post(
+        f"/api/buildings/{building_id}/open",
+        json={"player_id": player_id},
+        headers=headers,
+    )
+    assert repeat.status_code == 200
+    assert repeat.json() == body
+    assert db.query(Business).filter(Business.name == "Вокзальна кав'ярня").count() == 1
+    assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "building_opening_fee").count() == 1
+
+
+def test_open_building_requires_owner(client):
+    test_client, db = client
+    owner_id, owner_token = register_player(test_client, "building-open-owner")
+    intruder_id, intruder_token = register_player(test_client, "building-open-intruder")
+    building_id = create_openable_commercial_building(test_client, db, owner_id, owner_token)
+
+    res = test_client.post(
+        f"/api/buildings/{building_id}/open",
+        json={"player_id": intruder_id},
+        headers={"X-Player-Token": intruder_token},
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is False
+    assert body["message"] == "Відкрити можна лише власну будівлю."
+    building = db.query(Building).filter(Building.id == building_id).one()
+    assert building.operating_status == "inactive"
+    assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "building_opening_fee").count() == 0
+
+
+def test_open_building_rejects_already_active_without_idempotency(client):
+    test_client, db = client
+    player_id, token = register_player(test_client, "already-open-operator")
+    building_id = create_openable_commercial_building(test_client, db, player_id, token)
+
+    first = test_client.post(
+        f"/api/buildings/{building_id}/open",
+        json={"player_id": player_id},
+        headers={"X-Player-Token": token},
+    ).json()
+    assert first["success"] is True
+
+    second = test_client.post(
+        f"/api/buildings/{building_id}/open",
+        json={"player_id": player_id},
+        headers={"X-Player-Token": token},
+    )
+
+    assert second.status_code == 200
+    body = second.json()
+    assert body["success"] is False
+    assert body["message"] == "Будівля вже працює."
+    assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "building_opening_fee").count() == 1
 
 
 def test_revision_building_application_cannot_be_activated(client):

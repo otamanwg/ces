@@ -190,6 +190,7 @@ class BuildingItem(BaseModel):
     district_id: str
     land_parcel_id: str
     source_application_id: str
+    business_id: str | None
     owner_player_id: str
     name: str
     project_type: str
@@ -203,6 +204,11 @@ class LandPurchaseActionData(PlayerSnapshotData):
 
 class BuildingActivationActionData(PlayerSnapshotData):
     building: BuildingItem
+
+
+class BuildingOpenActionData(PlayerSnapshotData):
+    building: BuildingItem
+    opening_fee: float
 
 
 class DayTickCityData(BaseModel):

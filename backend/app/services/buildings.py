@@ -2,13 +2,27 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from backend.app.models import Building, BuildingApplication, Player
+from backend.app.models import Business, Building, BuildingApplication, City, Player
+from backend.app.services.ledger import credit, debit, log_transaction
+from backend.app.services.money import money
 
 
 BUILT = "built"
 INACTIVE = "inactive"
+ACTIVE = "active"
 APPLICATION_ACTIVATED = "activated"
 PARCEL_BUILT = "built"
+BUSINESS_PROJECT_TYPES = {
+    "commercial": "shop",
+    "industrial": "factory",
+}
+BUILDING_OPENING_FEES = {
+    "commercial": money("100.00"),
+    "industrial": money("150.00"),
+    "residential": money("60.00"),
+    "medical": money("80.00"),
+    "civic": money("0.00"),
+}
 
 
 def activate_building_application(db: Session, player: Player, application_id: UUID) -> dict:
@@ -66,4 +80,78 @@ def activate_building_application(db: Session, player: Player, application_id: U
         "success": True,
         "message": f"Будівлю '{building.name}' створено як міський актив.",
         "building": building,
+    }
+
+
+def get_building_opening_fee(building: Building):
+    return BUILDING_OPENING_FEES.get(building.project_type, money("100.00"))
+
+
+def open_building_operations(db: Session, player: Player, building_id: UUID) -> dict:
+    building = db.query(Building).filter(Building.id == building_id).with_for_update().first()
+    if not building or building.city_id != player.city_id:
+        return {"success": False, "message": "Будівлю не знайдено."}
+
+    if building.owner_player_id != player.id:
+        return {"success": False, "message": "Відкрити можна лише власну будівлю."}
+
+    if building.status != BUILT:
+        return {"success": False, "message": "Відкрити можна лише готову будівлю."}
+
+    if building.operating_status == ACTIVE:
+        return {"success": False, "message": "Будівля вже працює."}
+
+    if building.operating_status != INACTIVE:
+        return {"success": False, "message": "Будівля зараз не готова до відкриття."}
+
+    fee = get_building_opening_fee(building)
+    if money(player.balance) < fee:
+        return {"success": False, "message": f"Недостатньо коштів для відкриття будівлі! Потрібно: {fee:.2f} ₴."}
+
+    city = db.query(City).filter(City.id == player.city_id).first()
+    if not city:
+        return {"success": False, "message": "Місто не знайдено"}
+
+    if fee > money("0.00"):
+        debit(db, player, "balance", fee)
+        credit(db, city, "treasury_balance", fee)
+        log_transaction(
+            db,
+            city.id,
+            sender_id=player.id,
+            sender_type="player",
+            receiver_id=city.id,
+            receiver_type="treasury",
+            amount=float(fee),
+            tax=0.0,
+            purpose="building_opening_fee",
+        )
+
+    business = building.business
+    business_type = BUSINESS_PROJECT_TYPES.get(building.project_type)
+    if business is None and business_type is not None:
+        business = Business(
+            city_id=building.city_id,
+            name=building.name,
+            type=business_type,
+            owner_player_id=player.id,
+            owner_share_pct=100.00,
+            cash_balance=0.00,
+            status="active",
+        )
+        db.add(business)
+        db.flush()
+        building.business_id = business.id
+
+    building.operating_status = ACTIVE
+    db.commit()
+    db.refresh(building)
+    if building.business_id:
+        db.refresh(building.business)
+
+    return {
+        "success": True,
+        "message": f"Будівлю '{building.name}' відкрито для роботи.",
+        "building": building,
+        "opening_fee": float(fee),
     }

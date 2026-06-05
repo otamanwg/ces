@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 23: Building Operations.**
+**Sprint 23: Building Operations & Upkeep.**
 
-Мета: перетворити створену будівлю з пасивного запису в керований економічний актив.
+Мета: додати мінімальні правила утримання активної будівлі, не перетворюючи її ще на повну симуляцію бізнесу.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -417,10 +417,12 @@ DoD:
 
 Порядок:
 
-1. ⏳ Backend: endpoint для opening/activation operating status.
-2. ⏳ Backend: визначити мінімальні правила upkeep для `inactive`/`active`.
-3. ⏳ Backend: зв'язати commercial building із бізнес-можливістю або rental slot.
-4. ⏳ Backend/tests: ownership, status transition, ledger coverage.
+1. ✅ Backend: endpoint для opening/activation operating status.
+2. ✅ Backend/API/tests: opening fee з ledger `building_opening_fee`.
+3. ✅ Backend: commercial building створює linked `shop` business.
+4. ✅ Backend: industrial building створює linked `factory` business.
+5. ✅ Backend/tests: ownership, status transition, ledger, idempotency coverage.
+6. ⏳ Наступний backend крок: визначити мінімальні правила upkeep для `inactive`/`active`.
 
 ---
 

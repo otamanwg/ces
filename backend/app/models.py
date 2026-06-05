@@ -170,6 +170,7 @@ class Building(Base):
         ForeignKey("building_applications.id", ondelete="CASCADE"),
         nullable=False,
     )
+    business_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("businesses.id", ondelete="SET NULL"), unique=True)
     owner_player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     project_type: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -182,6 +183,7 @@ class Building(Base):
     land_parcel: Mapped["LandParcel"] = relationship("LandParcel", back_populates="building")
     source_application: Mapped["BuildingApplication"] = relationship("BuildingApplication", back_populates="building")
     owner: Mapped["Player"] = relationship("Player", back_populates="buildings")
+    business: Mapped[Optional["Business"]] = relationship("Business", back_populates="building")
 
 # 2. МОДЕЛЬ ГРАВЦЯ
 class Player(Base):
@@ -233,6 +235,7 @@ class Business(Base):
     # Зв'язки ORM
     city: Mapped["City"] = relationship("City", back_populates="businesses")
     owner: Mapped[Optional["Player"]] = relationship("Player", back_populates="businesses")
+    building: Mapped[Optional["Building"]] = relationship("Building", back_populates="business", uselist=False)
     jobs: Mapped[List["Job"]] = relationship("Job", back_populates="business")
     hostels: Mapped[List["Hostel"]] = relationship("Hostel", back_populates="business")
 
