@@ -239,6 +239,9 @@ var arrivalSnapshot = DashboardPlayerSnapshot.FromJson(JsonNode.Parse(
 AssertEqual(false, arrivalSnapshot.Onboarding.Completed, "Arrival snapshot keeps onboarding open");
 AssertEqual(true, arrivalSnapshot.Onboarding.CanReportToPolice, "Arrival offers police choice");
 AssertEqual(true, arrivalSnapshot.Onboarding.CanFindHousing, "Arrival offers housing choice");
+AssertEqual(3, DashboardArrivalStory.Count, "Arrival story has three setup beats");
+AssertEqual("Новий маршрут", DashboardArrivalStory.Get(0).Title, "Arrival story starts before the city");
+AssertEqual("Перші хвилини", DashboardArrivalStory.Get(2).Title, "Arrival story ends at the taxi event");
 
 var visualCityJson = JsonNode.Parse(
 	"""

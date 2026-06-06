@@ -4,7 +4,8 @@ param(
     [switch]$SkipBuild,
     [switch]$StressText,
     [switch]$Onboarding,
-    [switch]$PoliceRecovery
+    [switch]$PoliceRecovery,
+    [switch]$ArrivalStory
 )
 
 $ErrorActionPreference = "Stop"
@@ -64,6 +65,9 @@ if ($Onboarding) {
 }
 if ($PoliceRecovery) {
     $godotArguments += "--police-recovery"
+}
+if ($ArrivalStory) {
+    $godotArguments += "--arrival-story"
 }
 
 & $godot @godotArguments

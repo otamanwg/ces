@@ -681,6 +681,25 @@ DoD:
 
 ---
 
+## Sprint 40 — Arrival Visual Narrative
+
+Ціль: вступ має виглядати як ігрова сцена, а не як текстовий modal поверх dashboard.
+
+Порядок:
+
+1. ✅ Imagegen core asset: landscape-автовокзал, гравець із телефоном, таксі з викраденим багажем.
+2. ✅ Godot MCP: окремий `OnboardingBackdrop` під сюжетною панеллю.
+3. ✅ Client: три короткі story beats і кнопка `Далі` перед фінальним вибором.
+4. ✅ Capture workflow: `-ArrivalStory` і повторна перевірка фінального choice screen.
+5. ✅ Повний checkpoint, MCP smoke і commit.
+
+Наступний visual крок:
+
+1. Додати окремі per-beat зображення для залу очікування та поїздки в таксі.
+2. Винести список arrival assets у style-pack manifest, щоб `anime`, `hyperreal` і `mafia` не змінювали gameplay-код.
+
+---
+
 ## Checkpoints Де Потрібен Користувач
 
 | Checkpoint | Коли | Що потрібно |

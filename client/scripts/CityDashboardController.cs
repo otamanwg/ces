@@ -54,10 +54,13 @@ public partial class CityDashboardController : Control
 	private Label _onboardingPoliceStatusLabel;
 	private Button _onboardingPoliceButton;
 	private Button _onboardingHousingButton;
+	private Button _onboardingContinueButton;
 	private Button _policeRecoveryButton;
 	private DashboardStatusPresenter _statusPresenter;
 	private DashboardActionPresenter _actionPresenter;
 	private DashboardOnboardingState _onboardingState = new();
+	private int _arrivalStoryBeat;
+	private bool _arrivalStoryInitialized;
 	private bool _applyFirstVacancy;
 	private bool _buyFirstBusiness;
 	private bool _joinFirstSportsClub;
@@ -143,6 +146,10 @@ public partial class CityDashboardController : Control
 		if (_onboardingHousingButton != null)
 		{
 			_onboardingHousingButton.Pressed += OnOnboardingHousingButtonPressed;
+		}
+		if (_onboardingContinueButton != null)
+		{
+			_onboardingContinueButton.Pressed += OnOnboardingContinueButtonPressed;
 		}
 		if (_policeRecoveryButton != null)
 		{
@@ -236,6 +243,7 @@ public partial class CityDashboardController : Control
 		_onboardingPoliceStatusLabel ??= GetNodeOrNull<Label>("%OnboardingPoliceStatusLabel");
 		_onboardingPoliceButton ??= GetNodeOrNull<Button>("%OnboardingPoliceButton");
 		_onboardingHousingButton ??= GetNodeOrNull<Button>("%OnboardingHousingButton");
+		_onboardingContinueButton ??= GetNodeOrNull<Button>("%OnboardingContinueButton");
 		_policeRecoveryButton ??= GetNodeOrNull<Button>("%PoliceRecoveryButton");
 	}
 
@@ -1448,16 +1456,29 @@ public partial class CityDashboardController : Control
 		_onboardingOverlay.Visible = !_onboardingState.Completed;
 		if (_onboardingState.Completed)
 		{
+			_arrivalStoryInitialized = false;
+			_arrivalStoryBeat = 0;
 			return;
 		}
 
+		bool showingStory = _onboardingState.Stage == "arrival_choice"
+			&& _arrivalStoryInitialized
+			&& _arrivalStoryBeat < DashboardArrivalStory.Count;
+		if (_onboardingState.Stage == "arrival_choice" && !_arrivalStoryInitialized)
+		{
+			_arrivalStoryInitialized = true;
+			_arrivalStoryBeat = 0;
+			showingStory = true;
+		}
+
+		var storyBeat = showingStory ? DashboardArrivalStory.Get(_arrivalStoryBeat) : null;
 		if (_onboardingTitleLabel != null)
 		{
-			_onboardingTitleLabel.Text = _onboardingState.Title;
+			_onboardingTitleLabel.Text = storyBeat?.Title ?? _onboardingState.Title;
 		}
 		if (_onboardingNarrativeLabel != null)
 		{
-			_onboardingNarrativeLabel.Text = _onboardingState.Narrative;
+			_onboardingNarrativeLabel.Text = storyBeat?.Narrative ?? _onboardingState.Narrative;
 		}
 		if (_onboardingPoliceStatusLabel != null)
 		{
@@ -1466,15 +1487,23 @@ public partial class CityDashboardController : Control
 		}
 		if (_onboardingPoliceButton != null)
 		{
-			_onboardingPoliceButton.Visible = _onboardingState.CanReportToPolice;
+			_onboardingPoliceButton.Visible = !showingStory && _onboardingState.CanReportToPolice;
 			_onboardingPoliceButton.Disabled = _pendingOnboarding;
 			_onboardingPoliceButton.Text = _pendingOnboarding ? "Надсилаємо..." : "Звернутися в поліцію";
 		}
 		if (_onboardingHousingButton != null)
 		{
-			_onboardingHousingButton.Visible = _onboardingState.CanFindHousing;
+			_onboardingHousingButton.Visible = !showingStory && _onboardingState.CanFindHousing;
 			_onboardingHousingButton.Disabled = _pendingOnboarding;
 			_onboardingHousingButton.Text = _pendingOnboarding ? "Шукаємо..." : "Шукати житло";
+		}
+		if (_onboardingContinueButton != null)
+		{
+			_onboardingContinueButton.Visible = showingStory;
+			_onboardingContinueButton.Disabled = _pendingOnboarding;
+			_onboardingContinueButton.Text = _arrivalStoryBeat + 1 < DashboardArrivalStory.Count
+				? "Далі"
+				: "Прибути до міста";
 		}
 	}
 
@@ -1504,6 +1533,20 @@ public partial class CityDashboardController : Control
 	public void OnOnboardingHousingButtonPressed()
 	{
 		SubmitOnboardingChoice(DashboardOnboardingState.FindHousingChoice);
+	}
+
+	public void OnOnboardingContinueButtonPressed()
+	{
+		if (
+			_pendingOnboarding
+			|| _onboardingState.Stage != "arrival_choice"
+			|| _arrivalStoryBeat >= DashboardArrivalStory.Count)
+		{
+			return;
+		}
+
+		_arrivalStoryBeat += 1;
+		UpdateOnboardingUi();
 	}
 
 	private void UpdatePoliceRecoveryButton()

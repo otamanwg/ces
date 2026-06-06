@@ -15,6 +15,7 @@
     <Compile Include="..\client\scripts\DashboardVisualAnimation.cs" Link="DashboardVisualAnimation.cs" />
     <Compile Include="..\client\scripts\DashboardVisualPalette.cs" Link="DashboardVisualPalette.cs" />
     <Compile Include="..\client\scripts\DashboardEventHistory.cs" Link="DashboardEventHistory.cs" />
+    <Compile Include="..\client\scripts\DashboardArrivalStory.cs" Link="DashboardArrivalStory.cs" />
     <Compile Include="..\client\scripts\DashboardOnboardingState.cs" Link="DashboardOnboardingState.cs" />
     <Compile Include="..\client\scripts\DashboardPlayerSnapshot.cs" Link="DashboardPlayerSnapshot.cs" />
   </ItemGroup>

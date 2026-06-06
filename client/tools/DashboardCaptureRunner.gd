@@ -29,6 +29,9 @@ func _capture_dashboard() -> void:
 	if _has_argument("--police-recovery"):
 		_apply_police_recovery_preview(dashboard)
 		await get_tree().create_timer(0.25).timeout
+	if _has_argument("--arrival-story"):
+		_apply_arrival_story_preview(dashboard)
+		await get_tree().create_timer(0.25).timeout
 	RenderingServer.force_draw(false)
 	await RenderingServer.frame_post_draw
 
@@ -120,6 +123,30 @@ func _apply_police_recovery_preview(dashboard: Node) -> void:
 	button.disabled = false
 	button.text = "Забрати 75 ₴"
 	print("DASHBOARD_POLICE_RECOVERY_PREVIEW_APPLIED=1")
+
+
+func _apply_arrival_story_preview(dashboard: Node) -> void:
+	var overlay := dashboard.find_child("OnboardingOverlay", true, false) as Control
+	var continue_button := dashboard.find_child("OnboardingContinueButton", true, false) as Button
+	var police_button := dashboard.find_child("OnboardingPoliceButton", true, false) as Button
+	var housing_button := dashboard.find_child("OnboardingHousingButton", true, false) as Button
+	if overlay == null or continue_button == null or police_button == null or housing_button == null:
+		push_error("Dashboard capture: arrival story controls not found")
+		return
+
+	overlay.visible = true
+	police_button.visible = false
+	housing_button.visible = false
+	continue_button.visible = true
+	continue_button.text = "Далі"
+	_set_label(dashboard, "OnboardingTitleLabel", "Новий маршрут")
+	_set_label(
+		dashboard,
+		"OnboardingNarrativeLabel",
+		"У залі очікування автовокзалу випадковий співрозмовник помічає ваш квиток. "
+		+ "Ви кажете, що їдете починати нове життя у місті, де нікого не знаєте."
+	)
+	print("DASHBOARD_ARRIVAL_STORY_PREVIEW_APPLIED=1")
 
 
 func _set_label(root_node: Node, unique_name: String, value: String) -> bool:

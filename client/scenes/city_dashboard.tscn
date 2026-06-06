@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://c0gtwynhiqsc8"]
+[gd_scene load_steps=6 format=3 uid="uid://c0gtwynhiqsc8"]
 
 [ext_resource type="Script" path="res://scripts/CityDashboardController.cs" id="1"]
 [ext_resource type="Script" path="res://scripts/ExamPanelController.cs" id="2"]
 [ext_resource type="Texture2D" uid="uid://c5or4w24e3qvh" path="res://assets/visual/core/city_backdrop_core.png" id="3"]
 [ext_resource type="Script" path="res://scripts/CityVisualOverlay.cs" id="3_juvko"]
+[ext_resource type="Texture2D" uid="uid://03ukqeywx1l5" path="res://assets/visual/core/arrival_bus_station_core_v2.png" id="5_7m5xk"]
 
 [node name="CityDashboard" type="Control"]
 layout_mode = 3
@@ -654,7 +655,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.025, 0.035, 0.045, 0.9)
+color = Color(0.025, 0.035, 0.045, 0.52)
 
 [node name="OnboardingCenter" type="CenterContainer" parent="OnboardingOverlay"]
 layout_mode = 1
@@ -738,6 +739,28 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Шукати житло"
 text_overrun_behavior = 3
+
+[node name="OnboardingContinueButton" type="Button" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel/OnboardingMargin/OnboardingBox/OnboardingButtons"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(260, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Далі"
+text_overrun_behavior = 3
+
+[node name="OnboardingBackdrop" type="TextureRect" parent="OnboardingOverlay"]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_7m5xk")
+expand_mode = 1
+stretch_mode = 6
 
 [connection signal="pressed" from="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/OpenBuildingButton" to="." method="OnOpenBuildingButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/RepairBuildingButton" to="." method="OnRepairBuildingButtonPressed"]
