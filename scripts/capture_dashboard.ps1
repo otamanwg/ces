@@ -3,7 +3,8 @@ param(
     [double]$DelaySeconds = 3.0,
     [switch]$SkipBuild,
     [switch]$StressText,
-    [switch]$Onboarding
+    [switch]$Onboarding,
+    [switch]$PoliceRecovery
 )
 
 $ErrorActionPreference = "Stop"
@@ -60,6 +61,9 @@ if ($StressText) {
 }
 if ($Onboarding) {
     $godotArguments += "--onboarding"
+}
+if ($PoliceRecovery) {
+    $godotArguments += "--police-recovery"
 }
 
 & $godot @godotArguments

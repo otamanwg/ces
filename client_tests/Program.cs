@@ -168,7 +168,9 @@ var richSnapshotJson = JsonNode.Parse(
 			"title": "Нічліг у новому місті",
 			"narrative": "Після заяви потрібно знайти житло.",
 			"available_choices": ["find_housing"],
-			"police_report_status": "pending"
+			"police_report_status": "pending",
+			"police_recovery_amount": 75,
+			"police_recovery_claimable": true
 		},
 		"actions": {"can_work": true}
 	}
@@ -192,6 +194,8 @@ AssertEqual(false, richSnapshot.Onboarding.Completed, "Snapshot onboarding compl
 AssertEqual("housing_search", richSnapshot.Onboarding.Stage, "Snapshot onboarding stage parsed");
 AssertEqual(false, richSnapshot.Onboarding.CanReportToPolice, "Police choice removed after report");
 AssertEqual(true, richSnapshot.Onboarding.CanFindHousing, "Housing choice remains available");
+AssertEqual(75.0, richSnapshot.Onboarding.PoliceRecoveryAmount, "Police recovery amount parsed");
+AssertEqual(true, richSnapshot.Onboarding.PoliceRecoveryClaimable, "Due police recovery parsed");
 AssertEqual(
 	"Поліція розслідує справу. Результат надійде окремо.",
 	richSnapshot.Onboarding.PoliceStatusText,
@@ -226,7 +230,8 @@ var arrivalSnapshot = DashboardPlayerSnapshot.FromJson(JsonNode.Parse(
 			"title": "Новий початок",
 			"narrative": "Таксі зникло разом із багажем.",
 			"available_choices": ["report_to_police", "find_housing"],
-			"police_report_status": "not_filed"
+			"police_report_status": "not_filed",
+			"police_recovery_claimable": false
 		}
 	}
 	"""

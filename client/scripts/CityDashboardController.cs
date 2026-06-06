@@ -54,6 +54,7 @@ public partial class CityDashboardController : Control
 	private Label _onboardingPoliceStatusLabel;
 	private Button _onboardingPoliceButton;
 	private Button _onboardingHousingButton;
+	private Button _policeRecoveryButton;
 	private DashboardStatusPresenter _statusPresenter;
 	private DashboardActionPresenter _actionPresenter;
 	private DashboardOnboardingState _onboardingState = new();
@@ -95,6 +96,7 @@ public partial class CityDashboardController : Control
 	private string _pendingLandBuyKey = "";
 	private string _pendingBuildingApplicationKey = "";
 	private string _pendingBuildingActivationKey = "";
+	private string _pendingPoliceRecoveryKey = "";
 	private string _portfolioOpenBuildingId = "";
 	private string _portfolioRepairBuildingId = "";
 	private string _starterLandId = "";
@@ -141,6 +143,10 @@ public partial class CityDashboardController : Control
 		if (_onboardingHousingButton != null)
 		{
 			_onboardingHousingButton.Pressed += OnOnboardingHousingButtonPressed;
+		}
+		if (_policeRecoveryButton != null)
+		{
+			_policeRecoveryButton.Pressed += OnPoliceRecoveryButtonPressed;
 		}
 
 		_apiClient = GetNodeOrNull<ApiClient>("/root/ApiClient");
@@ -230,6 +236,7 @@ public partial class CityDashboardController : Control
 		_onboardingPoliceStatusLabel ??= GetNodeOrNull<Label>("%OnboardingPoliceStatusLabel");
 		_onboardingPoliceButton ??= GetNodeOrNull<Button>("%OnboardingPoliceButton");
 		_onboardingHousingButton ??= GetNodeOrNull<Button>("%OnboardingHousingButton");
+		_policeRecoveryButton ??= GetNodeOrNull<Button>("%PoliceRecoveryButton");
 	}
 
 	private void ConfigureTextSafety()
@@ -850,6 +857,7 @@ public partial class CityDashboardController : Control
 		UpdateAvailableActions(snapshot.Actions);
 		_onboardingState = snapshot.Onboarding;
 		UpdateOnboardingUi();
+		UpdatePoliceRecoveryButton();
 		if (!string.IsNullOrEmpty(snapshot.Id))
 		{
 			_session?.SetPlayer(snapshot.Id, snapshot.Username, snapshot.AuthToken);
@@ -1337,6 +1345,11 @@ public partial class CityDashboardController : Control
 			_pendingOnboarding = false;
 			UpdateOnboardingUi();
 		}
+		else if (endpoint == "/api/player/onboarding/police-recovery")
+		{
+			_pendingPoliceRecoveryKey = "";
+			UpdatePoliceRecoveryButton();
+		}
 		else if (endpoint.StartsWith("/api/jobs/work/"))
 		{
 			_pendingWorkKey = "";
@@ -1491,6 +1504,46 @@ public partial class CityDashboardController : Control
 	public void OnOnboardingHousingButtonPressed()
 	{
 		SubmitOnboardingChoice(DashboardOnboardingState.FindHousingChoice);
+	}
+
+	private void UpdatePoliceRecoveryButton()
+	{
+		if (_policeRecoveryButton == null)
+		{
+			return;
+		}
+
+		bool pending = !string.IsNullOrEmpty(_pendingPoliceRecoveryKey);
+		_policeRecoveryButton.Visible = _onboardingState.PoliceRecoveryClaimable || pending;
+		_policeRecoveryButton.Disabled = pending;
+		_policeRecoveryButton.Text = pending
+			? "Отримуємо..."
+			: $"Забрати {_onboardingState.PoliceRecoveryAmount:N0} ₴";
+		_policeRecoveryButton.TooltipText = pending
+			? "Поліція оформлює повернення."
+			: "Отримати знайдену поліцією частину втрачених коштів.";
+	}
+
+	public void OnPoliceRecoveryButtonPressed()
+	{
+		if (
+			!_onboardingState.PoliceRecoveryClaimable
+			|| !string.IsNullOrEmpty(_pendingPoliceRecoveryKey)
+			|| _session == null
+			|| !_session.HasAuthenticatedPlayer)
+		{
+			return;
+		}
+
+		_pendingPoliceRecoveryKey = BuildActionKey("police-recovery");
+		UpdatePoliceRecoveryButton();
+		ClearErrorState();
+		string payload = ApiClient.BuildJson(new { player_id = _session.PlayerId });
+		_apiClient?.PostAuthorizedIdempotent(
+			"/api/player/onboarding/police-recovery",
+			_session.AuthToken,
+			_pendingPoliceRecoveryKey,
+			payload);
 	}
 
 	private static bool IsBuildingPortfolioEndpoint(string endpoint)

@@ -26,6 +26,9 @@ func _capture_dashboard() -> void:
 	if _has_argument("--onboarding"):
 		_apply_onboarding_preview(dashboard)
 		await get_tree().create_timer(0.25).timeout
+	if _has_argument("--police-recovery"):
+		_apply_police_recovery_preview(dashboard)
+		await get_tree().create_timer(0.25).timeout
 	RenderingServer.force_draw(false)
 	await RenderingServer.frame_post_draw
 
@@ -105,6 +108,18 @@ func _apply_onboarding_preview(dashboard: Node) -> void:
 	if police_status != null:
 		police_status.visible = false
 	print("DASHBOARD_ONBOARDING_PREVIEW_APPLIED=1")
+
+
+func _apply_police_recovery_preview(dashboard: Node) -> void:
+	var button := dashboard.find_child("PoliceRecoveryButton", true, false) as Button
+	if button == null:
+		push_error("Dashboard capture: police recovery button not found")
+		return
+
+	button.visible = true
+	button.disabled = false
+	button.text = "Забрати 75 ₴"
+	print("DASHBOARD_POLICE_RECOVERY_PREVIEW_APPLIED=1")
 
 
 func _set_label(root_node: Node, unique_name: String, value: String) -> bool:

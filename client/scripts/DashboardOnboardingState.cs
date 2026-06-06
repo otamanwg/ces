@@ -13,6 +13,8 @@ public sealed class DashboardOnboardingState
 	public string Narrative { get; init; } = "";
 	public string PoliceReportStatus { get; init; } = "not_filed";
 	public string PoliceStatusText { get; init; } = "";
+	public double PoliceRecoveryAmount { get; init; }
+	public bool PoliceRecoveryClaimable { get; init; }
 	public bool CanReportToPolice { get; init; }
 	public bool CanFindHousing { get; init; }
 
@@ -38,6 +40,8 @@ public sealed class DashboardOnboardingState
 			Narrative = onboarding["narrative"]?.ToString() ?? "",
 			PoliceReportStatus = policeStatus,
 			PoliceStatusText = BuildPoliceStatusText(policeStatus),
+			PoliceRecoveryAmount = onboarding["police_recovery_amount"]?.GetValue<double>() ?? 0.0,
+			PoliceRecoveryClaimable = onboarding["police_recovery_claimable"]?.GetValue<bool>() ?? false,
 			CanReportToPolice = choices.Contains(ReportToPoliceChoice),
 			CanFindHousing = choices.Contains(FindHousingChoice),
 		};

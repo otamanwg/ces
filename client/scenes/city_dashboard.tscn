@@ -571,6 +571,15 @@ size_flags_horizontal = 3
 text = "Оновити"
 text_overrun_behavior = 3
 
+[node name="PoliceRecoveryButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Забрати повернення"
+text_overrun_behavior = 3
+
 [node name="ExamOverlay" type="PanelContainer" parent="."]
 visible = false
 layout_mode = 1
