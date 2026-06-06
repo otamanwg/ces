@@ -578,7 +578,7 @@ visible = false
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Забрати повернення"
+text = "POLICE_RECOVERY_DEFAULT"
 text_overrun_behavior = 3
 
 [node name="ExamOverlay" type="PanelContainer" parent="."]
@@ -691,7 +691,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 30
-text = "Новий початок"
+text = "ONBOARDING_ARRIVAL_CHOICE_TITLE"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
@@ -703,7 +703,7 @@ custom_minimum_size = Vector2(0, 126)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 19
-text = "Таксі зникло разом із вашим багажем. У телефоні залишились фото документів, а в кишені лише стартові гроші."
+text = "ONBOARDING_ARRIVAL_CHOICE_NARRATIVE"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
@@ -729,7 +729,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Звернутися в поліцію"
+text = "ONBOARDING_POLICE_BUTTON"
 text_overrun_behavior = 3
 
 [node name="OnboardingHousingButton" type="Button" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel/OnboardingMargin/OnboardingBox/OnboardingButtons"]
@@ -737,7 +737,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Шукати житло"
+text = "ONBOARDING_HOUSING_BUTTON"
 text_overrun_behavior = 3
 
 [node name="OnboardingContinueButton" type="Button" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel/OnboardingMargin/OnboardingBox/OnboardingButtons"]
@@ -746,7 +746,7 @@ visible = false
 custom_minimum_size = Vector2(260, 56)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Далі"
+text = "ARRIVAL_STORY_NEXT"
 text_overrun_behavior = 3
 
 [node name="OnboardingBackdrop" type="TextureRect" parent="OnboardingOverlay"]

@@ -10,3 +10,21 @@ ARRIVAL_BEAT_3_TITLE,Перші хвилини,First Minutes
 ARRIVAL_BEAT_3_NARRATIVE,"Автобус прибуває надвечір. Ви ловите таксі біля вокзалу, кладете багаж у машину і називаєте адресу. За кілька кварталів водій раптом зупиняється.","The bus arrives near dusk. You catch a taxi outside the station, put your luggage in the car, and give the address. A few blocks later, the driver suddenly stops."
 ARRIVAL_STORY_NEXT,Далі,Continue
 ARRIVAL_STORY_ARRIVE,Прибути до міста,Enter the city
+ONBOARDING_ARRIVAL_CHOICE_TITLE,Новий початок,A New Beginning
+ONBOARDING_ARRIVAL_CHOICE_NARRATIVE,"Таксі зникло разом із вашим багажем. У телефоні залишились фото документів, а в кишені лише стартові гроші. Можна звернутись у поліцію або негайно шукати житло.","The taxi disappeared with your luggage. You still have document photos on your phone and only your starting cash in your pocket. You can report the theft to the police or look for a place to stay immediately."
+ONBOARDING_HOUSING_SEARCH_TITLE,Нічліг у новому місті,A Place for the Night
+ONBOARDING_HOUSING_SEARCH_NARRATIVE,"Заяву прийнято. Тепер потрібно знайти безпечне житло на першу ніч.","Your report has been filed. Now you need to find a safe place to stay for the first night."
+ONBOARDING_COMPLETED_TITLE,Прибуття завершено,Arrival Complete
+ONBOARDING_COMPLETED_NARRATIVE,Перший вибір зроблено. Місто відкрите для наступного кроку.,Your first choice is made. The city is ready for your next step.
+ONBOARDING_POLICE_PENDING,Поліція розслідує справу. Результат надійде окремо.,The police are investigating. You will receive the outcome separately.
+ONBOARDING_POLICE_CLOSED,Заяву зареєстровано, але швидких зачіпок немає.,"Your report was registered, but there are no immediate leads."
+ONBOARDING_POLICE_RECOVERED,Поліція вже повернула частину втрачених коштів.,The police have recovered part of the stolen money.
+ONBOARDING_POLICE_BUTTON,Звернутися в поліцію,Report to police
+ONBOARDING_POLICE_PENDING_BUTTON,Надсилаємо...,Submitting...
+ONBOARDING_HOUSING_BUTTON,Шукати житло,Find a place to stay
+ONBOARDING_HOUSING_PENDING_BUTTON,Шукаємо...,Searching...
+POLICE_RECOVERY_DEFAULT,Забрати повернення,Claim recovery
+POLICE_RECOVERY_PENDING,Отримуємо...,Claiming...
+POLICE_RECOVERY_CLAIM,Забрати {amount} ₴,Claim {amount} ₴
+POLICE_RECOVERY_PENDING_TOOLTIP,Поліція оформлює повернення.,The police are processing the recovery.
+POLICE_RECOVERY_CLAIM_TOOLTIP,Отримати знайдену поліцією частину втрачених коштів.,Claim the portion of the stolen money recovered by police.

@@ -122,16 +122,19 @@ func _apply_onboarding_preview(dashboard: Node) -> void:
 		return
 
 	overlay.visible = true
-	_set_label(dashboard, "OnboardingTitleLabel", "Новий початок")
-	_set_label(
-		dashboard,
-		"OnboardingNarrativeLabel",
-		"Таксі зникло разом із вашим багажем. У телефоні залишились фото документів, "
-		+ "а в кишені лише стартові гроші. Можна звернутись у поліцію або негайно шукати житло."
-	)
+	_set_label(dashboard, "OnboardingTitleLabel", tr("ONBOARDING_ARRIVAL_CHOICE_TITLE"))
+	_set_label(dashboard, "OnboardingNarrativeLabel", tr("ONBOARDING_ARRIVAL_CHOICE_NARRATIVE"))
 	var police_status := dashboard.find_child("OnboardingPoliceStatusLabel", true, false) as Label
 	if police_status != null:
 		police_status.visible = false
+	var police_button := dashboard.find_child("OnboardingPoliceButton", true, false) as Button
+	if police_button != null:
+		police_button.visible = true
+		police_button.text = tr("ONBOARDING_POLICE_BUTTON")
+	var housing_button := dashboard.find_child("OnboardingHousingButton", true, false) as Button
+	if housing_button != null:
+		housing_button.visible = true
+		housing_button.text = tr("ONBOARDING_HOUSING_BUTTON")
 	_set_onboarding_texture(dashboard, "res://assets/visual/core/arrival_bus_station_core_v2.png")
 	_hide_onboarding_portrait(dashboard)
 	print("DASHBOARD_ONBOARDING_PREVIEW_APPLIED=1")
@@ -145,7 +148,8 @@ func _apply_police_recovery_preview(dashboard: Node) -> void:
 
 	button.visible = true
 	button.disabled = false
-	button.text = "Забрати 75 ₴"
+	button.text = tr("POLICE_RECOVERY_CLAIM").replace("{amount}", "75")
+	button.tooltip_text = tr("POLICE_RECOVERY_CLAIM_TOOLTIP")
 	print("DASHBOARD_POLICE_RECOVERY_PREVIEW_APPLIED=1")
 
 

@@ -756,6 +756,24 @@ DoD:
 
 ---
 
+## Sprint 45 — Localized Arrival Choice And Recovery
+
+Ціль: фінальний вибір вступу, статус заяви та отримання повернених коштів використовують semantic translation keys із backend text fallback.
+
+Порядок:
+
+1. ✅ Client state: stage/status перетворюються на стабільні localization keys.
+2. ✅ Runtime/capture: choice buttons, pending states і recovery amount локалізовані.
+3. ✅ Godot MCP: editor defaults замінені на translation keys.
+4. ✅ Visual QA українською та англійською для choice/recovery states.
+5. ✅ Повний checkpoint, MCP smoke і commit.
+
+Наступний visual крок:
+
+1. Додати character-creation screen, де гравець свідомо обирає tutorial age group.
+
+---
+
 ## Checkpoints Де Потрібен Користувач
 
 | Checkpoint | Коли | Що потрібно |

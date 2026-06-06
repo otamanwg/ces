@@ -10,9 +10,11 @@ public sealed class DashboardOnboardingState
 	public string Stage { get; init; } = "completed";
 	public bool Completed { get; init; } = true;
 	public string Title { get; init; } = "Прибуття завершено";
+	public string TitleKey { get; init; } = "ONBOARDING_COMPLETED_TITLE";
 	public string Narrative { get; init; } = "";
+	public string NarrativeKey { get; init; } = "ONBOARDING_COMPLETED_NARRATIVE";
 	public string PoliceReportStatus { get; init; } = "not_filed";
-	public string PoliceStatusText { get; init; } = "";
+	public string PoliceStatusKey { get; init; } = "";
 	public double PoliceRecoveryAmount { get; init; }
 	public bool PoliceRecoveryClaimable { get; init; }
 	public bool CanReportToPolice { get; init; }
@@ -30,16 +32,19 @@ public sealed class DashboardOnboardingState
 			.Select(choice => choice?.ToString() ?? "")
 			.Where(choice => !string.IsNullOrWhiteSpace(choice))
 			.ToArray() ?? Array.Empty<string>();
+		string stage = onboarding["stage"]?.ToString() ?? "completed";
 		string policeStatus = onboarding["police_report_status"]?.ToString() ?? "not_filed";
 
 		return new DashboardOnboardingState
 		{
-			Stage = onboarding["stage"]?.ToString() ?? "completed",
+			Stage = stage,
 			Completed = onboarding["completed"]?.GetValue<bool>() ?? true,
 			Title = onboarding["title"]?.ToString() ?? "Прибуття завершено",
+			TitleKey = BuildStageKey(stage, "TITLE"),
 			Narrative = onboarding["narrative"]?.ToString() ?? "",
+			NarrativeKey = BuildStageKey(stage, "NARRATIVE"),
 			PoliceReportStatus = policeStatus,
-			PoliceStatusText = BuildPoliceStatusText(policeStatus),
+			PoliceStatusKey = BuildPoliceStatusKey(policeStatus),
 			PoliceRecoveryAmount = onboarding["police_recovery_amount"]?.GetValue<double>() ?? 0.0,
 			PoliceRecoveryClaimable = onboarding["police_recovery_claimable"]?.GetValue<bool>() ?? false,
 			CanReportToPolice = choices.Contains(ReportToPoliceChoice),
@@ -47,13 +52,25 @@ public sealed class DashboardOnboardingState
 		};
 	}
 
-	private static string BuildPoliceStatusText(string status)
+	private static string BuildStageKey(string stage, string suffix)
+	{
+		string prefix = stage switch
+		{
+			"arrival_choice" => "ONBOARDING_ARRIVAL_CHOICE",
+			"housing_search" => "ONBOARDING_HOUSING_SEARCH",
+			"completed" => "ONBOARDING_COMPLETED",
+			_ => "",
+		};
+		return string.IsNullOrEmpty(prefix) ? "" : $"{prefix}_{suffix}";
+	}
+
+	private static string BuildPoliceStatusKey(string status)
 	{
 		return status switch
 		{
-			"pending" => "Поліція розслідує справу. Результат надійде окремо.",
-			"closed_no_recovery" => "Заяву зареєстровано, але швидких зачіпок немає.",
-			"recovered" => "Поліція вже повернула частину втрачених коштів.",
+			"pending" => "ONBOARDING_POLICE_PENDING",
+			"closed_no_recovery" => "ONBOARDING_POLICE_CLOSED",
+			"recovered" => "ONBOARDING_POLICE_RECOVERED",
 			_ => "",
 		};
 	}

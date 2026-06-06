@@ -1501,28 +1501,35 @@ public partial class CityDashboardController : Control
 			storyBeat?.PortraitSide ?? DashboardPortraitSide.Right);
 		if (_onboardingTitleLabel != null)
 		{
-			_onboardingTitleLabel.Text = storyBeat == null ? _onboardingState.Title : Tr(storyBeat.TitleKey);
+			_onboardingTitleLabel.Text = storyBeat == null
+				? TranslateOrFallback(_onboardingState.TitleKey, _onboardingState.Title)
+				: Tr(storyBeat.TitleKey);
 		}
 		if (_onboardingNarrativeLabel != null)
 		{
-			_onboardingNarrativeLabel.Text = storyBeat == null ? _onboardingState.Narrative : Tr(storyBeat.NarrativeKey);
+			_onboardingNarrativeLabel.Text = storyBeat == null
+				? TranslateOrFallback(_onboardingState.NarrativeKey, _onboardingState.Narrative)
+				: Tr(storyBeat.NarrativeKey);
 		}
 		if (_onboardingPoliceStatusLabel != null)
 		{
-			_onboardingPoliceStatusLabel.Text = _onboardingState.PoliceStatusText;
-			_onboardingPoliceStatusLabel.Visible = !string.IsNullOrWhiteSpace(_onboardingState.PoliceStatusText);
+			string policeStatusText = TranslateOrFallback(_onboardingState.PoliceStatusKey, "");
+			_onboardingPoliceStatusLabel.Text = policeStatusText;
+			_onboardingPoliceStatusLabel.Visible = !string.IsNullOrWhiteSpace(policeStatusText);
 		}
 		if (_onboardingPoliceButton != null)
 		{
 			_onboardingPoliceButton.Visible = !showingStory && _onboardingState.CanReportToPolice;
 			_onboardingPoliceButton.Disabled = _pendingOnboarding;
-			_onboardingPoliceButton.Text = _pendingOnboarding ? "Надсилаємо..." : "Звернутися в поліцію";
+			_onboardingPoliceButton.Text = Tr(
+				_pendingOnboarding ? "ONBOARDING_POLICE_PENDING_BUTTON" : "ONBOARDING_POLICE_BUTTON");
 		}
 		if (_onboardingHousingButton != null)
 		{
 			_onboardingHousingButton.Visible = !showingStory && _onboardingState.CanFindHousing;
 			_onboardingHousingButton.Disabled = _pendingOnboarding;
-			_onboardingHousingButton.Text = _pendingOnboarding ? "Шукаємо..." : "Шукати житло";
+			_onboardingHousingButton.Text = Tr(
+				_pendingOnboarding ? "ONBOARDING_HOUSING_PENDING_BUTTON" : "ONBOARDING_HOUSING_BUTTON");
 		}
 		if (_onboardingContinueButton != null)
 		{
@@ -1654,11 +1661,24 @@ public partial class CityDashboardController : Control
 		_policeRecoveryButton.Visible = _onboardingState.PoliceRecoveryClaimable || pending;
 		_policeRecoveryButton.Disabled = pending;
 		_policeRecoveryButton.Text = pending
-			? "Отримуємо..."
-			: $"Забрати {_onboardingState.PoliceRecoveryAmount:N0} ₴";
+			? Tr("POLICE_RECOVERY_PENDING")
+			: Tr("POLICE_RECOVERY_CLAIM").Replace(
+				"{amount}",
+				$"{_onboardingState.PoliceRecoveryAmount:N0}");
 		_policeRecoveryButton.TooltipText = pending
-			? "Поліція оформлює повернення."
-			: "Отримати знайдену поліцією частину втрачених коштів.";
+			? Tr("POLICE_RECOVERY_PENDING_TOOLTIP")
+			: Tr("POLICE_RECOVERY_CLAIM_TOOLTIP");
+	}
+
+	private string TranslateOrFallback(string key, string fallback)
+	{
+		if (string.IsNullOrWhiteSpace(key))
+		{
+			return fallback;
+		}
+
+		string translated = Tr(key);
+		return translated == key ? fallback : translated;
 	}
 
 	public void OnPoliceRecoveryButtonPressed()

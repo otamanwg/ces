@@ -197,9 +197,19 @@ AssertEqual(true, richSnapshot.Onboarding.CanFindHousing, "Housing choice remain
 AssertEqual(75.0, richSnapshot.Onboarding.PoliceRecoveryAmount, "Police recovery amount parsed");
 AssertEqual(true, richSnapshot.Onboarding.PoliceRecoveryClaimable, "Due police recovery parsed");
 AssertEqual(
-	"Поліція розслідує справу. Результат надійде окремо.",
-	richSnapshot.Onboarding.PoliceStatusText,
-	"Police status has player-facing text"
+	"ONBOARDING_HOUSING_SEARCH_TITLE",
+	richSnapshot.Onboarding.TitleKey,
+	"Housing stage maps to a localized title key"
+);
+AssertEqual(
+	"ONBOARDING_HOUSING_SEARCH_NARRATIVE",
+	richSnapshot.Onboarding.NarrativeKey,
+	"Housing stage maps to a localized narrative key"
+);
+AssertEqual(
+	"ONBOARDING_POLICE_PENDING",
+	richSnapshot.Onboarding.PoliceStatusKey,
+	"Police status maps to a localized status key"
 );
 
 var defaultSnapshotJson = JsonNode.Parse(
@@ -239,6 +249,16 @@ var arrivalSnapshot = DashboardPlayerSnapshot.FromJson(JsonNode.Parse(
 AssertEqual(false, arrivalSnapshot.Onboarding.Completed, "Arrival snapshot keeps onboarding open");
 AssertEqual(true, arrivalSnapshot.Onboarding.CanReportToPolice, "Arrival offers police choice");
 AssertEqual(true, arrivalSnapshot.Onboarding.CanFindHousing, "Arrival offers housing choice");
+AssertEqual(
+	"ONBOARDING_ARRIVAL_CHOICE_TITLE",
+	arrivalSnapshot.Onboarding.TitleKey,
+	"Arrival choice maps to a localized title key"
+);
+AssertEqual(
+	"ONBOARDING_ARRIVAL_CHOICE_NARRATIVE",
+	arrivalSnapshot.Onboarding.NarrativeKey,
+	"Arrival choice maps to a localized narrative key"
+);
 AssertEqual(DashboardTutorialAgeGroup.Adult, arrivalSnapshot.TutorialAgeGroup, "Legacy snapshot defaults to adult guidance");
 var teenSnapshot = DashboardPlayerSnapshot.FromJson(JsonNode.Parse("""{"tutorial_age_group":"teen"}""")!);
 AssertEqual(DashboardTutorialAgeGroup.Teen, teenSnapshot.TutorialAgeGroup, "Snapshot parses teen guidance group");
