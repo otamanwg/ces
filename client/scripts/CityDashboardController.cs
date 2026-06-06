@@ -130,6 +130,7 @@ public partial class CityDashboardController : Control
 		_session = GetNodeOrNull<GameSession>("/root/GameSession");
 		_networkManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
 		_examPanel = GetNodeOrNull<ExamPanelController>("ExamOverlay");
+		_cityVisualOverlay?.SetStyleCode(_session?.VisualStyleCode);
 
 		if (_apiClient != null)
 		{

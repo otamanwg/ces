@@ -630,10 +630,10 @@ DoD:
 
 Порядок:
 
-1. ⏳ Client session: `VisualStyleCode` із fallback на `core`.
-2. ⏳ Controller: застосувати session preference до `CityVisualOverlay`.
-3. ⏳ Client tests: normalization/fallback contract.
-4. ⏳ Godot MCP smoke + `scripts/check.ps1` + commit.
+1. ✅ Client session: `VisualStyleCode` із fallback на `core`.
+2. ✅ Controller: застосувати session preference до `CityVisualOverlay`.
+3. ✅ Client tests: normalization/fallback contract.
+4. ✅ Godot MCP smoke + `scripts/check.ps1` + commit.
 
 ---
 

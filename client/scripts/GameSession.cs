@@ -10,6 +10,7 @@ public partial class GameSession : Node
     public string AuthToken { get; private set; } = "";
     public string CityId { get; private set; } = "";
     public string LastJobId { get; private set; } = "";
+    public string VisualStyleCode { get; private set; } = DashboardVisualPalettes.Core.Code;
 
     private const string SessionPath = "user://player_session.json";
 
@@ -40,6 +41,12 @@ public partial class GameSession : Node
         LastJobId = jobId;
     }
 
+    public void SetVisualStyleCode(string styleCode)
+    {
+        VisualStyleCode = DashboardVisualPalettes.Resolve(styleCode).Code;
+        SaveSession();
+    }
+
     public bool HasPlayer => !string.IsNullOrEmpty(PlayerId);
     public bool HasAuthenticatedPlayer => !string.IsNullOrEmpty(PlayerId) && !string.IsNullOrEmpty(AuthToken);
 
@@ -49,6 +56,7 @@ public partial class GameSession : Node
         Username = "";
         AuthToken = "";
         LastJobId = "";
+        VisualStyleCode = DashboardVisualPalettes.Core.Code;
         string sessionPath = ResolveSessionPath();
         if (File.Exists(sessionPath))
         {
@@ -71,6 +79,7 @@ public partial class GameSession : Node
             Username = Username,
             AuthToken = AuthToken,
             CityId = CityId,
+            VisualStyleCode = VisualStyleCode,
         };
         File.WriteAllText(sessionPath, JsonSerializer.Serialize(data));
     }
@@ -95,6 +104,7 @@ public partial class GameSession : Node
             Username = data.Username ?? "";
             AuthToken = data.AuthToken ?? "";
             CityId = data.CityId ?? "";
+            VisualStyleCode = DashboardVisualPalettes.Resolve(data.VisualStyleCode).Code;
         }
         catch (Exception e)
         {
@@ -113,5 +123,6 @@ public partial class GameSession : Node
         public string Username { get; set; } = "";
         public string AuthToken { get; set; } = "";
         public string CityId { get; set; } = "";
+        public string VisualStyleCode { get; set; } = "";
     }
 }

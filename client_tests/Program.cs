@@ -318,6 +318,7 @@ AssertEqual("anime", DashboardVisualPalettes.Resolve(" ANIME ").Code, "Visual pa
 AssertEqual("hyperreal", DashboardVisualPalettes.Resolve("hyperreal").Code, "Visual palette resolves hyperreal");
 AssertEqual("mafia", DashboardVisualPalettes.Resolve("mafia").Code, "Visual palette resolves mafia");
 AssertEqual("core", DashboardVisualPalettes.Resolve("unknown").Code, "Visual palette rejects unknown style");
+AssertEqual("core", DashboardVisualPalettes.Resolve("dark_fantasy").Code, "Removed visual style falls back to core");
 AssertNear(0.25, DashboardVisualPalettes.Core.Danger.WithAlpha(0.25f).Alpha, 0.0001, "Visual token alpha override");
 
 var landCatalogJson = JsonNode.Parse(
