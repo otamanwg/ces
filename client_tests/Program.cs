@@ -312,6 +312,13 @@ AssertNear(1.0, DashboardVisualAnimation.Pulse(0.25, 1.0), 0.0001, "Visual pulse
 AssertNear(0.25, DashboardVisualAnimation.TravelFraction(0.25, 1.0), 0.0001, "Visual travel advances");
 AssertNear(0.25, DashboardVisualAnimation.TravelFraction(1.25, 1.0), 0.0001, "Visual travel wraps");
 AssertNear(0.0, DashboardVisualAnimation.TravelFraction(double.NaN), 0.0001, "Visual travel rejects invalid time");
+AssertSequence(new[] { "core", "anime", "hyperreal", "mafia" }, DashboardVisualPalettes.Codes.ToArray(), "Visual style codes");
+AssertEqual("core", DashboardVisualPalettes.Resolve(null).Code, "Visual palette defaults to core");
+AssertEqual("anime", DashboardVisualPalettes.Resolve(" ANIME ").Code, "Visual palette normalizes code");
+AssertEqual("hyperreal", DashboardVisualPalettes.Resolve("hyperreal").Code, "Visual palette resolves hyperreal");
+AssertEqual("mafia", DashboardVisualPalettes.Resolve("mafia").Code, "Visual palette resolves mafia");
+AssertEqual("core", DashboardVisualPalettes.Resolve("unknown").Code, "Visual palette rejects unknown style");
+AssertNear(0.25, DashboardVisualPalettes.Core.Danger.WithAlpha(0.25f).Alpha, 0.0001, "Visual token alpha override");
 
 var landCatalogJson = JsonNode.Parse(
 	"""

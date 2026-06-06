@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 33: City Idle Animation.**
+**Sprint 34: Visual Style Tokens.**
 
-Мета: додати контрольований рух у міський visual layer: пульс трафіку та уваги до проблемних активів без зміни gameplay state і без важкого redraw.
+Мета: відокремити semantic visual tokens від Godot drawing code, щоб майбутні `anime`, `hyperreal` і `mafia` паки могли змінювати presentation layer без зміни mechanics.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -589,6 +589,25 @@ DoD:
 3. ✅ Godot overlay: attention pulse для активів, що потребують ремонту.
 4. ✅ Performance guard: redraw не частіше 20 FPS.
 5. ✅ Godot MCP smoke + `scripts/check.ps1` + commit.
+
+---
+
+## Sprint 34 — Visual Style Tokens
+
+Ціль: закласти palette contract для майбутніх стилів без додавання перемикача в незавершений MVP UI.
+
+Порядок:
+
+1. ✅ Client model: registry `core`, `anime`, `hyperreal`, `mafia` з безпечним fallback на `core`.
+2. ✅ Client tests: code normalization, fallback і token behavior.
+3. ✅ Godot overlay: фон, дороги, трафік, текст і status colors використовують semantic tokens.
+4. ✅ Godot MCP smoke + `scripts/check.ps1` + commit.
+
+Наступний visual крок після Sprint 34:
+
+1. Підготовка screenshot/playtest script для швидкого показу результату.
+2. Збереження visual style preference у player session.
+3. UI selector додавати лише після готовності першого повного alternative asset pack.
 
 ---
 

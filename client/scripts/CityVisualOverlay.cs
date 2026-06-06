@@ -30,6 +30,7 @@ public partial class CityVisualOverlay : Control
 	};
 
 	private DashboardCityVisualModel _model = DashboardCityVisualModel.Empty;
+	private DashboardVisualPalette _palette = DashboardVisualPalettes.Core;
 	private bool _streetFocus;
 	private double _animationSeconds;
 	private double _redrawElapsedSeconds;
@@ -66,6 +67,13 @@ public partial class CityVisualOverlay : Control
 		QueueRedraw();
 	}
 
+	public string SetStyleCode(string? styleCode)
+	{
+		_palette = DashboardVisualPalettes.Resolve(styleCode);
+		QueueRedraw();
+		return _palette.Code;
+	}
+
 	public string ToggleFocusMode()
 	{
 		_streetFocus = !_streetFocus;
@@ -83,7 +91,7 @@ public partial class CityVisualOverlay : Control
 			return;
 		}
 
-		DrawRect(new Rect2(Vector2.Zero, size), new Color(0.02f, 0.03f, 0.04f, 0.20f), true);
+		DrawRect(new Rect2(Vector2.Zero, size), AsGodot(_palette.CanvasShade), true);
 		if (_streetFocus)
 		{
 			DrawStreetFocus(size);
@@ -99,16 +107,16 @@ public partial class CityVisualOverlay : Control
 	private void DrawStreetFocus(Vector2 size)
 	{
 		Font font = GetThemeDefaultFont();
-		DrawRect(new Rect2(Vector2.Zero, size), new Color(0.03f, 0.04f, 0.05f, 0.30f), true);
+		DrawRect(new Rect2(Vector2.Zero, size), AsGodot(_palette.CanvasShade.WithAlpha(0.30f)), true);
 
 		Rect2 street = new(new Vector2(0, size.Y * 0.70f), new Vector2(size.X, size.Y * 0.30f));
-		DrawRect(street, new Color(0.05f, 0.055f, 0.06f, 0.86f), true);
-		DrawLine(new Vector2(24, street.Position.Y + street.Size.Y * 0.48f), new Vector2(size.X - 24, street.Position.Y + street.Size.Y * 0.48f), new Color(0.90f, 0.82f, 0.52f, 0.65f), 3.0f, true);
+		DrawRect(street, AsGodot(_palette.SurfaceDeep), true);
+		DrawLine(new Vector2(24, street.Position.Y + street.Size.Y * 0.48f), new Vector2(size.X - 24, street.Position.Y + street.Size.Y * 0.48f), AsGodot(_palette.RoadLine), 3.0f, true);
 		DrawLine(new Vector2(0, street.Position.Y), new Vector2(size.X, street.Position.Y), new Color(0.70f, 0.72f, 0.66f, 0.72f), 7.0f, true);
 		DrawStreetTraffic(size, street);
 
-		DrawString(font, new Vector2(22, 32), "Street focus: вокзал / комерційне ядро", HorizontalAlignment.Left, size.X - 44, 15, new Color(0.98f, 0.97f, 0.90f, 0.96f));
-		DrawString(font, new Vector2(22, 54), _model.HeadlineText, HorizontalAlignment.Left, size.X - 44, 13, new Color(0.88f, 0.90f, 0.84f, 0.82f));
+		DrawString(font, new Vector2(22, 32), "Street focus: вокзал / комерційне ядро", HorizontalAlignment.Left, size.X - 44, 15, AsGodot(_palette.PrimaryText));
+		DrawString(font, new Vector2(22, 54), _model.HeadlineText, HorizontalAlignment.Left, size.X - 44, 13, AsGodot(_palette.SecondaryText));
 
 		var buildings = _model.Buildings.Take(5).ToArray();
 		if (buildings.Length == 0)
@@ -162,7 +170,7 @@ public partial class CityVisualOverlay : Control
 			for (int window = 0; window < 3; window++)
 			{
 				Vector2 windowPos = lot.Position + new Vector2(12 + window * 28, 14 + floor * 26);
-				DrawRect(new Rect2(windowPos, new Vector2(16, 14)), new Color(1.0f, 0.90f, 0.54f, 0.42f), true);
+				DrawRect(new Rect2(windowPos, new Vector2(16, 14)), AsGodot(_palette.WindowLight), true);
 			}
 		}
 
@@ -188,13 +196,13 @@ public partial class CityVisualOverlay : Control
 
 	private void DrawRoad(Vector2 from, Vector2 to, double phase)
 	{
-		DrawLine(from, to, new Color(0.05f, 0.06f, 0.07f, 0.72f), 12.0f, true);
-		DrawLine(from, to, new Color(0.84f, 0.80f, 0.67f, 0.62f), 2.0f, true);
+		DrawLine(from, to, AsGodot(_palette.RoadSurface), 12.0f, true);
+		DrawLine(from, to, AsGodot(_palette.RoadLine), 2.0f, true);
 
 		float travel = DashboardVisualAnimation.TravelFraction(_animationSeconds, 0.08, phase);
 		Vector2 trafficMarker = from.Lerp(to, travel);
-		DrawCircle(trafficMarker, 4.5f, new Color(0.98f, 0.76f, 0.28f, 0.92f));
-		DrawCircle(trafficMarker, 2.0f, new Color(1.0f, 0.96f, 0.74f, 0.98f));
+		DrawCircle(trafficMarker, 4.5f, AsGodot(_palette.Traffic));
+		DrawCircle(trafficMarker, 2.0f, AsGodot(_palette.TrafficHighlight));
 	}
 
 	private void DrawStreetTraffic(Vector2 size, Rect2 street)
@@ -203,7 +211,7 @@ public partial class CityVisualOverlay : Control
 		float x = Mathf.Lerp(24.0f, size.X - 38.0f, travel);
 		float y = street.Position.Y + street.Size.Y * 0.36f;
 		Rect2 vehicle = new(new Vector2(x, y), new Vector2(14, 7));
-		DrawRect(vehicle, new Color(0.94f, 0.67f, 0.22f, 0.94f), true);
+		DrawRect(vehicle, AsGodot(_palette.Traffic), true);
 		DrawCircle(vehicle.Position + new Vector2(3, 8), 2.0f, new Color(0.04f, 0.05f, 0.06f, 0.95f));
 		DrawCircle(vehicle.Position + new Vector2(11, 8), 2.0f, new Color(0.04f, 0.05f, 0.06f, 0.95f));
 	}
@@ -227,7 +235,7 @@ public partial class CityVisualOverlay : Control
 	{
 		Color baseColor = DistrictBaseColor(district.Code);
 		float pressure = Math.Clamp(district.PressureScore / 240.0f, 0.0f, 1.0f);
-		Color fill = baseColor.Lerp(new Color(0.67f, 0.20f, 0.18f, 0.82f), pressure * 0.32f);
+		Color fill = baseColor.Lerp(AsGodot(_palette.Danger.WithAlpha(0.82f)), pressure * 0.32f);
 		fill.A = 0.72f;
 
 		DrawRect(rect, fill, true);
@@ -237,8 +245,8 @@ public partial class CityVisualOverlay : Control
 		Vector2 labelPos = rect.Position + new Vector2(8, 18);
 		DrawString(font, labelPos, district.ShortLabel, HorizontalAlignment.Left, rect.Size.X - 16, 13, new Color(0.96f, 0.96f, 0.91f, 0.94f));
 
-		DrawMetricBar(rect.Position + new Vector2(8, rect.Size.Y - 18), rect.Size.X - 16, district.JobSupply, new Color(0.36f, 0.80f, 0.55f, 0.85f));
-		DrawMetricBar(rect.Position + new Vector2(8, rect.Size.Y - 10), rect.Size.X - 16, district.Traffic, new Color(0.95f, 0.70f, 0.28f, 0.82f));
+		DrawMetricBar(rect.Position + new Vector2(8, rect.Size.Y - 18), rect.Size.X - 16, district.JobSupply, AsGodot(_palette.Success));
+		DrawMetricBar(rect.Position + new Vector2(8, rect.Size.Y - 10), rect.Size.X - 16, district.Traffic, AsGodot(_palette.Warning));
 	}
 
 	private void DrawMetricBar(Vector2 origin, float width, int value, Color color)
@@ -253,8 +261,8 @@ public partial class CityVisualOverlay : Control
 		Vector2 station = CenterOf("bus_station", size);
 		Vector2 marker = station + new Vector2(34, -18);
 		Color markerColor = _model.ProblemBuildingCount > 0
-			? new Color(0.95f, 0.27f, 0.22f, 0.95f)
-			: new Color(0.98f, 0.78f, 0.28f, 0.95f);
+			? AsGodot(_palette.Danger)
+			: AsGodot(_palette.Accent);
 
 		DrawCircle(marker, 15.0f, new Color(0.0f, 0.0f, 0.0f, 0.42f));
 		DrawCircle(marker, 11.0f, markerColor);
@@ -262,7 +270,7 @@ public partial class CityVisualOverlay : Control
 		if (_model.ProblemBuildingCount > 0)
 		{
 			float pulse = DashboardVisualAnimation.Pulse(_animationSeconds, 0.72);
-			DrawArc(marker, 17.0f + pulse * 5.0f, 0.0f, MathF.Tau, 32, new Color(1.0f, 0.28f, 0.20f, 0.35f + pulse * 0.45f), 2.0f, true);
+			DrawArc(marker, 17.0f + pulse * 5.0f, 0.0f, MathF.Tau, 32, AsGodot(_palette.Danger.WithAlpha(0.35f + pulse * 0.45f)), 2.0f, true);
 		}
 		DrawBuildingMarkers(size);
 
@@ -301,7 +309,7 @@ public partial class CityVisualOverlay : Control
 		}
 
 		Color border = building.OperatingStatus == "maintenance_due"
-			? new Color(0.98f, 0.23f, 0.18f, 0.96f)
+			? AsGodot(_palette.Danger)
 			: new Color(1.0f, 1.0f, 1.0f, 0.72f);
 
 		DrawRect(new Rect2(rect.Position + new Vector2(2, 3), rect.Size), new Color(0.0f, 0.0f, 0.0f, 0.32f), true);
@@ -311,7 +319,7 @@ public partial class CityVisualOverlay : Control
 		if (building.OperatingStatus == "maintenance_due")
 		{
 			float pulse = DashboardVisualAnimation.Pulse(_animationSeconds, 0.80, position.X * 0.01);
-			DrawArc(position, 16.0f + pulse * 4.0f, 0.0f, MathF.Tau, 28, new Color(1.0f, 0.24f, 0.18f, 0.32f + pulse * 0.48f), 2.0f, true);
+			DrawArc(position, 16.0f + pulse * 4.0f, 0.0f, MathF.Tau, 28, AsGodot(_palette.Danger.WithAlpha(0.32f + pulse * 0.48f)), 2.0f, true);
 		}
 	}
 
@@ -355,6 +363,11 @@ public partial class CityVisualOverlay : Control
 			new Vector2(unit.Position.X * size.X, unit.Position.Y * size.Y),
 			new Vector2(unit.Size.X * size.X, unit.Size.Y * size.Y)
 		);
+	}
+
+	private static Color AsGodot(DashboardVisualColor color)
+	{
+		return new Color(color.Red, color.Green, color.Blue, color.Alpha);
 	}
 
 	private static Vector2 CenterOf(string code, Vector2 size)
