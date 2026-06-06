@@ -67,6 +67,8 @@ public partial class CityDashboardController : Control
 	private Button _characterAdultButton;
 	private Button _characterMatureButton;
 	private Button _characterCreateButton;
+	private Button _characterUkrainianButton;
+	private Button _characterEnglishButton;
 	private DashboardStatusPresenter _statusPresenter;
 	private DashboardActionPresenter _actionPresenter;
 	private DashboardOnboardingState _onboardingState = new();
@@ -186,6 +188,14 @@ public partial class CityDashboardController : Control
 		if (_characterCreateButton != null)
 		{
 			_characterCreateButton.Pressed += OnCharacterCreateButtonPressed;
+		}
+		if (_characterUkrainianButton != null)
+		{
+			_characterUkrainianButton.Pressed += OnCharacterUkrainianButtonPressed;
+		}
+		if (_characterEnglishButton != null)
+		{
+			_characterEnglishButton.Pressed += OnCharacterEnglishButtonPressed;
 		}
 		if (_characterNameInput != null)
 		{
@@ -309,6 +319,8 @@ public partial class CityDashboardController : Control
 		_characterAdultButton ??= GetNodeOrNull<Button>("%CharacterAdultButton");
 		_characterMatureButton ??= GetNodeOrNull<Button>("%CharacterMatureButton");
 		_characterCreateButton ??= GetNodeOrNull<Button>("%CharacterCreateButton");
+		_characterUkrainianButton ??= GetNodeOrNull<Button>("%CharacterUkrainianButton");
+		_characterEnglishButton ??= GetNodeOrNull<Button>("%CharacterEnglishButton");
 	}
 
 	private void ConfigureTextSafety()
@@ -683,6 +695,15 @@ public partial class CityDashboardController : Control
 
 	private void UpdateCharacterCreationUi()
 	{
+		string localeCode = DashboardLocaleProfile.Normalize(TranslationServer.GetLocale());
+		if (_characterUkrainianButton != null)
+		{
+			_characterUkrainianButton.ButtonPressed = localeCode == DashboardLocaleProfile.Ukrainian;
+		}
+		if (_characterEnglishButton != null)
+		{
+			_characterEnglishButton.ButtonPressed = localeCode == DashboardLocaleProfile.English;
+		}
 		if (_characterTeenButton != null)
 		{
 			_characterTeenButton.ButtonPressed = _selectedCharacterAgeGroup == "teen";
@@ -733,6 +754,35 @@ public partial class CityDashboardController : Control
 	public void OnCharacterMatureButtonPressed()
 	{
 		SelectCharacterAgeGroup("mature");
+	}
+
+	private void SelectCharacterLocale(string localeCode)
+	{
+		string normalized = DashboardLocaleProfile.Normalize(localeCode);
+		if (_session != null)
+		{
+			_session.SetLocaleCode(normalized);
+		}
+		else
+		{
+			TranslationServer.SetLocale(normalized);
+		}
+
+		if (_characterErrorLabel != null)
+		{
+			_characterErrorLabel.Visible = false;
+		}
+		UpdateCharacterCreationUi();
+	}
+
+	public void OnCharacterUkrainianButtonPressed()
+	{
+		SelectCharacterLocale(DashboardLocaleProfile.Ukrainian);
+	}
+
+	public void OnCharacterEnglishButtonPressed()
+	{
+		SelectCharacterLocale(DashboardLocaleProfile.English);
 	}
 
 	public void OnCharacterCreateButtonPressed()

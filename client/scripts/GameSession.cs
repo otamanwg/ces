@@ -11,12 +11,14 @@ public partial class GameSession : Node
     public string CityId { get; private set; } = "";
     public string LastJobId { get; private set; } = "";
     public string VisualStyleCode { get; private set; } = DashboardVisualPalettes.Core.Code;
+    public string LocaleCode { get; private set; } = DashboardLocaleProfile.Default;
 
     private const string SessionPath = "user://player_session.json";
 
     public override void _Ready()
     {
         LoadSession();
+        TranslationServer.SetLocale(LocaleCode);
     }
 
     public void SetPlayer(string playerId, string username, string authToken = "")
@@ -47,6 +49,13 @@ public partial class GameSession : Node
         SaveSession();
     }
 
+    public void SetLocaleCode(string localeCode)
+    {
+        LocaleCode = DashboardLocaleProfile.Normalize(localeCode);
+        TranslationServer.SetLocale(LocaleCode);
+        SaveSession();
+    }
+
     public bool HasPlayer => !string.IsNullOrEmpty(PlayerId);
     public bool HasAuthenticatedPlayer => !string.IsNullOrEmpty(PlayerId) && !string.IsNullOrEmpty(AuthToken);
 
@@ -57,11 +66,14 @@ public partial class GameSession : Node
         AuthToken = "";
         LastJobId = "";
         VisualStyleCode = DashboardVisualPalettes.Core.Code;
+        string localeCode = LocaleCode;
         string sessionPath = ResolveSessionPath();
         if (File.Exists(sessionPath))
         {
             File.Delete(sessionPath);
         }
+        LocaleCode = localeCode;
+        SaveSession();
     }
 
     private void SaveSession()
@@ -80,6 +92,7 @@ public partial class GameSession : Node
             AuthToken = AuthToken,
             CityId = CityId,
             VisualStyleCode = VisualStyleCode,
+            LocaleCode = LocaleCode,
         };
         File.WriteAllText(sessionPath, JsonSerializer.Serialize(data));
     }
@@ -105,6 +118,7 @@ public partial class GameSession : Node
             AuthToken = data.AuthToken ?? "";
             CityId = data.CityId ?? "";
             VisualStyleCode = DashboardVisualPalettes.Resolve(data.VisualStyleCode).Code;
+            LocaleCode = DashboardLocaleProfile.Normalize(data.LocaleCode);
         }
         catch (Exception e)
         {
@@ -124,5 +138,6 @@ public partial class GameSession : Node
         public string AuthToken { get; set; } = "";
         public string CityId { get; set; } = "";
         public string VisualStyleCode { get; set; } = "";
+        public string LocaleCode { get; set; } = "";
     }
 }

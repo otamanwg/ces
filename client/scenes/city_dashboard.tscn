@@ -927,6 +927,31 @@ layout_mode = 2
 size_flags_horizontal = 4
 text = "CHARACTER_CREATE_BUTTON"
 
+[node name="CharacterLocaleSegments" type="HBoxContainer" parent="CharacterCreationOverlay"]
+z_index = 2
+layout_mode = 0
+offset_left = 1088.0
+offset_top = 18.0
+offset_right = 1262.0
+offset_bottom = 62.0
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="CharacterUkrainianButton" type="Button" parent="CharacterCreationOverlay/CharacterLocaleSegments"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 42)
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+text = "UK"
+
+[node name="CharacterEnglishButton" type="Button" parent="CharacterCreationOverlay/CharacterLocaleSegments"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 42)
+layout_mode = 2
+toggle_mode = true
+text = "EN"
+
 [connection signal="pressed" from="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/OpenBuildingButton" to="." method="OnOpenBuildingButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/RepairBuildingButton" to="." method="OnRepairBuildingButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/ApplyJobButton" to="." method="OnApplyJobButtonPressed"]

@@ -788,6 +788,19 @@ DoD:
 
 ---
 
+## Sprint 47 — First-Launch Language Preference
+
+Ціль: гравець обирає українську або англійську до створення персонажа, а локальна сесія відновлює вибір при наступному запуску.
+
+Порядок:
+
+1. ✅ Client model/tests: locale allowlist і deterministic fallback.
+2. ✅ Game session: збереження locale до та після створення персонажа.
+3. ✅ Godot MCP/runtime: компактний `UK / EN` selector на character-creation screen.
+4. ✅ Localized capture QA, повний checkpoint, MCP smoke і commit.
+
+---
+
 ## Checkpoints Де Потрібен Користувач
 
 | Checkpoint | Коли | Що потрібно |

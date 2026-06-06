@@ -299,6 +299,9 @@ AssertEqual(
 );
 AssertEqual("adult", DashboardCharacterCreation.NormalizeAgeGroup("unknown"), "Unknown guidance group falls back to adult");
 AssertEqual("mature", DashboardCharacterCreation.NormalizeAgeGroup("MATURE"), "Guidance group normalization ignores case");
+AssertEqual("uk", DashboardLocaleProfile.Normalize(""), "Missing locale defaults to Ukrainian");
+AssertEqual("en", DashboardLocaleProfile.Normalize(" EN "), "Supported locale normalization trims and ignores case");
+AssertEqual("uk", DashboardLocaleProfile.Normalize("de"), "Unsupported locale falls back to Ukrainian");
 AssertEqual(DashboardArrivalVisual.WaitingHall, DashboardArrivalStory.Get(0).Visual, "First beat uses waiting hall");
 AssertEqual(DashboardArrivalVisual.WaitingHall, DashboardArrivalStory.Get(1).Visual, "Second beat reuses waiting hall");
 AssertEqual(DashboardArrivalVisual.TaxiRide, DashboardArrivalStory.Get(2).Visual, "Final story beat uses taxi ride");

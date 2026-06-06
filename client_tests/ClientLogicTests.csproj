@@ -17,6 +17,7 @@
     <Compile Include="..\client\scripts\DashboardVisualStylePack.cs" Link="DashboardVisualStylePack.cs" />
     <Compile Include="..\client\scripts\DashboardTutorialProfile.cs" Link="DashboardTutorialProfile.cs" />
     <Compile Include="..\client\scripts\DashboardCharacterCreation.cs" Link="DashboardCharacterCreation.cs" />
+    <Compile Include="..\client\scripts\DashboardLocaleProfile.cs" Link="DashboardLocaleProfile.cs" />
     <Compile Include="..\client\scripts\DashboardEventHistory.cs" Link="DashboardEventHistory.cs" />
     <Compile Include="..\client\scripts\DashboardArrivalStory.cs" Link="DashboardArrivalStory.cs" />
     <Compile Include="..\client\scripts\DashboardOnboardingState.cs" Link="DashboardOnboardingState.cs" />
