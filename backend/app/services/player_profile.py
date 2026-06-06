@@ -59,6 +59,7 @@ def build_player_snapshot(db: Session, player: Player) -> dict:
         energy=player.energy,
         mood=player.mood,
         hunger=player.hunger,
+        tutorial_age_group=player.tutorial_age_group,
         education_level=player.education_level,
         diploma_verified=player.diploma_verified,
         job=job.title if job else "Безробітний",

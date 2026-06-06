@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 43: Arrival NPC Portrait Layer.**
+**Sprint 44: Age-Aware Arrival Guidance.**
 
-Мета: додати style-aware портрети співрозмовника й водія поверх вступних кадрів, не звужуючи локалізований діалог.
+Мета: додати privacy-friendly вікові групи профілю та змінювати тон вступної підказки без зміни механік чи story sequence.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -695,8 +695,8 @@ DoD:
 
 Наступний visual крок:
 
-1. Додати age-aware варіанти вступних підказок без зміни story sequence.
-2. Локалізувати фінальний choice screen і police recovery controls.
+1. Локалізувати фінальний choice screen і police recovery controls.
+2. Додати character-creation screen, де гравець свідомо обирає tutorial age group.
 
 ---
 
@@ -738,6 +738,20 @@ DoD:
 2. ✅ Client architecture: portrait keys, side metadata і fallback у style-pack manifest.
 3. ✅ Godot MCP/runtime: окремий `OnboardingPortrait`, позиціонування та приховування на choice screen.
 4. ✅ Localized visual QA для waiting hall, taxi ride і фінального вибору.
+5. ✅ Повний checkpoint, MCP smoke і commit.
+
+---
+
+## Sprint 44 — Age-Aware Arrival Guidance
+
+Ціль: профіль зберігає лише потрібну для tutorial вікову групу, а другий вступний beat адаптує тон українською й англійською.
+
+Порядок:
+
+1. ✅ PostgreSQL: `players.tutorial_age_group` з migration, default і check constraint.
+2. ✅ Backend API/tests: `teen`, `adult`, `mature`, legacy-compatible default і snapshot contract.
+3. ✅ Client: parser профілю та age-aware narrative key без зміни story sequence.
+4. ✅ Visual QA для teen/adult/mature локалізованих підказок.
 5. ✅ Повний checkpoint, MCP smoke і commit.
 
 ---

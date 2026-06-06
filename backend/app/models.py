@@ -240,6 +240,7 @@ class Player(Base):
     energy: Mapped[int] = mapped_column(Integer, default=100)
     mood: Mapped[int] = mapped_column(Integer, default=100)
     hunger: Mapped[int] = mapped_column(Integer, default=0)
+    tutorial_age_group: Mapped[str] = mapped_column(String(20), default="adult")
     education_level: Mapped[str] = mapped_column(String(50), default="High School")
     diploma_verified: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

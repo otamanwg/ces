@@ -131,6 +131,7 @@ class PlayerSnapshotData(BaseModel):
     energy: int
     mood: int
     hunger: int
+    tutorial_age_group: str
     education_level: str
     diploma_verified: bool
     job: str

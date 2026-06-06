@@ -80,6 +80,7 @@ def test_registration_starts_arrival_and_blocks_ordinary_actions(client):
     assert data["hostel"] == "На вулиці"
     assert data["onboarding"]["stage"] == ARRIVAL_CHOICE
     assert data["onboarding"]["completed"] is False
+    assert data["tutorial_age_group"] == "adult"
     assert data["onboarding"]["police_recovery_claimable"] is False
     assert data["onboarding"]["available_choices"] == [REPORT_TO_POLICE, FIND_HOUSING]
     assert all(available is False for available in data["actions"].values())
@@ -95,6 +96,31 @@ def test_registration_starts_arrival_and_blocks_ordinary_actions(client):
     assert blocked["success"] is False
     assert blocked["message"] == ONBOARDING_REQUIRED_MESSAGE
     assert blocked["data"]["onboarding"]["stage"] == ARRIVAL_CHOICE
+
+
+def test_registration_accepts_supported_tutorial_age_group(client):
+    test_client, db = client
+    response = test_client.post(
+        "/api/player/register",
+        json={"username": "teen-arrival", "tutorial_age_group": "teen"},
+    )
+    body = response.json()
+
+    assert body["success"] is True
+    assert body["data"]["tutorial_age_group"] == "teen"
+    player = db.query(Player).filter(Player.id == body["data"]["id"]).one()
+    assert player.tutorial_age_group == "teen"
+    PlayerSnapshotData.model_validate(body["data"])
+
+
+def test_registration_rejects_unknown_tutorial_age_group(client):
+    test_client, _db = client
+    response = test_client.post(
+        "/api/player/register",
+        json={"username": "unknown-age", "tutorial_age_group": "unknown"},
+    )
+
+    assert response.status_code == 422
 
 
 def test_player_can_find_housing_and_complete_arrival_idempotently(client):

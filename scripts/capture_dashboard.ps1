@@ -3,11 +3,14 @@ param(
     [double]$DelaySeconds = 3.0,
     [ValidateSet("uk", "en")]
     [string]$Locale = "uk",
+    [ValidateSet("teen", "adult", "mature")]
+    [string]$TutorialAgeGroup = "adult",
     [switch]$SkipBuild,
     [switch]$StressText,
     [switch]$Onboarding,
     [switch]$PoliceRecovery,
     [switch]$ArrivalStory,
+    [switch]$GuidanceStory,
     [switch]$TaxiStory
 )
 
@@ -59,7 +62,8 @@ $godotArguments = @(
     "--",
     "--output=$godotOutputPath",
     "--delay=$delayArgument",
-    "--locale=$Locale"
+    "--locale=$Locale",
+    "--tutorial-age-group=$TutorialAgeGroup"
 )
 if ($StressText) {
     $godotArguments += "--stress-text"
@@ -72,6 +76,9 @@ if ($PoliceRecovery) {
 }
 if ($ArrivalStory) {
     $godotArguments += "--arrival-story"
+}
+if ($GuidanceStory) {
+    $godotArguments += "--arrival-guidance"
 }
 if ($TaxiStory) {
     $godotArguments += "--taxi-story"

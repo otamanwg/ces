@@ -33,6 +33,9 @@ func _capture_dashboard() -> void:
 	if _has_argument("--arrival-story"):
 		_apply_arrival_story_preview(dashboard)
 		await get_tree().create_timer(0.25).timeout
+	if _has_argument("--arrival-guidance"):
+		_apply_arrival_guidance_preview(dashboard)
+		await get_tree().create_timer(0.25).timeout
 	if _has_argument("--taxi-story"):
 		_apply_taxi_story_preview(dashboard)
 		await get_tree().create_timer(0.25).timeout
@@ -84,6 +87,13 @@ func _configure_locale() -> void:
 
 func _has_argument(expected: String) -> bool:
 	return expected in OS.get_cmdline_user_args()
+
+
+func _tutorial_age_group() -> String:
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--tutorial-age-group="):
+			return argument.trim_prefix("--tutorial-age-group=")
+	return "adult"
 
 
 func _apply_stress_text(dashboard: Node) -> void:
@@ -162,6 +172,38 @@ func _apply_arrival_story_preview(dashboard: Node) -> void:
 		false
 	)
 	print("DASHBOARD_ARRIVAL_STORY_PREVIEW_APPLIED=1")
+
+
+func _apply_arrival_guidance_preview(dashboard: Node) -> void:
+	var overlay := dashboard.find_child("OnboardingOverlay", true, false) as Control
+	var continue_button := dashboard.find_child("OnboardingContinueButton", true, false) as Button
+	var police_button := dashboard.find_child("OnboardingPoliceButton", true, false) as Button
+	var housing_button := dashboard.find_child("OnboardingHousingButton", true, false) as Button
+	if overlay == null or continue_button == null or police_button == null or housing_button == null:
+		push_error("Dashboard capture: arrival guidance controls not found")
+		return
+
+	var narrative_key := "ARRIVAL_BEAT_2_ADULT_NARRATIVE"
+	match _tutorial_age_group():
+		"teen":
+			narrative_key = "ARRIVAL_BEAT_2_TEEN_NARRATIVE"
+		"mature":
+			narrative_key = "ARRIVAL_BEAT_2_MATURE_NARRATIVE"
+
+	overlay.visible = true
+	police_button.visible = false
+	housing_button.visible = false
+	continue_button.visible = true
+	continue_button.text = tr("ARRIVAL_STORY_NEXT")
+	_set_label(dashboard, "OnboardingTitleLabel", tr("ARRIVAL_BEAT_2_TITLE"))
+	_set_label(dashboard, "OnboardingNarrativeLabel", tr(narrative_key))
+	_set_onboarding_texture(dashboard, "res://assets/visual/core/arrival_waiting_hall_core.png")
+	_set_onboarding_portrait(
+		dashboard,
+		"res://assets/visual/core/arrival_portrait_stranger_core.png",
+		false
+	)
+	print("DASHBOARD_ARRIVAL_GUIDANCE_PREVIEW_APPLIED=", _tutorial_age_group())
 
 
 func _apply_taxi_story_preview(dashboard: Node) -> void:

@@ -61,6 +61,7 @@ public partial class CityDashboardController : Control
 	private DashboardStatusPresenter _statusPresenter;
 	private DashboardActionPresenter _actionPresenter;
 	private DashboardOnboardingState _onboardingState = new();
+	private DashboardTutorialAgeGroup _tutorialAgeGroup = DashboardTutorialAgeGroup.Adult;
 	private int _arrivalStoryBeat;
 	private bool _arrivalStoryInitialized;
 	private bool _applyFirstVacancy;
@@ -884,6 +885,7 @@ public partial class CityDashboardController : Control
 		}
 
 		UpdateAvailableActions(snapshot.Actions);
+		_tutorialAgeGroup = snapshot.TutorialAgeGroup;
 		_onboardingState = snapshot.Onboarding;
 		UpdateOnboardingUi();
 		UpdatePoliceRecoveryButton();
@@ -1492,7 +1494,7 @@ public partial class CityDashboardController : Control
 			showingStory = true;
 		}
 
-		var storyBeat = showingStory ? DashboardArrivalStory.Get(_arrivalStoryBeat) : null;
+		var storyBeat = showingStory ? DashboardArrivalStory.Get(_arrivalStoryBeat, _tutorialAgeGroup) : null;
 		UpdateOnboardingBackdrop(storyBeat?.Visual ?? DashboardArrivalVisual.BaggageTheft);
 		UpdateOnboardingPortrait(
 			storyBeat?.Portrait ?? DashboardArrivalPortrait.None,

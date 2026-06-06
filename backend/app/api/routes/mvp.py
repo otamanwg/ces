@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
@@ -87,6 +87,7 @@ router = APIRouter(prefix="/api", tags=["mvp"])
 
 class PlayerRegister(BaseModel):
     username: str
+    tutorial_age_group: Literal["teen", "adult", "mature"] = "adult"
 
 
 class OnboardingChoice(BaseModel):
@@ -600,6 +601,7 @@ def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
         energy=100,
         mood=100,
         hunger=0,
+        tutorial_age_group=data.tutorial_age_group,
         education_level="High School",
         auth_token=new_player_token(),
     )

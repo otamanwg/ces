@@ -239,11 +239,32 @@ var arrivalSnapshot = DashboardPlayerSnapshot.FromJson(JsonNode.Parse(
 AssertEqual(false, arrivalSnapshot.Onboarding.Completed, "Arrival snapshot keeps onboarding open");
 AssertEqual(true, arrivalSnapshot.Onboarding.CanReportToPolice, "Arrival offers police choice");
 AssertEqual(true, arrivalSnapshot.Onboarding.CanFindHousing, "Arrival offers housing choice");
+AssertEqual(DashboardTutorialAgeGroup.Adult, arrivalSnapshot.TutorialAgeGroup, "Legacy snapshot defaults to adult guidance");
+var teenSnapshot = DashboardPlayerSnapshot.FromJson(JsonNode.Parse("""{"tutorial_age_group":"teen"}""")!);
+AssertEqual(DashboardTutorialAgeGroup.Teen, teenSnapshot.TutorialAgeGroup, "Snapshot parses teen guidance group");
 AssertEqual(3, DashboardArrivalStory.Count, "Arrival story has three setup beats");
 AssertEqual("ARRIVAL_BEAT_1_TITLE", DashboardArrivalStory.Get(0).TitleKey, "Arrival story starts with stable title key");
 AssertEqual("ARRIVAL_BEAT_1_NARRATIVE", DashboardArrivalStory.Get(0).NarrativeKey, "Arrival story starts with stable narrative key");
 AssertEqual("ARRIVAL_BEAT_3_TITLE", DashboardArrivalStory.Get(2).TitleKey, "Arrival story ends with stable title key");
 AssertEqual("ARRIVAL_BEAT_3_NARRATIVE", DashboardArrivalStory.Get(2).NarrativeKey, "Arrival story ends with stable narrative key");
+AssertEqual(
+	"ARRIVAL_BEAT_2_TEEN_NARRATIVE",
+	DashboardArrivalStory.Get(1, DashboardTutorialAgeGroup.Teen).NarrativeKey,
+	"Teen guidance uses direct reassuring copy"
+);
+AssertEqual(
+	"ARRIVAL_BEAT_2_ADULT_NARRATIVE",
+	DashboardArrivalStory.Get(1, DashboardTutorialAgeGroup.Adult).NarrativeKey,
+	"Adult guidance uses balanced copy"
+);
+AssertEqual(
+	"ARRIVAL_BEAT_2_MATURE_NARRATIVE",
+	DashboardArrivalStory.Get(1, DashboardTutorialAgeGroup.Mature).NarrativeKey,
+	"Mature guidance emphasizes planning"
+);
+AssertEqual(DashboardTutorialAgeGroup.Adult, DashboardTutorialProfile.ParseAgeGroup(""), "Missing age group defaults to adult");
+AssertEqual(DashboardTutorialAgeGroup.Teen, DashboardTutorialProfile.ParseAgeGroup("TEEN"), "Age group parsing ignores case");
+AssertEqual("mature", DashboardTutorialProfile.ToApiValue(DashboardTutorialAgeGroup.Mature), "Mature age group API value");
 AssertEqual(DashboardArrivalVisual.WaitingHall, DashboardArrivalStory.Get(0).Visual, "First beat uses waiting hall");
 AssertEqual(DashboardArrivalVisual.WaitingHall, DashboardArrivalStory.Get(1).Visual, "Second beat reuses waiting hall");
 AssertEqual(DashboardArrivalVisual.TaxiRide, DashboardArrivalStory.Get(2).Visual, "Final story beat uses taxi ride");

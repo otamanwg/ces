@@ -24,7 +24,7 @@ public static class DashboardArrivalStory
 			DashboardPortraitSide.Right),
 		new(
 			"ARRIVAL_BEAT_2_TITLE",
-			"ARRIVAL_BEAT_2_NARRATIVE",
+			"ARRIVAL_BEAT_2_ADULT_NARRATIVE",
 			DashboardArrivalVisual.WaitingHall,
 			DashboardArrivalPortrait.Stranger,
 			DashboardPortraitSide.Right),
@@ -38,8 +38,22 @@ public static class DashboardArrivalStory
 
 	public static int Count => Beats.Length;
 
-	public static DashboardArrivalBeat Get(int index)
+	public static DashboardArrivalBeat Get(
+		int index,
+		DashboardTutorialAgeGroup ageGroup = DashboardTutorialAgeGroup.Adult)
 	{
-		return Beats[index];
+		var beat = Beats[index];
+		if (index != 1)
+		{
+			return beat;
+		}
+
+		string narrativeKey = ageGroup switch
+		{
+			DashboardTutorialAgeGroup.Teen => "ARRIVAL_BEAT_2_TEEN_NARRATIVE",
+			DashboardTutorialAgeGroup.Mature => "ARRIVAL_BEAT_2_MATURE_NARRATIVE",
+			_ => "ARRIVAL_BEAT_2_ADULT_NARRATIVE",
+		};
+		return beat with { NarrativeKey = narrativeKey };
 	}
 }
