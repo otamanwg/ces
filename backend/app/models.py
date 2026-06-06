@@ -260,6 +260,29 @@ class Player(Base):
         back_populates="applicant",
     )
     buildings: Mapped[List["Building"]] = relationship("Building", back_populates="owner")
+    onboarding: Mapped[Optional["PlayerOnboarding"]] = relationship(
+        "PlayerOnboarding",
+        back_populates="player",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+
+class PlayerOnboarding(Base):
+    __tablename__ = "player_onboarding"
+
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    stage: Mapped[str] = mapped_column(String(30), default="arrival_choice")
+    police_report_status: Mapped[str] = mapped_column(String(30), default="not_filed")
+    police_recovery_amount: Mapped[Optional[float]] = mapped_column(Decimal(15, 2))
+    police_recovery_available_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    player: Mapped["Player"] = relationship("Player", back_populates="onboarding")
 
 # 3. МОДЕЛЬ ПІДПРИЄМСТВА (БІЗНЕСУ)
 class Business(Base):

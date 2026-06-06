@@ -112,6 +112,17 @@ class SportsContractSnapshot(BaseModel):
     salary_per_match: float
 
 
+class PlayerOnboardingData(BaseModel):
+    stage: str
+    completed: bool
+    title: str
+    narrative: str
+    available_choices: list[str]
+    police_report_status: str
+    police_recovery_amount: float | None
+    police_recovery_available_at: str | None
+
+
 class PlayerSnapshotData(BaseModel):
     id: str
     username: str
@@ -126,6 +137,7 @@ class PlayerSnapshotData(BaseModel):
     hostel: str
     owned_businesses: list[OwnedBusinessSnapshot]
     sports_contract: SportsContractSnapshot | None
+    onboarding: PlayerOnboardingData
     actions: PlayerActionsData
     goal_effects: list[GameEffect]
 

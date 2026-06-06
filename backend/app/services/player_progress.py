@@ -9,11 +9,21 @@ from backend.app.services.education import load_manager_exam
 from backend.app.services.job_queries import get_active_job, get_first_vacant_job_by_min_education
 from backend.app.services.money import money
 from backend.app.services.needs import HUNGER_WARNING_THRESHOLD, MEAL_COST
+from backend.app.services.onboarding import build_onboarding_snapshot, is_onboarding_complete
 from backend.app.services.sports import GYM_COST, GYM_ENERGY_COST
 
 
 def build_next_action_hint(db: Session, player: Player) -> dict:
     """Підказка наступної дії для MVP loop (work → sleep → exam → краща робота)."""
+    if not is_onboarding_complete(db, player):
+        onboarding = build_onboarding_snapshot(db, player)
+        return GameEffect(
+            key="next_action",
+            label="Наступний крок",
+            value=onboarding["title"],
+            delta="Оберіть дію у сцені прибуття",
+        ).model_dump()
+
     job = get_active_job(db, player.id)
 
     if not job:
@@ -119,6 +129,9 @@ def build_next_action_hint(db: Session, player: Player) -> dict:
 
 def build_goal_effects(db: Session, player: Player) -> list[dict]:
     effects: list[dict] = [build_next_action_hint(db, player)]
+    if not is_onboarding_complete(db, player):
+        return effects
+
     balance = money(player.balance)
     owned_businesses = get_owned_businesses(db, player.id)
 

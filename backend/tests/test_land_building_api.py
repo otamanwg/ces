@@ -54,7 +54,15 @@ def client():
 def register_player(test_client, username: str):
     body = test_client.post("/api/player/register", json={"username": username}).json()
     assert body["success"] is True
-    return body["data"]["id"], body["data"]["auth_token"]
+    player_id = body["data"]["id"]
+    token = body["data"]["auth_token"]
+    onboarding = test_client.post(
+        "/api/player/onboarding/choose",
+        json={"player_id": player_id, "choice": "find_housing"},
+        headers={"X-Player-Token": token},
+    ).json()
+    assert onboarding["success"] is True
+    return player_id, token
 
 
 def test_land_parcels_endpoint_returns_seeded_city_land(client):
@@ -180,6 +188,8 @@ def test_land_purchase_transfers_money_to_treasury_assigns_owner_and_is_idempote
     player = db.query(Player).filter(Player.id == player_id).one()
     city = db.query(City).filter(City.id == player.city_id).one()
     parcel = db.query(LandParcel).filter(LandParcel.code == "bus_station_kiosk_lot").one()
+    player.balance = Decimal("500.00")
+    db.commit()
     starting_treasury = Decimal(str(city.treasury_balance))
 
     payload = {"player_id": player_id, "land_parcel_id": str(parcel.id)}
@@ -221,6 +231,7 @@ def test_land_purchase_requires_enough_money(client):
     player_id, token = register_player(test_client, "poor-land-buyer")
     player = db.query(Player).filter(Player.id == player_id).one()
     parcel = db.query(LandParcel).filter(LandParcel.code == "outer_expansion_lot").one()
+    starting_balance = Decimal(str(player.balance))
 
     res = test_client.post(
         "/api/land/buy",
@@ -234,7 +245,7 @@ def test_land_purchase_requires_enough_money(client):
     assert "Недостатньо коштів для купівлі землі" in body["message"]
     db.refresh(player)
     db.refresh(parcel)
-    assert Decimal(str(player.balance)) == Decimal("500.00")
+    assert Decimal(str(player.balance)) == starting_balance
     assert parcel.owner_player_id is None
     assert parcel.status == "city_owned"
     assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "land_purchase").count() == 0
@@ -576,6 +587,8 @@ def test_open_building_charges_fee_links_business_and_is_idempotent(client):
     player_id, token = register_player(test_client, "building-operator")
     player = db.query(Player).filter(Player.id == player_id).one()
     city = db.query(City).filter(City.id == player.city_id).one()
+    player.balance = Decimal("500.00")
+    db.commit()
     building_id = create_openable_commercial_building(test_client, db, player_id, token)
     starting_treasury = Decimal(str(city.treasury_balance))
 
@@ -779,6 +792,8 @@ def test_repair_building_charges_fee_reactivates_and_is_idempotent(client):
     player_id, token = register_player(test_client, "repair-operator")
     player = db.query(Player).filter(Player.id == player_id).one()
     city = db.query(City).filter(City.id == player.city_id).one()
+    player.balance = Decimal("500.00")
+    db.commit()
     building_id = create_opened_blueprint_building(test_client, db, player_id, token)
     building = db.query(Building).filter(Building.id == building_id).one()
     building.operating_status = MAINTENANCE_DUE

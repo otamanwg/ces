@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from backend.app.core.config import settings
 from backend.app.api.responses import build_player_action_response, save_player_action_response
 from backend.app.database import get_db
-from backend.app.models import Building, BuildingApplication, BusinessBlueprint, City, Hostel, LandParcel, Player, SportsClub
+from backend.app.models import Building, BuildingApplication, BusinessBlueprint, City, LandParcel, Player, SportsClub
 from backend.app.schemas.mvp import (
     BuildingApplicationData,
     BuildingActivationActionData,
@@ -69,6 +69,15 @@ from backend.app.services.land import get_land_parcels, process_land_purchase
 from backend.app.services.job_queries import education_rank, get_active_job, get_job, get_vacant_jobs
 from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
 from backend.app.services.needs import process_meal_purchase
+from backend.app.services.onboarding import (
+    ONBOARDING_REQUIRED_MESSAGE,
+    build_onboarding_snapshot,
+    choose_onboarding_path,
+    claim_police_recovery,
+    create_player_onboarding,
+    is_onboarding_complete,
+    random_starting_cash,
+)
 from backend.app.services.player_profile import build_player_snapshot, get_player_snapshot
 from backend.app.services.player_progress import build_goal_effects
 from backend.app.services.sports import sign_athlete_contract, train_at_gym
@@ -78,6 +87,15 @@ router = APIRouter(prefix="/api", tags=["mvp"])
 
 class PlayerRegister(BaseModel):
     username: str
+
+
+class OnboardingChoice(BaseModel):
+    player_id: str
+    choice: str
+
+
+class OnboardingClaim(BaseModel):
+    player_id: str
 
 
 class JobApply(BaseModel):
@@ -142,6 +160,15 @@ class ExamAnswers(BaseModel):
 
 def require_player(db: Session, player_id: str, player_token: str | None) -> Player | None:
     return get_authorized_player(db, player_id, player_token)
+
+
+def require_completed_onboarding(db: Session, player: Player) -> dict | None:
+    if is_onboarding_complete(db, player):
+        return None
+    return api_error(
+        ONBOARDING_REQUIRED_MESSAGE,
+        {"onboarding": build_onboarding_snapshot(db, player)},
+    )
 
 
 def land_parcel_item(parcel: LandParcel) -> LandParcelItem:
@@ -334,6 +361,9 @@ def buy_land_parcel(
     player = require_player(db, data.player_id, player_token)
     if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     cached = get_idempotent_response(db, "land_buy", idempotency_key, data.player_id)
     if cached:
@@ -370,6 +400,9 @@ def submit_building_application(
     player = require_player(db, data.player_id, player_token)
     if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     cached = get_idempotent_response(db, "building_application", idempotency_key, data.player_id)
     if cached:
@@ -419,6 +452,9 @@ def activate_approved_building_application(
     player = require_player(db, data.player_id, player_token)
     if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     cached = get_idempotent_response(db, "building_application_activate", idempotency_key, data.player_id)
     if cached:
@@ -456,6 +492,9 @@ def open_building(
     player = require_player(db, data.player_id, player_token)
     if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     cached = get_idempotent_response(db, "building_open", idempotency_key, data.player_id)
     if cached:
@@ -494,6 +533,9 @@ def repair_building(
     player = require_player(db, data.player_id, player_token)
     if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     cached = get_idempotent_response(db, "building_repair", idempotency_key, data.player_id)
     if cached:
@@ -554,7 +596,7 @@ def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
     player = Player(
         city_id=city.id,
         username=username,
-        balance=500.00,
+        balance=random_starting_cash(),
         energy=100,
         mood=100,
         hunger=0,
@@ -562,22 +604,90 @@ def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
         auth_token=new_player_token(),
     )
     db.add(player)
+    db.flush()
+    create_player_onboarding(db, player)
     db.commit()
     db.refresh(player)
-
-    free_room = db.query(Hostel).filter(Hostel.tenant_player_id.is_(None)).first()
-    if free_room:
-        free_room.tenant_player_id = player.id
-        db.commit()
 
     snapshot = build_player_snapshot(db, player)
     snapshot["auth_token"] = player.auth_token
     effects = build_goal_effects(db, player)
-    hostel_msg = snapshot["hostel"]
     return api_success(
-        f"Ласкаво просимо, {username}! Вас поселено: {hostel_msg}.",
+        f"Ласкаво просимо, {username}. Ви прибули на автовокзал нового міста.",
         snapshot,
         effects,
+    )
+
+
+@router.get("/player/{player_id}/onboarding")
+def get_onboarding_status(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    player = require_player(db, player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    return api_success("Стан прибуття.", build_onboarding_snapshot(db, player))
+
+
+@router.post("/player/onboarding/choose")
+def choose_arrival_path(
+    data: OnboardingChoice,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db),
+):
+    player = require_player(db, data.player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    cached = get_idempotent_response(db, "onboarding_choose", idempotency_key, data.player_id)
+    if cached:
+        return cached
+
+    res = choose_onboarding_path(db, player, data.choice)
+    if not res["success"]:
+        return api_error(res["message"])
+
+    db.refresh(player)
+    return save_player_action_response(
+        db,
+        "onboarding_choose",
+        idempotency_key,
+        data.player_id,
+        player,
+        res["message"],
+    )
+
+
+@router.post("/player/onboarding/police-recovery")
+def collect_police_recovery(
+    data: OnboardingClaim,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: Session = Depends(get_db),
+):
+    player = require_player(db, data.player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    cached = get_idempotent_response(db, "onboarding_police_recovery", idempotency_key, data.player_id)
+    if cached:
+        return cached
+
+    res = claim_police_recovery(db, player)
+    if not res["success"]:
+        return api_error(res["message"])
+
+    db.refresh(player)
+    return save_player_action_response(
+        db,
+        "onboarding_police_recovery",
+        idempotency_key,
+        data.player_id,
+        player,
+        res["message"],
     )
 
 
@@ -662,6 +772,9 @@ def buy_business(
     player = require_player(db, data.player_id, player_token)
     if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     cached = get_idempotent_response(db, "business_buy", idempotency_key, data.player_id)
     if cached:
@@ -698,6 +811,9 @@ def collect_business_dividend(
     player = require_player(db, data.player_id, player_token)
     if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     cached = get_idempotent_response(db, "business_dividend", idempotency_key, data.player_id)
     if cached:
@@ -753,6 +869,9 @@ def join_sports_club(
     player = require_player(db, data.player_id, player_token)
     if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     cached = get_idempotent_response(db, "sports_join", idempotency_key, data.player_id)
     if cached:
@@ -780,6 +899,9 @@ def train_sports(
     player = require_player(db, data.player_id, player_token)
     if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     cached = get_idempotent_response(db, "sports_train", idempotency_key, data.player_id)
     if cached:
@@ -811,6 +933,9 @@ def apply_for_job(
     player = require_player(db, data.player_id, player_token)
     if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     job_uuid = try_uuid(data.job_id)
     if job_uuid is None:
@@ -851,8 +976,12 @@ def do_work_shift(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
 ):
-    if not require_player(db, player_id, player_token):
+    player = require_player(db, player_id, player_token)
+    if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     cached = get_idempotent_response(db, "work_shift", idempotency_key, player_id)
     if cached:
@@ -882,8 +1011,12 @@ def sleep_in_hostel(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
 ):
-    if not require_player(db, player_id, player_token):
+    player = require_player(db, player_id, player_token)
+    if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     cached = get_idempotent_response(db, "sleep", idempotency_key, player_id)
     if cached:
@@ -904,8 +1037,12 @@ def eat_meal(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
 ):
-    if not require_player(db, player_id, player_token):
+    player = require_player(db, player_id, player_token)
+    if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     cached = get_idempotent_response(db, "eat", idempotency_key, player_id)
     if cached:
@@ -947,8 +1084,12 @@ def submit_exam(
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
 ):
-    if not require_player(db, data.player_id, player_token):
+    player = require_player(db, data.player_id, player_token)
+    if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    onboarding_error = require_completed_onboarding(db, player)
+    if onboarding_error:
+        return onboarding_error
 
     cached = get_idempotent_response(db, "exam_submit", idempotency_key, data.player_id)
     if cached:

@@ -10,11 +10,25 @@ from backend.app.services.ids import to_uuid
 from backend.app.services.job_queries import education_rank, get_active_job, has_eligible_vacancy
 from backend.app.services.money import money
 from backend.app.services.needs import MEAL_COST
+from backend.app.services.onboarding import build_onboarding_snapshot, is_onboarding_complete
 from backend.app.services.player_progress import build_goal_effects
 from backend.app.services.sports import GYM_COST, GYM_ENERGY_COST
 
 
 def build_player_actions(db: Session, player: Player, job: Job | None, hostel: Hostel | None) -> dict:
+    if not is_onboarding_complete(db, player):
+        return PlayerActionsData(
+            can_apply_job=False,
+            can_work=False,
+            can_sleep=False,
+            can_eat=False,
+            can_buy_business=False,
+            can_collect_dividend=False,
+            can_join_sports=False,
+            can_train_sports=False,
+            can_take_exam=False,
+        ).model_dump()
+
     exam = load_manager_exam()
     exam_cost = money(exam.get("cost_to_take", 100)) if exam else Decimal("100.00")
 
@@ -67,6 +81,7 @@ def build_player_snapshot(db: Session, player: Player) -> dict:
         }
         if athlete_contract
         else None,
+        onboarding=build_onboarding_snapshot(db, player),
         actions=actions,
         goal_effects=build_goal_effects(db, player),
     )

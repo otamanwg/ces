@@ -52,6 +52,18 @@ def client():
     db.close()
 
 
+def complete_onboarding(test_client, register_body):
+    player_id = register_body["data"]["id"]
+    response = test_client.post(
+        "/api/player/onboarding/choose",
+        json={"player_id": player_id, "choice": "find_housing"},
+        headers={"X-Player-Token": register_body["data"]["auth_token"]},
+    ).json()
+    assert response["success"] is True
+    assert response["data"]["onboarding"]["completed"] is True
+    return response
+
+
 def test_full_mvp_api_loop(client):
     test_client, db = client
 
@@ -82,11 +94,15 @@ def test_full_mvp_api_loop(client):
     player_id = register_body["data"]["id"]
     player_token = register_body["data"]["auth_token"]
     auth_headers = {"X-Player-Token": player_token}
-    assert register_body["data"]["balance"] == 500.0
+    starting_balance = register_body["data"]["balance"]
+    assert 300 <= starting_balance <= 400
     assert register_body["data"]["actions"]["can_take_exam"] is False
     register_effects = register_body["effects"]
     next_action = next(e for e in register_effects if e["key"] == "next_action")
-    assert next_action["value"] == "Влаштуйтесь на роботу"
+    assert next_action["value"] == "Новий початок"
+
+    completed_arrival = complete_onboarding(test_client, register_body)
+    assert completed_arrival["data"]["hostel"] != "Немає"
 
     unauth_player = test_client.get(f"/api/player/{player_id}")
     assert unauth_player.status_code == 200
@@ -145,7 +161,7 @@ def test_full_mvp_api_loop(client):
     WorkActionData.model_validate(work_body["data"])
     assert work_body["data"]["energy"] == 70
     assert work_body["data"]["hunger"] == 20
-    assert work_body["data"]["balance"] > 500
+    assert work_body["data"]["balance"] > starting_balance
     transactions_after_work = db.query(TransactionModelLog).count()
 
     repeat_work = test_client.post(f"/api/jobs/work/{player_id}", headers=work_headers)
@@ -280,6 +296,7 @@ def test_business_market_and_buy_endpoint_are_idempotent(client):
     test_client, db = client
 
     register = test_client.post("/api/player/register", json={"username": "api-owner"}).json()
+    complete_onboarding(test_client, register)
     player_id = register["data"]["id"]
     headers = {"X-Player-Token": register["data"]["auth_token"]}
 
@@ -327,6 +344,7 @@ def test_business_dividend_endpoint_is_idempotent(client):
     test_client, db = client
 
     register = test_client.post("/api/player/register", json={"username": "api-dividend-owner"}).json()
+    complete_onboarding(test_client, register)
     player_id = register["data"]["id"]
     headers = {"X-Player-Token": register["data"]["auth_token"]}
     player = db.query(Player).filter(Player.id == player_id).first()
@@ -372,8 +390,10 @@ def test_sports_join_and_train_are_idempotent(client):
     test_client, db = client
 
     register = test_client.post("/api/player/register", json={"username": "api-athlete"}).json()
+    complete_onboarding(test_client, register)
     player_id = register["data"]["id"]
     headers = {"X-Player-Token": register["data"]["auth_token"]}
+    starting_balance = register["data"]["balance"]
 
     clubs_res = test_client.get("/api/sports/clubs")
     assert clubs_res.status_code == 200
@@ -403,7 +423,7 @@ def test_sports_join_and_train_are_idempotent(client):
     train_body = train_res.json()
     assert train_body["success"] is True
     SportsTrainActionData.model_validate(train_body["data"])
-    assert train_body["data"]["balance"] == 460.0
+    assert train_body["data"]["balance"] == starting_balance - 40
     assert train_body["data"]["energy"] == 60
     assert train_body["data"]["sports_contract"]["strength"] >= 12
     transactions_after_train = db.query(TransactionModelLog).count()
@@ -427,8 +447,10 @@ def test_eat_endpoint_is_idempotent_and_logs_food(client):
     test_client, db = client
 
     register = test_client.post("/api/player/register", json={"username": "api-hungry"}).json()
+    complete_onboarding(test_client, register)
     player_id = register["data"]["id"]
     headers = {"X-Player-Token": register["data"]["auth_token"]}
+    starting_balance = register["data"]["balance"]
 
     player = db.query(Player).filter(Player.id == player_id).first()
     player.hunger = 80
@@ -440,7 +462,7 @@ def test_eat_endpoint_is_idempotent_and_logs_food(client):
     eat_body = eat_res.json()
     assert eat_body["success"] is True
     PlayerSnapshotData.model_validate(eat_body["data"])
-    assert eat_body["data"]["balance"] == 475.0
+    assert eat_body["data"]["balance"] == starting_balance - 25
     assert eat_body["data"]["hunger"] == 45
     transactions_after_eat = db.query(TransactionModelLog).count()
 
@@ -460,6 +482,8 @@ def test_idempotency_key_is_scoped_by_action_and_player(client):
 
     first_register = test_client.post("/api/player/register", json={"username": "idempotent-one"}).json()
     second_register = test_client.post("/api/player/register", json={"username": "idempotent-two"}).json()
+    complete_onboarding(test_client, first_register)
+    complete_onboarding(test_client, second_register)
     first_player_id = first_register["data"]["id"]
     second_player_id = second_register["data"]["id"]
     first_headers = {"X-Player-Token": first_register["data"]["auth_token"]}
