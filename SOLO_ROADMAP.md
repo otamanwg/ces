@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 37: Landscape Text Safety.**
+**Sprint 38: Player Arrival Vertical Slice.**
 
-Мета: перевірити довгі job/status/event/building strings у реальному `1280x720` layout і прибрати переповнення без збільшення viewport.
+Мета: новий гравець починає не в бухгалтерському dashboard, а з серверного сюжетного вибору після крадіжки багажу на автовокзалі.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -647,6 +647,25 @@ DoD:
 2. ✅ Visual QA: screenshot `1280x720` і фіксація фактичних переповнень.
 3. ✅ Scene/client fixes: wrapping, clipping або overrun тільки у проблемних вузлах.
 4. ✅ Повторний screenshot + Godot MCP smoke + `scripts/check.ps1` + commit.
+
+---
+
+## Sprint 38 — Player Arrival Vertical Slice
+
+Ціль: перший керований момент гри має бути сюжетним, збереженим на сервері та обов'язковим перед економічними діями.
+
+Порядок:
+
+1. ✅ PostgreSQL: `player_onboarding`, Alembic backfill для існуючих гравців.
+2. ✅ Backend: стартові 300–400 ₴, вибір поліція/житло, відкладене часткове повернення коштів.
+3. ✅ Backend guards/tests: core actions заблоковані до поселення; idempotency і ledger покриті.
+4. ✅ Client: style-agnostic arrival presenter та модальний landscape overlay, створений через Godot MCP.
+5. ✅ Visual QA: `capture_dashboard.ps1 -Onboarding`, Godot MCP smoke, повний checkpoint.
+
+Наступний крок:
+
+1. Sprint 39: окремий візуальний шар автовокзалу та короткі діалогові beats до моменту крадіжки.
+2. Додати ненав'язливе повідомлення, коли поліцейське повернення коштів стає доступним.
 
 ---
 

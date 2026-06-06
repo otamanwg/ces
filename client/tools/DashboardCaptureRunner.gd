@@ -23,6 +23,9 @@ func _capture_dashboard() -> void:
 	if _has_argument("--stress-text"):
 		_apply_stress_text(dashboard)
 		await get_tree().create_timer(0.25).timeout
+	if _has_argument("--onboarding"):
+		_apply_onboarding_preview(dashboard)
+		await get_tree().create_timer(0.25).timeout
 	RenderingServer.force_draw(false)
 	await RenderingServer.frame_post_draw
 
@@ -82,6 +85,26 @@ func _apply_stress_text(dashboard: Node) -> void:
 	applied += int(_set_label(dashboard, "GoalLabel", "Ціль: накопичити резерв для першого стабільного бізнесу"))
 	applied += int(_set_label(dashboard, "NextActionLabel", "Наступний крок: перевірити бюджет і подати заявку на будівництво"))
 	print("DASHBOARD_STRESS_LABELS_APPLIED=", applied)
+
+
+func _apply_onboarding_preview(dashboard: Node) -> void:
+	var overlay := dashboard.find_child("OnboardingOverlay", true, false) as Control
+	if overlay == null:
+		push_error("Dashboard capture: onboarding overlay not found")
+		return
+
+	overlay.visible = true
+	_set_label(dashboard, "OnboardingTitleLabel", "Новий початок")
+	_set_label(
+		dashboard,
+		"OnboardingNarrativeLabel",
+		"Таксі зникло разом із вашим багажем. У телефоні залишились фото документів, "
+		+ "а в кишені лише стартові гроші. Можна звернутись у поліцію або негайно шукати житло."
+	)
+	var police_status := dashboard.find_child("OnboardingPoliceStatusLabel", true, false) as Label
+	if police_status != null:
+		police_status.visible = false
+	print("DASHBOARD_ONBOARDING_PREVIEW_APPLIED=1")
 
 
 func _set_label(root_node: Node, unique_name: String, value: String) -> bool:

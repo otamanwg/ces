@@ -2,7 +2,8 @@ param(
     [string]$OutputPath = "",
     [double]$DelaySeconds = 3.0,
     [switch]$SkipBuild,
-    [switch]$StressText
+    [switch]$StressText,
+    [switch]$Onboarding
 )
 
 $ErrorActionPreference = "Stop"
@@ -56,6 +57,9 @@ $godotArguments = @(
 )
 if ($StressText) {
     $godotArguments += "--stress-text"
+}
+if ($Onboarding) {
+    $godotArguments += "--onboarding"
 }
 
 & $godot @godotArguments

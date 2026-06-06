@@ -635,6 +635,101 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Закрити"
 
+[node name="OnboardingOverlay" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 30
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.025, 0.035, 0.045, 0.9)
+
+[node name="OnboardingCenter" type="CenterContainer" parent="OnboardingOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="OnboardingPanel" type="PanelContainer" parent="OnboardingOverlay/OnboardingCenter"]
+custom_minimum_size = Vector2(660, 390)
+layout_mode = 2
+
+[node name="OnboardingMargin" type="MarginContainer" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 28
+
+[node name="OnboardingBox" type="VBoxContainer" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel/OnboardingMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="OnboardingSceneLabel" type="Label" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel/OnboardingMargin/OnboardingBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "АВТОВОКЗАЛ  •  ПЕРШИЙ ДЕНЬ"
+horizontal_alignment = 1
+
+[node name="OnboardingTitleLabel" type="Label" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel/OnboardingMargin/OnboardingBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "Новий початок"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+text_overrun_behavior = 3
+
+[node name="OnboardingNarrativeLabel" type="Label" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel/OnboardingMargin/OnboardingBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 126)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 19
+text = "Таксі зникло разом із вашим багажем. У телефоні залишились фото документів, а в кишені лише стартові гроші."
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+text_overrun_behavior = 3
+
+[node name="OnboardingPoliceStatusLabel" type="Label" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel/OnboardingMargin/OnboardingBox"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+text_overrun_behavior = 3
+
+[node name="OnboardingButtons" type="HBoxContainer" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel/OnboardingMargin/OnboardingBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="OnboardingPoliceButton" type="Button" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel/OnboardingMargin/OnboardingBox/OnboardingButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Звернутися в поліцію"
+text_overrun_behavior = 3
+
+[node name="OnboardingHousingButton" type="Button" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel/OnboardingMargin/OnboardingBox/OnboardingButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Шукати житло"
+text_overrun_behavior = 3
+
 [connection signal="pressed" from="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/OpenBuildingButton" to="." method="OnOpenBuildingButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/RepairBuildingButton" to="." method="OnRepairBuildingButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/ApplyJobButton" to="." method="OnApplyJobButtonPressed"]

@@ -162,6 +162,14 @@ var richSnapshotJson = JsonNode.Parse(
 		"energy": 80,
 		"mood": 70,
 		"hunger": 25,
+		"onboarding": {
+			"stage": "housing_search",
+			"completed": false,
+			"title": "Нічліг у новому місті",
+			"narrative": "Після заяви потрібно знайти житло.",
+			"available_choices": ["find_housing"],
+			"police_report_status": "pending"
+		},
 		"actions": {"can_work": true}
 	}
 	"""
@@ -180,6 +188,15 @@ AssertEqual("Спорт: FC Test STR 12 / STA 15", richSnapshot.SportsText, "Sna
 AssertEqual(80, richSnapshot.Energy, "Snapshot energy parsed");
 AssertEqual(70, richSnapshot.Mood, "Snapshot mood parsed");
 AssertEqual(25, richSnapshot.Hunger, "Snapshot hunger parsed");
+AssertEqual(false, richSnapshot.Onboarding.Completed, "Snapshot onboarding completion parsed");
+AssertEqual("housing_search", richSnapshot.Onboarding.Stage, "Snapshot onboarding stage parsed");
+AssertEqual(false, richSnapshot.Onboarding.CanReportToPolice, "Police choice removed after report");
+AssertEqual(true, richSnapshot.Onboarding.CanFindHousing, "Housing choice remains available");
+AssertEqual(
+	"Поліція розслідує справу. Результат надійде окремо.",
+	richSnapshot.Onboarding.PoliceStatusText,
+	"Police status has player-facing text"
+);
 
 var defaultSnapshotJson = JsonNode.Parse(
 	"""
@@ -198,6 +215,25 @@ AssertEqual("Вулиця", defaultSnapshot.Hostel, "Snapshot default hostel");
 AssertEqual("", defaultSnapshot.OwnedBusinessId, "Snapshot default owned business id");
 AssertEqual("Бізнес: немає", defaultSnapshot.OwnedBusinessText, "Snapshot default owned business text");
 AssertEqual("Спорт: немає", defaultSnapshot.SportsText, "Snapshot default sports text");
+AssertEqual(true, defaultSnapshot.Onboarding.Completed, "Legacy snapshot defaults to completed onboarding");
+
+var arrivalSnapshot = DashboardPlayerSnapshot.FromJson(JsonNode.Parse(
+	"""
+	{
+		"onboarding": {
+			"stage": "arrival_choice",
+			"completed": false,
+			"title": "Новий початок",
+			"narrative": "Таксі зникло разом із багажем.",
+			"available_choices": ["report_to_police", "find_housing"],
+			"police_report_status": "not_filed"
+		}
+	}
+	"""
+)!);
+AssertEqual(false, arrivalSnapshot.Onboarding.Completed, "Arrival snapshot keeps onboarding open");
+AssertEqual(true, arrivalSnapshot.Onboarding.CanReportToPolice, "Arrival offers police choice");
+AssertEqual(true, arrivalSnapshot.Onboarding.CanFindHousing, "Arrival offers housing choice");
 
 var visualCityJson = JsonNode.Parse(
 	"""

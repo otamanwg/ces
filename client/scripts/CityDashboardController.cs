@@ -48,8 +48,15 @@ public partial class CityDashboardController : Control
 	private Button _repairBuildingButton;
 	private Button _buyStarterLandButton;
 	private Button _visualFocusButton;
+	private Control _onboardingOverlay;
+	private Label _onboardingTitleLabel;
+	private Label _onboardingNarrativeLabel;
+	private Label _onboardingPoliceStatusLabel;
+	private Button _onboardingPoliceButton;
+	private Button _onboardingHousingButton;
 	private DashboardStatusPresenter _statusPresenter;
 	private DashboardActionPresenter _actionPresenter;
+	private DashboardOnboardingState _onboardingState = new();
 	private bool _applyFirstVacancy;
 	private bool _buyFirstBusiness;
 	private bool _joinFirstSportsClub;
@@ -61,6 +68,7 @@ public partial class CityDashboardController : Control
 	private bool _pendingBuildingPortfolio;
 	private bool _pendingBuildLandCatalog;
 	private bool _pendingBuildBlueprintCatalog;
+	private bool _pendingOnboarding;
 	private bool _bootstrapPending = true;
 	private bool _hasJob;
 	private bool _canApplyJob;
@@ -125,6 +133,14 @@ public partial class CityDashboardController : Control
 			{
 				_visualFocusButton.Text = _cityVisualOverlay.FocusButtonText;
 			}
+		}
+		if (_onboardingPoliceButton != null)
+		{
+			_onboardingPoliceButton.Pressed += OnOnboardingPoliceButtonPressed;
+		}
+		if (_onboardingHousingButton != null)
+		{
+			_onboardingHousingButton.Pressed += OnOnboardingHousingButtonPressed;
 		}
 
 		_apiClient = GetNodeOrNull<ApiClient>("/root/ApiClient");
@@ -208,6 +224,12 @@ public partial class CityDashboardController : Control
 		_repairBuildingButton ??= GetNodeOrNull<Button>("%RepairBuildingButton");
 		_buyStarterLandButton ??= GetNodeOrNull<Button>("%BuyStarterLandButton");
 		_visualFocusButton ??= GetNodeOrNull<Button>("%VisualFocusButton");
+		_onboardingOverlay ??= GetNodeOrNull<Control>("%OnboardingOverlay");
+		_onboardingTitleLabel ??= GetNodeOrNull<Label>("%OnboardingTitleLabel");
+		_onboardingNarrativeLabel ??= GetNodeOrNull<Label>("%OnboardingNarrativeLabel");
+		_onboardingPoliceStatusLabel ??= GetNodeOrNull<Label>("%OnboardingPoliceStatusLabel");
+		_onboardingPoliceButton ??= GetNodeOrNull<Button>("%OnboardingPoliceButton");
+		_onboardingHousingButton ??= GetNodeOrNull<Button>("%OnboardingHousingButton");
 	}
 
 	private void ConfigureTextSafety()
@@ -226,6 +248,9 @@ public partial class CityDashboardController : Control
 		ConfigureLabel(EffectsLabel, 2, 38);
 		ConfigureLabel(EventHistoryLabel, 3, 56);
 		ConfigureLabel(ErrorStateLabel, 2, 38);
+		ConfigureLabel(_onboardingTitleLabel, 2, 52);
+		ConfigureLabel(_onboardingNarrativeLabel, 5, 120);
+		ConfigureLabel(_onboardingPoliceStatusLabel, 2, 48);
 	}
 
 	private static void ConfigureLabel(Label label, int maxLines, float minimumHeight)
@@ -406,6 +431,7 @@ public partial class CityDashboardController : Control
 		_pendingBuildingPortfolio = false;
 		_pendingBuildLandCatalog = false;
 		_pendingBuildBlueprintCatalog = false;
+		_pendingOnboarding = false;
 		_pendingLandBuyKey = "";
 		_pendingBuildingApplicationKey = "";
 		_pendingBuildingActivationKey = "";
@@ -822,11 +848,16 @@ public partial class CityDashboardController : Control
 		}
 
 		UpdateAvailableActions(snapshot.Actions);
+		_onboardingState = snapshot.Onboarding;
+		UpdateOnboardingUi();
 		if (!string.IsNullOrEmpty(snapshot.Id))
 		{
 			_session?.SetPlayer(snapshot.Id, snapshot.Username, snapshot.AuthToken);
-			RefreshBuildingPortfolio();
-			RefreshBuildCatalog();
+			if (snapshot.Onboarding.Completed)
+			{
+				RefreshBuildingPortfolio();
+				RefreshBuildCatalog();
+			}
 		}
 
 		UpdateActionButtons();
@@ -1301,7 +1332,12 @@ public partial class CityDashboardController : Control
 
 	private void ClearPendingAction(string endpoint)
 	{
-		if (endpoint.StartsWith("/api/jobs/work/"))
+		if (endpoint == "/api/player/onboarding/choose")
+		{
+			_pendingOnboarding = false;
+			UpdateOnboardingUi();
+		}
+		else if (endpoint.StartsWith("/api/jobs/work/"))
 		{
 			_pendingWorkKey = "";
 		}
@@ -1387,6 +1423,74 @@ public partial class CityDashboardController : Control
 		}
 
 		UpdateActionButtons();
+	}
+
+	private void UpdateOnboardingUi()
+	{
+		if (_onboardingOverlay == null)
+		{
+			return;
+		}
+
+		_onboardingOverlay.Visible = !_onboardingState.Completed;
+		if (_onboardingState.Completed)
+		{
+			return;
+		}
+
+		if (_onboardingTitleLabel != null)
+		{
+			_onboardingTitleLabel.Text = _onboardingState.Title;
+		}
+		if (_onboardingNarrativeLabel != null)
+		{
+			_onboardingNarrativeLabel.Text = _onboardingState.Narrative;
+		}
+		if (_onboardingPoliceStatusLabel != null)
+		{
+			_onboardingPoliceStatusLabel.Text = _onboardingState.PoliceStatusText;
+			_onboardingPoliceStatusLabel.Visible = !string.IsNullOrWhiteSpace(_onboardingState.PoliceStatusText);
+		}
+		if (_onboardingPoliceButton != null)
+		{
+			_onboardingPoliceButton.Visible = _onboardingState.CanReportToPolice;
+			_onboardingPoliceButton.Disabled = _pendingOnboarding;
+			_onboardingPoliceButton.Text = _pendingOnboarding ? "Надсилаємо..." : "Звернутися в поліцію";
+		}
+		if (_onboardingHousingButton != null)
+		{
+			_onboardingHousingButton.Visible = _onboardingState.CanFindHousing;
+			_onboardingHousingButton.Disabled = _pendingOnboarding;
+			_onboardingHousingButton.Text = _pendingOnboarding ? "Шукаємо..." : "Шукати житло";
+		}
+	}
+
+	private void SubmitOnboardingChoice(string choice)
+	{
+		if (_pendingOnboarding || _session == null || !_session.HasAuthenticatedPlayer)
+		{
+			return;
+		}
+
+		_pendingOnboarding = true;
+		UpdateOnboardingUi();
+		ClearErrorState();
+		string payload = ApiClient.BuildJson(new { player_id = _session.PlayerId, choice });
+		_apiClient?.PostAuthorizedIdempotent(
+			"/api/player/onboarding/choose",
+			_session.AuthToken,
+			BuildActionKey($"onboarding-{choice}"),
+			payload);
+	}
+
+	public void OnOnboardingPoliceButtonPressed()
+	{
+		SubmitOnboardingChoice(DashboardOnboardingState.ReportToPoliceChoice);
+	}
+
+	public void OnOnboardingHousingButtonPressed()
+	{
+		SubmitOnboardingChoice(DashboardOnboardingState.FindHousingChoice);
 	}
 
 	private static bool IsBuildingPortfolioEndpoint(string endpoint)

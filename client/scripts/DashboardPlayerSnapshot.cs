@@ -16,6 +16,7 @@ public sealed class DashboardPlayerSnapshot
 	public int Mood { get; init; }
 	public int Hunger { get; init; }
 	public JsonNode Actions { get; init; } = new JsonObject();
+	public DashboardOnboardingState Onboarding { get; init; } = new();
 
 	public bool HasJob => Job != "Безробітний";
 
@@ -53,6 +54,7 @@ public sealed class DashboardPlayerSnapshot
 			Mood = data["mood"]?.GetValue<int>() ?? 0,
 			Hunger = data["hunger"]?.GetValue<int>() ?? 0,
 			Actions = data["actions"] ?? new JsonObject(),
+			Onboarding = DashboardOnboardingState.FromJson(data),
 		};
 	}
 }
