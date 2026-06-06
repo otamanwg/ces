@@ -20,6 +20,14 @@ static void AssertSequence(string[] expected, string[] actual, string message)
 	}
 }
 
+static void AssertNear(double expected, double actual, double tolerance, string message)
+{
+	if (Math.Abs(expected - actual) > tolerance)
+	{
+		throw new InvalidOperationException($"{message}: expected {expected}, got {actual}");
+	}
+}
+
 static DashboardActionState ActionState(
 	bool hasPlayer = true,
 	bool bootstrapPending = false,
@@ -299,6 +307,11 @@ AssertEqual(1, visualWithPortfolio.ProblemBuildingCount, "Visual model problem b
 AssertEqual(0, visualWithPortfolio.ActiveBuildingCount, "Visual model active building count");
 AssertEqual("K", visualWithPortfolio.Buildings[0].ArchetypeLabel, "Visual model building archetype label");
 AssertEqual("bus_station", visualWithPortfolio.Buildings[0].DistrictCode, "Visual model building district code");
+AssertNear(0.5, DashboardVisualAnimation.Pulse(0.0, 1.0), 0.0001, "Visual pulse starts centered");
+AssertNear(1.0, DashboardVisualAnimation.Pulse(0.25, 1.0), 0.0001, "Visual pulse reaches peak");
+AssertNear(0.25, DashboardVisualAnimation.TravelFraction(0.25, 1.0), 0.0001, "Visual travel advances");
+AssertNear(0.25, DashboardVisualAnimation.TravelFraction(1.25, 1.0), 0.0001, "Visual travel wraps");
+AssertNear(0.0, DashboardVisualAnimation.TravelFraction(double.NaN), 0.0001, "Visual travel rejects invalid time");
 
 var landCatalogJson = JsonNode.Parse(
 	"""

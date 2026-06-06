@@ -22,15 +22,15 @@
 
 ### Поточний Фокус
 
-**Sprint 32: Overview / Street Focus Toggle.**
+**Sprint 33: City Idle Animation.**
 
-Мета: дати гравцю перше відчуття zoom-поведінки: overview для міста-сервера і street-focus для стартової зони/активів без зміни backend mechanics.
+Мета: додати контрольований рух у міський visual layer: пульс трафіку та уваги до проблемних активів без зміни gameplay state і без важкого redraw.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
 ### Майбутні Visual Style Packs
 
-Гра має підтримувати кілька візуальних стилів за вподобанням гравця: наприклад `anime`, `dark_fantasy`, `hyperreal`, `mafia` або інші тематичні паки.
+Гра має підтримувати кілька візуальних стилів за вподобанням гравця: наприклад `anime`, `hyperreal`, `mafia` або інші тематичні паки.
 
 Архітектурний принцип: style pack змінює тільки presentation layer — фон, палітру, портрети, іконки, VFX, звуки та шрифтовий настрій. Економічні механіки, API contracts, player progression, balance і backend simulation залишаються спільними для всіх стилів.
 
@@ -572,9 +572,23 @@ DoD:
 
 Наступний visual крок після Sprint 32:
 
-1. Легка idle-анімація overlay: traffic pulse, asset attention pulse.
+1. ✅ Легка idle-анімація overlay: traffic pulse, asset attention pulse.
 2. Style-token palette для майбутніх visual packs.
 3. Підготовка screenshot/playtest script для швидкого показу результату.
+
+---
+
+## Sprint 33 — City Idle Animation
+
+Ціль: карта має виглядати живою навіть без дій гравця, але анімація не повинна впливати на simulation state або перевантажувати слабкі пристрої.
+
+Порядок:
+
+1. ✅ Client logic: детерміновані `pulse` і `travel` helpers з regression tests.
+2. ✅ Godot overlay: рух трафіку на overview і street-focus.
+3. ✅ Godot overlay: attention pulse для активів, що потребують ремонту.
+4. ✅ Performance guard: redraw не частіше 20 FPS.
+5. ✅ Godot MCP smoke + `scripts/check.ps1` + commit.
 
 ---
 

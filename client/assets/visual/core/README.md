@@ -2,7 +2,7 @@
 
 `core` is the neutral MVP visual style. It should make the game feel like a playable city-life simulator without locking mechanics to a genre.
 
-Future style packs such as `anime`, `dark_fantasy`, `hyperreal`, or `mafia` should replace presentation assets like backdrop, portraits, palettes, icons, VFX, sound, and typography while keeping the same backend mechanics and client state model.
+Future style packs such as `anime`, `hyperreal`, or `mafia` should replace presentation assets like backdrop, portraits, palettes, icons, VFX, sound, and typography while keeping the same backend mechanics and client state model.
 
 ## city_backdrop_core.png
 

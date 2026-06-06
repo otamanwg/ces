@@ -12,6 +12,7 @@
     <Compile Include="..\client\scripts\DashboardBuildCatalog.cs" Link="DashboardBuildCatalog.cs" />
     <Compile Include="..\client\scripts\DashboardBuildingPortfolio.cs" Link="DashboardBuildingPortfolio.cs" />
     <Compile Include="..\client\scripts\DashboardCityVisualModel.cs" Link="DashboardCityVisualModel.cs" />
+    <Compile Include="..\client\scripts\DashboardVisualAnimation.cs" Link="DashboardVisualAnimation.cs" />
     <Compile Include="..\client\scripts\DashboardEventHistory.cs" Link="DashboardEventHistory.cs" />
     <Compile Include="..\client\scripts\DashboardPlayerSnapshot.cs" Link="DashboardPlayerSnapshot.cs" />
   </ItemGroup>

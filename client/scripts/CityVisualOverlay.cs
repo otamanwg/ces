@@ -7,6 +7,8 @@ using System.Linq;
 
 public partial class CityVisualOverlay : Control
 {
+	private const double VisualFrameIntervalSeconds = 1.0 / 20.0;
+
 	private static readonly string[] DistrictOrder =
 	{
 		"outer_land",
@@ -29,11 +31,27 @@ public partial class CityVisualOverlay : Control
 
 	private DashboardCityVisualModel _model = DashboardCityVisualModel.Empty;
 	private bool _streetFocus;
+	private double _animationSeconds;
+	private double _redrawElapsedSeconds;
 
 	public override void _Ready()
 	{
 		MouseFilter = MouseFilterEnum.Ignore;
 		ClipContents = true;
+		SetProcess(true);
+	}
+
+	public override void _Process(double delta)
+	{
+		_animationSeconds += delta;
+		_redrawElapsedSeconds += delta;
+		if (_redrawElapsedSeconds < VisualFrameIntervalSeconds)
+		{
+			return;
+		}
+
+		_redrawElapsedSeconds %= VisualFrameIntervalSeconds;
+		QueueRedraw();
 	}
 
 	public void SetCityModel(DashboardCityVisualModel model)
@@ -87,6 +105,7 @@ public partial class CityVisualOverlay : Control
 		DrawRect(street, new Color(0.05f, 0.055f, 0.06f, 0.86f), true);
 		DrawLine(new Vector2(24, street.Position.Y + street.Size.Y * 0.48f), new Vector2(size.X - 24, street.Position.Y + street.Size.Y * 0.48f), new Color(0.90f, 0.82f, 0.52f, 0.65f), 3.0f, true);
 		DrawLine(new Vector2(0, street.Position.Y), new Vector2(size.X, street.Position.Y), new Color(0.70f, 0.72f, 0.66f, 0.72f), 7.0f, true);
+		DrawStreetTraffic(size, street);
 
 		DrawString(font, new Vector2(22, 32), "Street focus: вокзал / комерційне ядро", HorizontalAlignment.Left, size.X - 44, 15, new Color(0.98f, 0.97f, 0.90f, 0.96f));
 		DrawString(font, new Vector2(22, 54), _model.HeadlineText, HorizontalAlignment.Left, size.X - 44, 13, new Color(0.88f, 0.90f, 0.84f, 0.82f));
@@ -160,17 +179,33 @@ public partial class CityVisualOverlay : Control
 		Vector2 suburb = CenterOf("suburb_private_sector", size);
 		Vector2 outer = CenterOf("outer_land", size);
 
-		DrawRoad(station, commercial);
-		DrawRoad(commercial, residential);
-		DrawRoad(commercial, industrial);
-		DrawRoad(station, suburb);
-		DrawRoad(suburb, outer);
+		DrawRoad(station, commercial, 0.00);
+		DrawRoad(commercial, residential, 0.23);
+		DrawRoad(commercial, industrial, 0.47);
+		DrawRoad(station, suburb, 0.68);
+		DrawRoad(suburb, outer, 0.84);
 	}
 
-	private void DrawRoad(Vector2 from, Vector2 to)
+	private void DrawRoad(Vector2 from, Vector2 to, double phase)
 	{
 		DrawLine(from, to, new Color(0.05f, 0.06f, 0.07f, 0.72f), 12.0f, true);
 		DrawLine(from, to, new Color(0.84f, 0.80f, 0.67f, 0.62f), 2.0f, true);
+
+		float travel = DashboardVisualAnimation.TravelFraction(_animationSeconds, 0.08, phase);
+		Vector2 trafficMarker = from.Lerp(to, travel);
+		DrawCircle(trafficMarker, 4.5f, new Color(0.98f, 0.76f, 0.28f, 0.92f));
+		DrawCircle(trafficMarker, 2.0f, new Color(1.0f, 0.96f, 0.74f, 0.98f));
+	}
+
+	private void DrawStreetTraffic(Vector2 size, Rect2 street)
+	{
+		float travel = DashboardVisualAnimation.TravelFraction(_animationSeconds, 0.10);
+		float x = Mathf.Lerp(24.0f, size.X - 38.0f, travel);
+		float y = street.Position.Y + street.Size.Y * 0.36f;
+		Rect2 vehicle = new(new Vector2(x, y), new Vector2(14, 7));
+		DrawRect(vehicle, new Color(0.94f, 0.67f, 0.22f, 0.94f), true);
+		DrawCircle(vehicle.Position + new Vector2(3, 8), 2.0f, new Color(0.04f, 0.05f, 0.06f, 0.95f));
+		DrawCircle(vehicle.Position + new Vector2(11, 8), 2.0f, new Color(0.04f, 0.05f, 0.06f, 0.95f));
 	}
 
 	private void DrawDistricts(Vector2 size)
@@ -224,6 +259,11 @@ public partial class CityVisualOverlay : Control
 		DrawCircle(marker, 15.0f, new Color(0.0f, 0.0f, 0.0f, 0.42f));
 		DrawCircle(marker, 11.0f, markerColor);
 		DrawCircle(marker, 4.0f, new Color(1.0f, 1.0f, 1.0f, 0.9f));
+		if (_model.ProblemBuildingCount > 0)
+		{
+			float pulse = DashboardVisualAnimation.Pulse(_animationSeconds, 0.72);
+			DrawArc(marker, 17.0f + pulse * 5.0f, 0.0f, MathF.Tau, 32, new Color(1.0f, 0.28f, 0.20f, 0.35f + pulse * 0.45f), 2.0f, true);
+		}
 		DrawBuildingMarkers(size);
 
 		Font font = GetThemeDefaultFont();
@@ -268,6 +308,11 @@ public partial class CityVisualOverlay : Control
 		DrawRect(rect, fill, true);
 		DrawRect(rect, border, false, 2.0f);
 		DrawString(font, rect.Position + new Vector2(0, 17), building.ArchetypeLabel, HorizontalAlignment.Center, rect.Size.X, 13, new Color(0.98f, 0.98f, 0.94f, 0.96f));
+		if (building.OperatingStatus == "maintenance_due")
+		{
+			float pulse = DashboardVisualAnimation.Pulse(_animationSeconds, 0.80, position.X * 0.01);
+			DrawArc(position, 16.0f + pulse * 4.0f, 0.0f, MathF.Tau, 28, new Color(1.0f, 0.24f, 0.18f, 0.32f + pulse * 0.48f), 2.0f, true);
+		}
 	}
 
 	private static Vector2 BuildingMarkerPosition(DashboardCityVisualBuilding building, int index, Vector2 size)
