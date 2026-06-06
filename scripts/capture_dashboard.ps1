@@ -1,7 +1,8 @@
 param(
     [string]$OutputPath = "",
     [double]$DelaySeconds = 3.0,
-    [switch]$SkipBuild
+    [switch]$SkipBuild,
+    [switch]$StressText
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,14 +45,20 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $godotOutputPath = $OutputPath.Replace("\", "/")
 $delayArgument = $DelaySeconds.ToString([System.Globalization.CultureInfo]::InvariantCulture)
 Write-Host "Capturing dashboard at 1280x720..."
-& $godot `
-    --path "$Root\client" `
-    --windowed `
-    --resolution 1280x720 `
-    "res://tools/dashboard_capture.tscn" `
-    -- `
-    "--output=$godotOutputPath" `
+$godotArguments = @(
+    "--path", "$Root\client",
+    "--windowed",
+    "--resolution", "1280x720",
+    "res://tools/dashboard_capture.tscn",
+    "--",
+    "--output=$godotOutputPath",
     "--delay=$delayArgument"
+)
+if ($StressText) {
+    $godotArguments += "--stress-text"
+}
+
+& $godot @godotArguments
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 if (-not (Test-Path $OutputPath)) {

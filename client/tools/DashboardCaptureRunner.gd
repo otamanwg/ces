@@ -20,8 +20,11 @@ func _capture_dashboard() -> void:
 
 	await get_tree().process_frame
 	await get_tree().create_timer(_capture_delay()).timeout
+	if _has_argument("--stress-text"):
+		_apply_stress_text(dashboard)
+		await get_tree().create_timer(0.25).timeout
 	RenderingServer.force_draw(false)
-	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
 
 	var output_path := _output_path()
 	var output_dir := output_path.get_base_dir()
@@ -56,3 +59,34 @@ func _capture_delay() -> float:
 		if argument.begins_with("--delay="):
 			return maxf(argument.trim_prefix("--delay=").to_float(), 0.5)
 	return DEFAULT_DELAY_SECONDS
+
+
+func _has_argument(expected: String) -> bool:
+	return expected in OS.get_cmdline_user_args()
+
+
+func _apply_stress_text(dashboard: Node) -> void:
+	var applied := 0
+	applied += int(_set_label(dashboard, "CityCaption", "STRESS: дуже довгий заголовок району перевіряє безпечну зону поруч із кнопкою"))
+	applied += int(_set_label(dashboard, "UsernameLabel", "Гравець_із_дуже_довгим_іменем_без_скорочень"))
+	applied += int(_set_label(dashboard, "CurrentJobLabel", "Старший координатор міської логістики та аварійної інфраструктури"))
+	applied += int(_set_label(dashboard, "CurrentHostelLabel", "Тимчасове житло у віддаленому районі біля промислової зони"))
+	applied += int(_set_label(dashboard, "OwnedBusinessLabel", "Бізнес: мережа цілодобових сервісних центрів та районних кав'ярень"))
+	applied += int(_set_label(dashboard, "SportsLabel", "Спорт: міський клуб аматорської ліги, контракт очікує продовження"))
+	applied += int(_set_label(dashboard, "StatusLabel", "Подія дня: через ремонт центральної дороги час поїздки на роботу збільшено, перевірте наступну дію."))
+	applied += int(_set_label(dashboard, "EffectsLabel", "Ефекти: настрій +12, енергія -18, транспортні витрати +35%, репутація району +4"))
+	applied += int(_set_label(dashboard, "ErrorStateLabel", "Попередження: частина сервісів району тимчасово перевантажена, але прогрес гравця збережено."))
+	applied += int(_set_label(dashboard, "EventHistoryLabel", "Останні події:\nОтримано довгу пропозицію роботи з випробувальним терміном.\nМіська служба повідомила про зміну маршруту."))
+	applied += int(_set_label(dashboard, "BuildingPortfolioLabel", "3 будівлі: районна кав'ярня працює | сервісний центр потребує ремонту | хостел очікує відкриття"))
+	applied += int(_set_label(dashboard, "BuildPlanLabel", "План: придбати ділянку у комерційному районі, подати заявку меру та зберегти резерв на відкриття"))
+	applied += int(_set_label(dashboard, "GoalLabel", "Ціль: накопичити резерв для першого стабільного бізнесу"))
+	applied += int(_set_label(dashboard, "NextActionLabel", "Наступний крок: перевірити бюджет і подати заявку на будівництво"))
+	print("DASHBOARD_STRESS_LABELS_APPLIED=", applied)
+
+
+func _set_label(root_node: Node, unique_name: String, value: String) -> bool:
+	var label := root_node.find_child(unique_name, true, false) as Label
+	if label != null:
+		label.text = value
+		return true
+	return false

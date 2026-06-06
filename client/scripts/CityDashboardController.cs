@@ -101,6 +101,7 @@ public partial class CityDashboardController : Control
 	public override void _Ready()
 	{
 		BindUiNodes();
+		ConfigureTextSafety();
 		_statusPresenter = new DashboardStatusPresenter(StatusLabel, ErrorStateLabel, EventHistoryLabel);
 		_actionPresenter = new DashboardActionPresenter(
 			_applyJobButton,
@@ -207,6 +208,39 @@ public partial class CityDashboardController : Control
 		_repairBuildingButton ??= GetNodeOrNull<Button>("%RepairBuildingButton");
 		_buyStarterLandButton ??= GetNodeOrNull<Button>("%BuyStarterLandButton");
 		_visualFocusButton ??= GetNodeOrNull<Button>("%VisualFocusButton");
+	}
+
+	private void ConfigureTextSafety()
+	{
+		ConfigureLabel(StatusLabel, 1, 20);
+		ConfigureLabel(UsernameLabel, 1, 20);
+		ConfigureLabel(CurrentJobLabel, 1, 20);
+		ConfigureLabel(CurrentHostelLabel, 1, 20);
+		ConfigureLabel(OwnedBusinessLabel, 1, 20);
+		ConfigureLabel(SportsLabel, 1, 20);
+		ConfigureLabel(CityNameLabel, 1, 20);
+		ConfigureLabel(NextActionLabel, 2, 38);
+		ConfigureLabel(BuildingPortfolioLabel, 2, 38);
+		ConfigureLabel(BuildPlanLabel, 2, 38);
+		ConfigureLabel(GoalLabel, 1, 20);
+		ConfigureLabel(EffectsLabel, 2, 38);
+		ConfigureLabel(EventHistoryLabel, 3, 56);
+		ConfigureLabel(ErrorStateLabel, 2, 38);
+	}
+
+	private static void ConfigureLabel(Label label, int maxLines, float minimumHeight)
+	{
+		if (label == null)
+		{
+			return;
+		}
+
+		label.CustomMinimumSize = new Vector2(label.CustomMinimumSize.X, minimumHeight);
+		label.AutowrapMode = maxLines == 1
+			? TextServer.AutowrapMode.Off
+			: TextServer.AutowrapMode.WordSmart;
+		label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+		label.MaxLinesVisible = maxLines;
 	}
 
 	private void OnApiRequestFinished(string endpoint, bool success, string jsonBody)

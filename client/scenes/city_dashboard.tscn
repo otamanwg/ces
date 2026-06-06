@@ -174,22 +174,28 @@ layout_mode = 2
 text = "0.0%"
 autowrap_mode = 3
 
-[node name="CenterStage" type="VBoxContainer" parent="RootMargin/LandscapeGrid"]
+[node name="CenterScroll" type="ScrollContainer" parent="RootMargin/LandscapeGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="CenterStage" type="VBoxContainer" parent="RootMargin/LandscapeGrid/CenterScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 14
 
-[node name="CityVisualPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
+[node name="CityVisualPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="CityVisual" type="Control" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel"]
+[node name="CityVisual" type="Control" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel"]
 custom_minimum_size = Vector2(0, 360)
 layout_mode = 2
 
-[node name="CoreBackdrop" type="TextureRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+[node name="CoreBackdrop" type="TextureRect" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -200,7 +206,7 @@ texture = ExtResource("3")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="CityVisualOverlay" type="Control" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+[node name="CityVisualOverlay" type="Control" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -211,7 +217,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("3_juvko")
 
-[node name="Sky" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+[node name="Sky" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -221,7 +227,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.12, 0.23, 0.31, 1)
 
-[node name="Ground" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+[node name="Ground" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual"]
 visible = false
 layout_mode = 1
 anchors_preset = 12
@@ -233,7 +239,7 @@ grow_horizontal = 2
 grow_vertical = 0
 color = Color(0.12, 0.26, 0.18, 1)
 
-[node name="Road" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+[node name="Road" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual"]
 visible = false
 layout_mode = 1
 anchors_preset = 12
@@ -248,7 +254,7 @@ grow_horizontal = 2
 grow_vertical = 0
 color = Color(0.13, 0.14, 0.15, 1)
 
-[node name="Sun" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+[node name="Sun" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual"]
 visible = false
 layout_mode = 1
 offset_left = 38.0
@@ -257,7 +263,7 @@ offset_right = 112.0
 offset_bottom = 108.0
 color = Color(0.95, 0.75, 0.32, 1)
 
-[node name="BuildingA" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+[node name="BuildingA" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual"]
 visible = false
 layout_mode = 1
 anchors_preset = 12
@@ -272,7 +278,7 @@ grow_horizontal = 2
 grow_vertical = 0
 color = Color(0.21, 0.28, 0.34, 1)
 
-[node name="BuildingB" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+[node name="BuildingB" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual"]
 visible = false
 layout_mode = 1
 anchors_preset = 12
@@ -287,7 +293,7 @@ grow_horizontal = 2
 grow_vertical = 0
 color = Color(0.28, 0.36, 0.42, 1)
 
-[node name="BuildingC" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+[node name="BuildingC" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual"]
 visible = false
 layout_mode = 1
 anchors_preset = 12
@@ -302,7 +308,7 @@ grow_horizontal = 2
 grow_vertical = 0
 color = Color(0.18, 0.23, 0.27, 1)
 
-[node name="PlayerMarker" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+[node name="PlayerMarker" type="ColorRect" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual"]
 visible = false
 layout_mode = 1
 anchors_preset = 12
@@ -317,7 +323,7 @@ grow_horizontal = 2
 grow_vertical = 0
 color = Color(0.72, 0.43, 0.18, 1)
 
-[node name="CityCaption" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+[node name="CityCaption" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -329,8 +335,9 @@ grow_horizontal = 2
 text = "Твій район: робота, оренда, спорт і перший бізнес"
 autowrap_mode = 3
 text_overrun_behavior = 3
+max_lines_visible = 1
 
-[node name="VisualFocusButton" type="Button" parent="RootMargin/LandscapeGrid/CenterStage/CityVisualPanel/CityVisual"]
+[node name="VisualFocusButton" type="Button" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 1
@@ -344,42 +351,42 @@ grow_horizontal = 0
 text = "Вулиця"
 text_overrun_behavior = 3
 
-[node name="NextActionPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
+[node name="NextActionPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NextActionLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/NextActionPanel"]
+[node name="NextActionLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/NextActionPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Наступний крок: —"
 autowrap_mode = 3
 text_overrun_behavior = 3
 
-[node name="BuildingPortfolioPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
+[node name="BuildingPortfolioPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="BuildingPortfolioBox" type="VBoxContainer" parent="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel"]
+[node name="BuildingPortfolioBox" type="VBoxContainer" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="BuildingPortfolioTitle" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox"]
+[node name="BuildingPortfolioTitle" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox"]
 layout_mode = 2
 text = "Мої будівлі"
 horizontal_alignment = 1
 
-[node name="BuildingPortfolioLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox"]
+[node name="BuildingPortfolioLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Будівлі: немає"
 autowrap_mode = 3
 text_overrun_behavior = 3
 
-[node name="BuildingPortfolioActions" type="HBoxContainer" parent="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox"]
+[node name="BuildingPortfolioActions" type="HBoxContainer" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="OpenBuildingButton" type="Button" parent="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions"]
+[node name="OpenBuildingButton" type="Button" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
@@ -388,7 +395,7 @@ disabled = true
 text = "Відкрити"
 text_overrun_behavior = 3
 
-[node name="RepairBuildingButton" type="Button" parent="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions"]
+[node name="RepairBuildingButton" type="Button" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
@@ -397,31 +404,31 @@ disabled = true
 text = "Ремонт"
 text_overrun_behavior = 3
 
-[node name="BuildFlowPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
+[node name="BuildFlowPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="BuildFlowBox" type="VBoxContainer" parent="RootMargin/LandscapeGrid/CenterStage/BuildFlowPanel"]
+[node name="BuildFlowBox" type="VBoxContainer" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildFlowPanel"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="BuildFlowTitle" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/BuildFlowPanel/BuildFlowBox"]
+[node name="BuildFlowTitle" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildFlowPanel/BuildFlowBox"]
 layout_mode = 2
 text = "Побудувати"
 horizontal_alignment = 1
 
-[node name="BuildPlanLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/BuildFlowPanel/BuildFlowBox"]
+[node name="BuildPlanLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildFlowPanel/BuildFlowBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Будівництво: завантаження каталогу..."
 autowrap_mode = 3
 text_overrun_behavior = 3
 
-[node name="BuildFlowActions" type="HBoxContainer" parent="RootMargin/LandscapeGrid/CenterStage/BuildFlowPanel/BuildFlowBox"]
+[node name="BuildFlowActions" type="HBoxContainer" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildFlowPanel/BuildFlowBox"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="BuyStarterLandButton" type="Button" parent="RootMargin/LandscapeGrid/CenterStage/BuildFlowPanel/BuildFlowBox/BuildFlowActions"]
+[node name="BuyStarterLandButton" type="Button" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildFlowPanel/BuildFlowBox/BuildFlowActions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
@@ -430,44 +437,44 @@ disabled = true
 text = "Купити землю"
 text_overrun_behavior = 3
 
-[node name="GoalPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
+[node name="GoalPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="GoalBox" type="VBoxContainer" parent="RootMargin/LandscapeGrid/CenterStage/GoalPanel"]
+[node name="GoalBox" type="VBoxContainer" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/GoalPanel"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="GoalLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/GoalPanel/GoalBox"]
+[node name="GoalLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/GoalPanel/GoalBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Ціль: —"
 autowrap_mode = 3
 text_overrun_behavior = 3
 
-[node name="GoalProgressBar" type="ProgressBar" parent="RootMargin/LandscapeGrid/CenterStage/GoalPanel/GoalBox"]
+[node name="GoalProgressBar" type="ProgressBar" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/GoalPanel/GoalBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="EffectsLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/GoalPanel/GoalBox"]
+[node name="EffectsLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/GoalPanel/GoalBox"]
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 3
 text_overrun_behavior = 3
 
-[node name="EventPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterStage"]
+[node name="EventPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="EventHistoryLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage/EventPanel"]
+[node name="EventHistoryLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/EventPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Події: —"
 autowrap_mode = 3
 text_overrun_behavior = 3
 
-[node name="ErrorStateLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterStage"]
+[node name="ErrorStateLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage"]
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 3
@@ -628,8 +635,8 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Закрити"
 
-[connection signal="pressed" from="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/OpenBuildingButton" to="." method="OnOpenBuildingButtonPressed"]
-[connection signal="pressed" from="RootMargin/LandscapeGrid/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/RepairBuildingButton" to="." method="OnRepairBuildingButtonPressed"]
+[connection signal="pressed" from="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/OpenBuildingButton" to="." method="OnOpenBuildingButtonPressed"]
+[connection signal="pressed" from="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/RepairBuildingButton" to="." method="OnRepairBuildingButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/ApplyJobButton" to="." method="OnApplyJobButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/WorkButton" to="." method="OnWorkButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/SleepButton" to="." method="OnSleepButtonPressed"]

@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 36: Visual Style Preference.**
+**Sprint 37: Landscape Text Safety.**
 
-Мета: зберігати вибраний style code у локальній player session і безпечно застосовувати його до overlay; UI selector лишається відкладеним до готовності першого повного alternative asset pack.
+Мета: перевірити довгі job/status/event/building strings у реальному `1280x720` layout і прибрати переповнення без збільшення viewport.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -358,7 +358,7 @@ DoD:
 2. ✅ Scene: три зони `player/city status -> city visual -> actions`.
 3. ✅ Assets: neutral `core` city backdrop замість тимчасових прямокутників.
 4. ✅ Scene: підключити core asset так, щоб майбутній style pack міг підмінити тільки visual layer.
-5. ⏭️ Text safety: перевірити довгі job/status/event strings у landscape без вильоту за контейнер.
+5. ✅ Text safety: перевірити довгі job/status/event strings у landscape без вильоту за контейнер.
 6. ✅ Перевірка: `check.ps1`, `smoke_godot_dashboard.ps1`, commit.
 
 ---
@@ -634,6 +634,19 @@ DoD:
 2. ✅ Controller: застосувати session preference до `CityVisualOverlay`.
 3. ✅ Client tests: normalization/fallback contract.
 4. ✅ Godot MCP smoke + `scripts/check.ps1` + commit.
+
+---
+
+## Sprint 37 — Landscape Text Safety
+
+Ціль: довгі локалізовані рядки не виходять за межі rail/panel, не перекривають сусідні controls і не змінюють стабільну ширину dashboard.
+
+Порядок:
+
+1. ✅ Capture tool: `-StressText` для реалістичних довгих player/status/building strings.
+2. ✅ Visual QA: screenshot `1280x720` і фіксація фактичних переповнень.
+3. ✅ Scene/client fixes: wrapping, clipping або overrun тільки у проблемних вузлах.
+4. ✅ Повторний screenshot + Godot MCP smoke + `scripts/check.ps1` + commit.
 
 ---
 
