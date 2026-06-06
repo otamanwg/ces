@@ -240,8 +240,10 @@ AssertEqual(false, arrivalSnapshot.Onboarding.Completed, "Arrival snapshot keeps
 AssertEqual(true, arrivalSnapshot.Onboarding.CanReportToPolice, "Arrival offers police choice");
 AssertEqual(true, arrivalSnapshot.Onboarding.CanFindHousing, "Arrival offers housing choice");
 AssertEqual(3, DashboardArrivalStory.Count, "Arrival story has three setup beats");
-AssertEqual("Новий маршрут", DashboardArrivalStory.Get(0).Title, "Arrival story starts before the city");
-AssertEqual("Перші хвилини", DashboardArrivalStory.Get(2).Title, "Arrival story ends at the taxi event");
+AssertEqual("ARRIVAL_BEAT_1_TITLE", DashboardArrivalStory.Get(0).TitleKey, "Arrival story starts with stable title key");
+AssertEqual("ARRIVAL_BEAT_1_NARRATIVE", DashboardArrivalStory.Get(0).NarrativeKey, "Arrival story starts with stable narrative key");
+AssertEqual("ARRIVAL_BEAT_3_TITLE", DashboardArrivalStory.Get(2).TitleKey, "Arrival story ends with stable title key");
+AssertEqual("ARRIVAL_BEAT_3_NARRATIVE", DashboardArrivalStory.Get(2).NarrativeKey, "Arrival story ends with stable narrative key");
 AssertEqual(DashboardArrivalVisual.WaitingHall, DashboardArrivalStory.Get(0).Visual, "First beat uses waiting hall");
 AssertEqual(DashboardArrivalVisual.WaitingHall, DashboardArrivalStory.Get(1).Visual, "Second beat reuses waiting hall");
 AssertEqual(DashboardArrivalVisual.TaxiRide, DashboardArrivalStory.Get(2).Visual, "Final story beat uses taxi ride");

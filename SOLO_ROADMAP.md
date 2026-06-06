@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 41: Arrival Style-Pack Assets.**
+**Sprint 42: Localized Arrival Narrative.**
 
-Мета: дати кожному вступному beat окремий кадр і відокремити semantic visual keys від конкретного style pack, не змінюючи gameplay-код.
+Мета: відокремити текст вступу від gameplay-коду через нативний Godot translation catalog і підготувати безпечне додавання мов.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -696,7 +696,7 @@ DoD:
 Наступний visual крок:
 
 1. Додати portrait layer для співрозмовника та водія поверх core backgrounds.
-2. Винести репліки вступу в локалізований narrative catalog.
+2. Додати age-aware варіанти вступних підказок без зміни story sequence.
 
 ---
 
@@ -710,6 +710,20 @@ DoD:
 2. ✅ Imagegen core assets: окремий зал очікування та поїздка в таксі.
 3. ✅ Godot runtime: перемикання `OnboardingBackdrop` відповідно до story beat.
 4. ✅ Visual QA: окремі capture states для waiting hall, taxi ride і фінального choice screen.
+5. ✅ Повний checkpoint, MCP smoke і commit.
+
+---
+
+## Sprint 42 — Localized Arrival Narrative
+
+Ціль: C# runtime і GDScript capture tooling використовують ті самі translation keys, а story model більше не містить display text.
+
+Порядок:
+
+1. ✅ Godot translation catalog: українська базова та англійська перевірочна локаль.
+2. ✅ Client model: story beats містять `TitleKey`, `NarrativeKey` і semantic visual key.
+3. ✅ Runtime/capture: текст і кнопки вступу проходять через `Tr(...)` / `tr(...)`.
+4. ✅ Tests і visual QA для української та англійської локалі.
 5. ✅ Повний checkpoint, MCP smoke і commit.
 
 ---

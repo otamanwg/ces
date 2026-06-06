@@ -9,6 +9,7 @@ func _ready() -> void:
 
 
 func _capture_dashboard() -> void:
+	_configure_locale()
 	var packed_scene := load(DASHBOARD_SCENE) as PackedScene
 	if packed_scene == null:
 		push_error("Dashboard capture: cannot load %s" % DASHBOARD_SCENE)
@@ -71,6 +72,14 @@ func _capture_delay() -> float:
 		if argument.begins_with("--delay="):
 			return maxf(argument.trim_prefix("--delay=").to_float(), 0.5)
 	return DEFAULT_DELAY_SECONDS
+
+
+func _configure_locale() -> void:
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--locale="):
+			TranslationServer.set_locale(argument.trim_prefix("--locale="))
+			return
+	TranslationServer.set_locale("uk")
 
 
 func _has_argument(expected: String) -> bool:
@@ -142,14 +151,9 @@ func _apply_arrival_story_preview(dashboard: Node) -> void:
 	police_button.visible = false
 	housing_button.visible = false
 	continue_button.visible = true
-	continue_button.text = "Далі"
-	_set_label(dashboard, "OnboardingTitleLabel", "Новий маршрут")
-	_set_label(
-		dashboard,
-		"OnboardingNarrativeLabel",
-		"У залі очікування автовокзалу випадковий співрозмовник помічає ваш квиток. "
-		+ "Ви кажете, що їдете починати нове життя у місті, де нікого не знаєте."
-	)
+	continue_button.text = tr("ARRIVAL_STORY_NEXT")
+	_set_label(dashboard, "OnboardingTitleLabel", tr("ARRIVAL_BEAT_1_TITLE"))
+	_set_label(dashboard, "OnboardingNarrativeLabel", tr("ARRIVAL_BEAT_1_NARRATIVE"))
 	_set_onboarding_texture(dashboard, "res://assets/visual/core/arrival_waiting_hall_core.png")
 	print("DASHBOARD_ARRIVAL_STORY_PREVIEW_APPLIED=1")
 
@@ -167,14 +171,9 @@ func _apply_taxi_story_preview(dashboard: Node) -> void:
 	police_button.visible = false
 	housing_button.visible = false
 	continue_button.visible = true
-	continue_button.text = "Прибути до міста"
-	_set_label(dashboard, "OnboardingTitleLabel", "Перші хвилини")
-	_set_label(
-		dashboard,
-		"OnboardingNarrativeLabel",
-		"Автобус прибуває надвечір. Ви ловите таксі біля вокзалу, кладете багаж у машину "
-		+ "і називаєте адресу. За кілька кварталів водій раптом зупиняється."
-	)
+	continue_button.text = tr("ARRIVAL_STORY_ARRIVE")
+	_set_label(dashboard, "OnboardingTitleLabel", tr("ARRIVAL_BEAT_3_TITLE"))
+	_set_label(dashboard, "OnboardingNarrativeLabel", tr("ARRIVAL_BEAT_3_NARRATIVE"))
 	_set_onboarding_texture(dashboard, "res://assets/visual/core/arrival_taxi_ride_core.png")
 	print("DASHBOARD_TAXI_STORY_PREVIEW_APPLIED=1")
 

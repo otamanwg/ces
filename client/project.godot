@@ -36,3 +36,8 @@ project/assembly_name="city_economic_simulator"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
+
+[internationalization]
+
+locale/fallback="uk"
+locale/translations=PackedStringArray("res://localization/arrival_story.uk.translation", "res://localization/arrival_story.en.translation")

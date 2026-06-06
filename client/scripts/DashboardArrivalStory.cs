@@ -1,6 +1,6 @@
 public sealed record DashboardArrivalBeat(
-	string Title,
-	string Narrative,
+	string TitleKey,
+	string NarrativeKey,
 	DashboardArrivalVisual Visual
 );
 
@@ -9,19 +9,16 @@ public static class DashboardArrivalStory
 	private static readonly DashboardArrivalBeat[] Beats =
 	{
 		new(
-			"Новий маршрут",
-			"У залі очікування автовокзалу випадковий співрозмовник помічає ваш квиток. "
-			+ "Ви кажете, що їдете починати нове життя у місті, де нікого не знаєте.",
+			"ARRIVAL_BEAT_1_TITLE",
+			"ARRIVAL_BEAT_1_NARRATIVE",
 			DashboardArrivalVisual.WaitingHall),
 		new(
-			"Місто живе без пауз",
-			"«Не поспішайте», — відповідає він. «Тут усе росте поступово: робота, зв'язки, "
-			+ "власна справа і вплив. Місто житиме навіть тоді, коли ви вийдете з гри».",
+			"ARRIVAL_BEAT_2_TITLE",
+			"ARRIVAL_BEAT_2_NARRATIVE",
 			DashboardArrivalVisual.WaitingHall),
 		new(
-			"Перші хвилини",
-			"Автобус прибуває надвечір. Ви ловите таксі біля вокзалу, кладете багаж у машину "
-			+ "і називаєте адресу. За кілька кварталів водій раптом зупиняється.",
+			"ARRIVAL_BEAT_3_TITLE",
+			"ARRIVAL_BEAT_3_NARRATIVE",
 			DashboardArrivalVisual.TaxiRide),
 	};
 

@@ -1,6 +1,8 @@
 param(
     [string]$OutputPath = "",
     [double]$DelaySeconds = 3.0,
+    [ValidateSet("uk", "en")]
+    [string]$Locale = "uk",
     [switch]$SkipBuild,
     [switch]$StressText,
     [switch]$Onboarding,
@@ -56,7 +58,8 @@ $godotArguments = @(
     "res://tools/dashboard_capture.tscn",
     "--",
     "--output=$godotOutputPath",
-    "--delay=$delayArgument"
+    "--delay=$delayArgument",
+    "--locale=$Locale"
 )
 if ($StressText) {
     $godotArguments += "--stress-text"

@@ -683,7 +683,7 @@ theme_override_constants/separation = 14
 [node name="OnboardingSceneLabel" type="Label" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel/OnboardingMargin/OnboardingBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "АВТОВОКЗАЛ  •  ПЕРШИЙ ДЕНЬ"
+text = "ARRIVAL_CONTEXT_LABEL"
 horizontal_alignment = 1
 
 [node name="OnboardingTitleLabel" type="Label" parent="OnboardingOverlay/OnboardingCenter/OnboardingPanel/OnboardingMargin/OnboardingBox"]

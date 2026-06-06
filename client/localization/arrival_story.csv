@@ -1,0 +1,10 @@
+keys,uk,en
+ARRIVAL_CONTEXT_LABEL,АВТОВОКЗАЛ  •  ПЕРШИЙ ДЕНЬ,BUS STATION  •  DAY ONE
+ARRIVAL_BEAT_1_TITLE,Новий маршрут,New Route
+ARRIVAL_BEAT_1_NARRATIVE,"У залі очікування автовокзалу випадковий співрозмовник помічає ваш квиток. Ви кажете, що їдете починати нове життя у місті, де нікого не знаєте.","In the bus station waiting hall, a stranger notices your ticket. You say you are heading to start a new life in a city where you know no one."
+ARRIVAL_BEAT_2_TITLE,Місто живе без пауз,The City Never Pauses
+ARRIVAL_BEAT_2_NARRATIVE,"«Не поспішайте», — відповідає він. «Тут усе росте поступово: робота, зв'язки, власна справа і вплив. Місто житиме навіть тоді, коли ви вийдете з гри».","“Take your time,” he replies. “Everything grows gradually here: work, connections, your own business, and influence. The city will keep living even when you log out.”"
+ARRIVAL_BEAT_3_TITLE,Перші хвилини,First Minutes
+ARRIVAL_BEAT_3_NARRATIVE,"Автобус прибуває надвечір. Ви ловите таксі біля вокзалу, кладете багаж у машину і називаєте адресу. За кілька кварталів водій раптом зупиняється.","The bus arrives near dusk. You catch a taxi outside the station, put your luggage in the car, and give the address. A few blocks later, the driver suddenly stops."
+ARRIVAL_STORY_NEXT,Далі,Continue
+ARRIVAL_STORY_ARRIVE,Прибути до міста,Enter the city

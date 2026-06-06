@@ -1478,11 +1478,11 @@ public partial class CityDashboardController : Control
 		UpdateOnboardingBackdrop(storyBeat?.Visual ?? DashboardArrivalVisual.BaggageTheft);
 		if (_onboardingTitleLabel != null)
 		{
-			_onboardingTitleLabel.Text = storyBeat?.Title ?? _onboardingState.Title;
+			_onboardingTitleLabel.Text = storyBeat == null ? _onboardingState.Title : Tr(storyBeat.TitleKey);
 		}
 		if (_onboardingNarrativeLabel != null)
 		{
-			_onboardingNarrativeLabel.Text = storyBeat?.Narrative ?? _onboardingState.Narrative;
+			_onboardingNarrativeLabel.Text = storyBeat == null ? _onboardingState.Narrative : Tr(storyBeat.NarrativeKey);
 		}
 		if (_onboardingPoliceStatusLabel != null)
 		{
@@ -1506,8 +1506,8 @@ public partial class CityDashboardController : Control
 			_onboardingContinueButton.Visible = showingStory;
 			_onboardingContinueButton.Disabled = _pendingOnboarding;
 			_onboardingContinueButton.Text = _arrivalStoryBeat + 1 < DashboardArrivalStory.Count
-				? "Далі"
-				: "Прибути до міста";
+				? Tr("ARRIVAL_STORY_NEXT")
+				: Tr("ARRIVAL_STORY_ARRIVE");
 		}
 	}
 
