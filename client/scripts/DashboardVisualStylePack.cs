@@ -10,9 +10,17 @@ public enum DashboardArrivalVisual
 	BaggageTheft,
 }
 
+public enum DashboardArrivalPortrait
+{
+	None,
+	Stranger,
+	TaxiDriver,
+}
+
 public sealed record DashboardVisualStylePack(
 	string Code,
-	IReadOnlyDictionary<DashboardArrivalVisual, string> ArrivalAssets
+	IReadOnlyDictionary<DashboardArrivalVisual, string> ArrivalAssets,
+	IReadOnlyDictionary<DashboardArrivalPortrait, string> ArrivalPortraits
 );
 
 public static class DashboardVisualStylePacks
@@ -24,6 +32,11 @@ public static class DashboardVisualStylePacks
 			[DashboardArrivalVisual.WaitingHall] = "res://assets/visual/core/arrival_waiting_hall_core.png",
 			[DashboardArrivalVisual.TaxiRide] = "res://assets/visual/core/arrival_taxi_ride_core.png",
 			[DashboardArrivalVisual.BaggageTheft] = "res://assets/visual/core/arrival_bus_station_core_v2.png",
+		},
+		new Dictionary<DashboardArrivalPortrait, string>
+		{
+			[DashboardArrivalPortrait.Stranger] = "res://assets/visual/core/arrival_portrait_stranger_core.png",
+			[DashboardArrivalPortrait.TaxiDriver] = "res://assets/visual/core/arrival_portrait_taxi_driver_core.png",
 		}
 	);
 
@@ -31,10 +44,18 @@ public static class DashboardVisualStylePacks
 		new Dictionary<string, DashboardVisualStylePack>(StringComparer.OrdinalIgnoreCase)
 		{
 			[Core.Code] = Core,
-			[DashboardVisualPalettes.Anime.Code] = new(DashboardVisualPalettes.Anime.Code, new Dictionary<DashboardArrivalVisual, string>()),
-			[DashboardVisualPalettes.Hyperreal.Code] = new(DashboardVisualPalettes.Hyperreal.Code, new Dictionary<DashboardArrivalVisual, string>()),
-			[DashboardVisualPalettes.Mafia.Code] = new(DashboardVisualPalettes.Mafia.Code, new Dictionary<DashboardArrivalVisual, string>()),
+			[DashboardVisualPalettes.Anime.Code] = EmptyPack(DashboardVisualPalettes.Anime.Code),
+			[DashboardVisualPalettes.Hyperreal.Code] = EmptyPack(DashboardVisualPalettes.Hyperreal.Code),
+			[DashboardVisualPalettes.Mafia.Code] = EmptyPack(DashboardVisualPalettes.Mafia.Code),
 		};
+
+	private static DashboardVisualStylePack EmptyPack(string code)
+	{
+		return new DashboardVisualStylePack(
+			code,
+			new Dictionary<DashboardArrivalVisual, string>(),
+			new Dictionary<DashboardArrivalPortrait, string>());
+	}
 
 	public static DashboardVisualStylePack Resolve(string? code)
 	{
@@ -50,5 +71,21 @@ public static class DashboardVisualStylePacks
 			return requestedPath;
 		}
 		return Core.ArrivalAssets[visual];
+	}
+
+	public static string ResolveArrivalPortrait(string? styleCode, DashboardArrivalPortrait portrait)
+	{
+		if (portrait == DashboardArrivalPortrait.None)
+		{
+			return "";
+		}
+
+		var requestedPack = Resolve(styleCode);
+		if (requestedPack.ArrivalPortraits.TryGetValue(portrait, out string? requestedPath)
+			&& !string.IsNullOrWhiteSpace(requestedPath))
+		{
+			return requestedPath;
+		}
+		return Core.ArrivalPortraits[portrait];
 	}
 }

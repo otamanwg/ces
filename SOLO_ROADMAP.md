@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 42: Localized Arrival Narrative.**
+**Sprint 43: Arrival NPC Portrait Layer.**
 
-Мета: відокремити текст вступу від gameplay-коду через нативний Godot translation catalog і підготувати безпечне додавання мов.
+Мета: додати style-aware портрети співрозмовника й водія поверх вступних кадрів, не звужуючи локалізований діалог.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -695,8 +695,8 @@ DoD:
 
 Наступний visual крок:
 
-1. Додати portrait layer для співрозмовника та водія поверх core backgrounds.
-2. Додати age-aware варіанти вступних підказок без зміни story sequence.
+1. Додати age-aware варіанти вступних підказок без зміни story sequence.
+2. Локалізувати фінальний choice screen і police recovery controls.
 
 ---
 
@@ -724,6 +724,20 @@ DoD:
 2. ✅ Client model: story beats містять `TitleKey`, `NarrativeKey` і semantic visual key.
 3. ✅ Runtime/capture: текст і кнопки вступу проходять через `Tr(...)` / `tr(...)`.
 4. ✅ Tests і visual QA для української та англійської локалі.
+5. ✅ Повний checkpoint, MCP smoke і commit.
+
+---
+
+## Sprint 43 — Arrival NPC Portrait Layer
+
+Ціль: story beat визначає semantic portrait і сторону екрана, а style pack підставляє конкретний NPC asset.
+
+Порядок:
+
+1. ✅ Imagegen core assets: співрозмовник автовокзалу та водій таксі.
+2. ✅ Client architecture: portrait keys, side metadata і fallback у style-pack manifest.
+3. ✅ Godot MCP/runtime: окремий `OnboardingPortrait`, позиціонування та приховування на choice screen.
+4. ✅ Localized visual QA для waiting hall, taxi ride і фінального вибору.
 5. ✅ Повний checkpoint, MCP smoke і commit.
 
 ---

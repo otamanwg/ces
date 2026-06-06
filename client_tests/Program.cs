@@ -247,6 +247,10 @@ AssertEqual("ARRIVAL_BEAT_3_NARRATIVE", DashboardArrivalStory.Get(2).NarrativeKe
 AssertEqual(DashboardArrivalVisual.WaitingHall, DashboardArrivalStory.Get(0).Visual, "First beat uses waiting hall");
 AssertEqual(DashboardArrivalVisual.WaitingHall, DashboardArrivalStory.Get(1).Visual, "Second beat reuses waiting hall");
 AssertEqual(DashboardArrivalVisual.TaxiRide, DashboardArrivalStory.Get(2).Visual, "Final story beat uses taxi ride");
+AssertEqual(DashboardArrivalPortrait.Stranger, DashboardArrivalStory.Get(0).Portrait, "First beat shows stranger portrait");
+AssertEqual(DashboardPortraitSide.Right, DashboardArrivalStory.Get(1).PortraitSide, "Stranger stays on the right");
+AssertEqual(DashboardArrivalPortrait.TaxiDriver, DashboardArrivalStory.Get(2).Portrait, "Taxi beat shows driver portrait");
+AssertEqual(DashboardPortraitSide.Right, DashboardArrivalStory.Get(2).PortraitSide, "Taxi driver reinforces the right-side driver");
 AssertEqual(
 	"res://assets/visual/core/arrival_waiting_hall_core.png",
 	DashboardVisualStylePacks.ResolveArrivalAsset("core", DashboardArrivalVisual.WaitingHall),
@@ -261,6 +265,16 @@ AssertEqual(
 	"res://assets/visual/core/arrival_bus_station_core_v2.png",
 	DashboardVisualStylePacks.ResolveArrivalAsset("unknown", DashboardArrivalVisual.BaggageTheft),
 	"Unknown style falls back to core theft scene"
+);
+AssertEqual(
+	"res://assets/visual/core/arrival_portrait_stranger_core.png",
+	DashboardVisualStylePacks.ResolveArrivalPortrait("anime", DashboardArrivalPortrait.Stranger),
+	"Missing anime portrait falls back to core stranger"
+);
+AssertEqual(
+	"",
+	DashboardVisualStylePacks.ResolveArrivalPortrait("core", DashboardArrivalPortrait.None),
+	"Empty portrait resolves without an asset"
 );
 
 var visualCityJson = JsonNode.Parse(

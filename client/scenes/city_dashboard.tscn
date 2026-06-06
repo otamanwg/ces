@@ -763,6 +763,19 @@ texture = ExtResource("5_7m5xk")
 expand_mode = 1
 stretch_mode = 6
 
+[node name="OnboardingPortrait" type="TextureRect" parent="OnboardingOverlay"]
+unique_name_in_owner = true
+visible = false
+z_index = 1
+layout_mode = 0
+offset_left = 988.0
+offset_top = 230.0
+offset_right = 1248.0
+offset_bottom = 555.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
 [connection signal="pressed" from="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/OpenBuildingButton" to="." method="OnOpenBuildingButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/RepairBuildingButton" to="." method="OnRepairBuildingButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/ApplyJobButton" to="." method="OnApplyJobButtonPressed"]

@@ -50,6 +50,7 @@ public partial class CityDashboardController : Control
 	private Button _visualFocusButton;
 	private Control _onboardingOverlay;
 	private TextureRect _onboardingBackdrop;
+	private TextureRect _onboardingPortrait;
 	private Label _onboardingTitleLabel;
 	private Label _onboardingNarrativeLabel;
 	private Label _onboardingPoliceStatusLabel;
@@ -108,6 +109,7 @@ public partial class CityDashboardController : Control
 	private string _approvedApplicationId = "";
 	private string _buildFlowAction = "";
 	private string _onboardingBackdropPath = "";
+	private string _onboardingPortraitPath = "";
 	private double _playerBalance;
 	private JsonNode _landCatalogData;
 	private JsonNode _blueprintCatalogData;
@@ -163,6 +165,7 @@ public partial class CityDashboardController : Control
 		_networkManager = GetNodeOrNull<NetworkManager>("/root/NetworkManager");
 		_examPanel = GetNodeOrNull<ExamPanelController>("ExamOverlay");
 		_cityVisualOverlay?.SetStyleCode(_session?.VisualStyleCode);
+		ConfigureOnboardingPortraitMaterial();
 
 		if (_apiClient != null)
 		{
@@ -198,6 +201,20 @@ public partial class CityDashboardController : Control
 		SetStatus("Підключення до сервера...");
 		UpdateActionButtons();
 		_apiClient?.Get("/api/city/status");
+	}
+
+	private void ConfigureOnboardingPortraitMaterial()
+	{
+		if (_onboardingPortrait == null)
+		{
+			return;
+		}
+
+		var shader = ResourceLoader.Load<Shader>("res://shaders/onboarding_portrait_blend.gdshader");
+		if (shader != null)
+		{
+			_onboardingPortrait.Material = new ShaderMaterial { Shader = shader };
+		}
 	}
 
 	private void BindUiNodes()
@@ -241,6 +258,7 @@ public partial class CityDashboardController : Control
 		_visualFocusButton ??= GetNodeOrNull<Button>("%VisualFocusButton");
 		_onboardingOverlay ??= GetNodeOrNull<Control>("%OnboardingOverlay");
 		_onboardingBackdrop ??= GetNodeOrNull<TextureRect>("%OnboardingBackdrop");
+		_onboardingPortrait ??= GetNodeOrNull<TextureRect>("%OnboardingPortrait");
 		_onboardingTitleLabel ??= GetNodeOrNull<Label>("%OnboardingTitleLabel");
 		_onboardingNarrativeLabel ??= GetNodeOrNull<Label>("%OnboardingNarrativeLabel");
 		_onboardingPoliceStatusLabel ??= GetNodeOrNull<Label>("%OnboardingPoliceStatusLabel");
@@ -1476,6 +1494,9 @@ public partial class CityDashboardController : Control
 
 		var storyBeat = showingStory ? DashboardArrivalStory.Get(_arrivalStoryBeat) : null;
 		UpdateOnboardingBackdrop(storyBeat?.Visual ?? DashboardArrivalVisual.BaggageTheft);
+		UpdateOnboardingPortrait(
+			storyBeat?.Portrait ?? DashboardArrivalPortrait.None,
+			storyBeat?.PortraitSide ?? DashboardPortraitSide.Right);
 		if (_onboardingTitleLabel != null)
 		{
 			_onboardingTitleLabel.Text = storyBeat == null ? _onboardingState.Title : Tr(storyBeat.TitleKey);
@@ -1533,6 +1554,49 @@ public partial class CityDashboardController : Control
 
 		_onboardingBackdrop.Texture = texture;
 		_onboardingBackdropPath = assetPath;
+	}
+
+	private void UpdateOnboardingPortrait(DashboardArrivalPortrait portrait, DashboardPortraitSide side)
+	{
+		if (_onboardingPortrait == null)
+		{
+			return;
+		}
+
+		if (portrait == DashboardArrivalPortrait.None)
+		{
+			_onboardingPortrait.Visible = false;
+			return;
+		}
+
+		const float width = 260.0f;
+		const float height = 325.0f;
+		const float margin = 32.0f;
+		const float top = 230.0f;
+		float viewportWidth = GetViewportRect().Size.X;
+		float left = side == DashboardPortraitSide.Left
+			? margin
+			: Math.Max(margin, viewportWidth - margin - width);
+		_onboardingPortrait.Position = new Vector2(left, top);
+		_onboardingPortrait.Size = new Vector2(width, height);
+		_onboardingPortrait.Visible = true;
+
+		string assetPath = DashboardVisualStylePacks.ResolveArrivalPortrait(_session?.VisualStyleCode, portrait);
+		if (assetPath == _onboardingPortraitPath)
+		{
+			return;
+		}
+
+		var texture = ResourceLoader.Load<Texture2D>(assetPath);
+		if (texture == null)
+		{
+			_onboardingPortrait.Visible = false;
+			GD.PushError($"Не вдалося завантажити arrival portrait: {assetPath}");
+			return;
+		}
+
+		_onboardingPortrait.Texture = texture;
+		_onboardingPortraitPath = assetPath;
 	}
 
 	private void SubmitOnboardingChoice(string choice)

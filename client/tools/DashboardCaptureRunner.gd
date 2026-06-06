@@ -123,6 +123,7 @@ func _apply_onboarding_preview(dashboard: Node) -> void:
 	if police_status != null:
 		police_status.visible = false
 	_set_onboarding_texture(dashboard, "res://assets/visual/core/arrival_bus_station_core_v2.png")
+	_hide_onboarding_portrait(dashboard)
 	print("DASHBOARD_ONBOARDING_PREVIEW_APPLIED=1")
 
 
@@ -155,6 +156,11 @@ func _apply_arrival_story_preview(dashboard: Node) -> void:
 	_set_label(dashboard, "OnboardingTitleLabel", tr("ARRIVAL_BEAT_1_TITLE"))
 	_set_label(dashboard, "OnboardingNarrativeLabel", tr("ARRIVAL_BEAT_1_NARRATIVE"))
 	_set_onboarding_texture(dashboard, "res://assets/visual/core/arrival_waiting_hall_core.png")
+	_set_onboarding_portrait(
+		dashboard,
+		"res://assets/visual/core/arrival_portrait_stranger_core.png",
+		false
+	)
 	print("DASHBOARD_ARRIVAL_STORY_PREVIEW_APPLIED=1")
 
 
@@ -175,6 +181,11 @@ func _apply_taxi_story_preview(dashboard: Node) -> void:
 	_set_label(dashboard, "OnboardingTitleLabel", tr("ARRIVAL_BEAT_3_TITLE"))
 	_set_label(dashboard, "OnboardingNarrativeLabel", tr("ARRIVAL_BEAT_3_NARRATIVE"))
 	_set_onboarding_texture(dashboard, "res://assets/visual/core/arrival_taxi_ride_core.png")
+	_set_onboarding_portrait(
+		dashboard,
+		"res://assets/visual/core/arrival_portrait_taxi_driver_core.png",
+		false
+	)
 	print("DASHBOARD_TAXI_STORY_PREVIEW_APPLIED=1")
 
 
@@ -185,6 +196,24 @@ func _set_onboarding_texture(dashboard: Node, resource_path: String) -> void:
 		push_error("Dashboard capture: onboarding texture unavailable: %s" % resource_path)
 		return
 	backdrop.texture = texture
+
+
+func _set_onboarding_portrait(dashboard: Node, resource_path: String, on_left: bool) -> void:
+	var portrait := dashboard.find_child("OnboardingPortrait", true, false) as TextureRect
+	var texture := load(resource_path) as Texture2D
+	if portrait == null or texture == null:
+		push_error("Dashboard capture: onboarding portrait unavailable: %s" % resource_path)
+		return
+	portrait.position = Vector2(32 if on_left else 988, 230)
+	portrait.size = Vector2(260, 325)
+	portrait.texture = texture
+	portrait.visible = true
+
+
+func _hide_onboarding_portrait(dashboard: Node) -> void:
+	var portrait := dashboard.find_child("OnboardingPortrait", true, false) as TextureRect
+	if portrait != null:
+		portrait.visible = false
 
 
 func _set_label(root_node: Node, unique_name: String, value: String) -> bool:

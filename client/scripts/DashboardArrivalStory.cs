@@ -1,7 +1,15 @@
+public enum DashboardPortraitSide
+{
+	Left,
+	Right,
+}
+
 public sealed record DashboardArrivalBeat(
 	string TitleKey,
 	string NarrativeKey,
-	DashboardArrivalVisual Visual
+	DashboardArrivalVisual Visual,
+	DashboardArrivalPortrait Portrait,
+	DashboardPortraitSide PortraitSide
 );
 
 public static class DashboardArrivalStory
@@ -11,15 +19,21 @@ public static class DashboardArrivalStory
 		new(
 			"ARRIVAL_BEAT_1_TITLE",
 			"ARRIVAL_BEAT_1_NARRATIVE",
-			DashboardArrivalVisual.WaitingHall),
+			DashboardArrivalVisual.WaitingHall,
+			DashboardArrivalPortrait.Stranger,
+			DashboardPortraitSide.Right),
 		new(
 			"ARRIVAL_BEAT_2_TITLE",
 			"ARRIVAL_BEAT_2_NARRATIVE",
-			DashboardArrivalVisual.WaitingHall),
+			DashboardArrivalVisual.WaitingHall,
+			DashboardArrivalPortrait.Stranger,
+			DashboardPortraitSide.Right),
 		new(
 			"ARRIVAL_BEAT_3_TITLE",
 			"ARRIVAL_BEAT_3_NARRATIVE",
-			DashboardArrivalVisual.TaxiRide),
+			DashboardArrivalVisual.TaxiRide,
+			DashboardArrivalPortrait.TaxiDriver,
+			DashboardPortraitSide.Right),
 	};
 
 	public static int Count => Beats.Length;
