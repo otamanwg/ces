@@ -80,6 +80,7 @@ def test_registration_starts_arrival_and_blocks_ordinary_actions(client):
     assert data["hostel"] == "На вулиці"
     assert data["onboarding"]["stage"] == ARRIVAL_CHOICE
     assert data["onboarding"]["completed"] is False
+    assert data["onboarding"]["police_recovery_claimable"] is False
     assert data["onboarding"]["available_choices"] == [REPORT_TO_POLICE, FIND_HOUSING]
     assert all(available is False for available in data["actions"].values())
     PlayerSnapshotData.model_validate(data)
@@ -144,6 +145,12 @@ def test_due_police_recovery_credits_player_once(client):
     starting_balance = Decimal(str(player.balance))
     db.commit()
 
+    due_status = test_client.get(
+        f"/api/player/{player_id}",
+        headers=headers,
+    ).json()
+    assert due_status["data"]["onboarding"]["police_recovery_claimable"] is True
+
     claim_headers = {**headers, "Idempotency-Key": "police-recovery-claim"}
     first = test_client.post(
         "/api/player/onboarding/police-recovery",
@@ -154,6 +161,7 @@ def test_due_police_recovery_credits_player_once(client):
     assert first["success"] is True
     assert Decimal(str(first["data"]["balance"])) == starting_balance + Decimal("75.00")
     assert first["data"]["onboarding"]["police_report_status"] == POLICE_RECOVERED
+    assert first["data"]["onboarding"]["police_recovery_claimable"] is False
     assert (
         db.query(TransactionModelLog)
         .filter(TransactionModelLog.purpose == "police_recovery")

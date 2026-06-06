@@ -52,7 +52,27 @@ def is_onboarding_complete(db: Session, player: Player) -> bool:
     return onboarding is None or onboarding.stage == COMPLETED
 
 
-def build_onboarding_snapshot(db: Session, player: Player) -> dict:
+def is_police_recovery_claimable(
+    onboarding: PlayerOnboarding | None,
+    *,
+    now: datetime | None = None,
+) -> bool:
+    if (
+        onboarding is None
+        or onboarding.police_report_status != POLICE_PENDING
+        or onboarding.police_recovery_available_at is None
+        or money(onboarding.police_recovery_amount or 0) <= Decimal("0.00")
+    ):
+        return False
+    return (now or datetime.now(timezone.utc)) >= onboarding.police_recovery_available_at
+
+
+def build_onboarding_snapshot(
+    db: Session,
+    player: Player,
+    *,
+    now: datetime | None = None,
+) -> dict:
     onboarding = get_player_onboarding(db, player)
     if onboarding is None:
         return {
@@ -64,6 +84,7 @@ def build_onboarding_snapshot(db: Session, player: Player) -> dict:
             "police_report_status": POLICE_NOT_FILED,
             "police_recovery_amount": None,
             "police_recovery_available_at": None,
+            "police_recovery_claimable": False,
         }
 
     if onboarding.stage == ARRIVAL_CHOICE:
@@ -102,6 +123,7 @@ def build_onboarding_snapshot(db: Session, player: Player) -> dict:
             if onboarding.police_recovery_available_at is not None
             else None
         ),
+        "police_recovery_claimable": is_police_recovery_claimable(onboarding, now=now),
     }
 
 

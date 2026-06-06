@@ -121,6 +121,7 @@ class PlayerOnboardingData(BaseModel):
     police_report_status: str
     police_recovery_amount: float | None
     police_recovery_available_at: str | None
+    police_recovery_claimable: bool
 
 
 class PlayerSnapshotData(BaseModel):
