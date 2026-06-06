@@ -123,6 +123,29 @@ def test_registration_rejects_unknown_tutorial_age_group(client):
     assert response.status_code == 422
 
 
+@pytest.mark.parametrize("username", [" ", "a", "x" * 25])
+def test_registration_rejects_invalid_username_length(client, username):
+    test_client, _db = client
+    body = test_client.post("/api/player/register", json={"username": username}).json()
+
+    assert body["success"] is False
+    assert body["message"] == "Ім'я має містити від 2 до 24 символів."
+
+
+def test_registration_trims_username(client):
+    test_client, db = client
+    body = test_client.post(
+        "/api/player/register",
+        json={"username": "  New Citizen  ", "tutorial_age_group": "mature"},
+    ).json()
+
+    assert body["success"] is True
+    assert body["data"]["username"] == "New Citizen"
+    player = db.query(Player).filter(Player.id == body["data"]["id"]).one()
+    assert player.username == "New Citizen"
+    assert player.tutorial_age_group == "mature"
+
+
 def test_player_can_find_housing_and_complete_arrival_idempotently(client):
     test_client, _db = client
     register, headers = register_player(test_client, "direct-housing")

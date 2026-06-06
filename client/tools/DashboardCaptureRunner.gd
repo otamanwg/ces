@@ -39,6 +39,9 @@ func _capture_dashboard() -> void:
 	if _has_argument("--taxi-story"):
 		_apply_taxi_story_preview(dashboard)
 		await get_tree().create_timer(0.25).timeout
+	if _has_argument("--character-creation"):
+		_apply_character_creation_preview(dashboard)
+		await get_tree().create_timer(0.25).timeout
 	RenderingServer.force_draw(false)
 	await RenderingServer.frame_post_draw
 
@@ -233,6 +236,33 @@ func _apply_taxi_story_preview(dashboard: Node) -> void:
 		false
 	)
 	print("DASHBOARD_TAXI_STORY_PREVIEW_APPLIED=1")
+
+
+func _apply_character_creation_preview(dashboard: Node) -> void:
+	var overlay := dashboard.find_child("CharacterCreationOverlay", true, false) as Control
+	var name_input := dashboard.find_child("CharacterNameInput", true, false) as LineEdit
+	var adult_button := dashboard.find_child("CharacterAdultButton", true, false) as Button
+	var description := dashboard.find_child("CharacterAgeDescriptionLabel", true, false) as Label
+	var error_label := dashboard.find_child("CharacterErrorLabel", true, false) as Label
+	var create_button := dashboard.find_child("CharacterCreateButton", true, false) as Button
+	if (
+		overlay == null
+		or name_input == null
+		or adult_button == null
+		or description == null
+		or error_label == null
+		or create_button == null
+	):
+		push_error("Dashboard capture: character creation controls not found")
+		return
+
+	overlay.visible = true
+	name_input.text = "Alex"
+	adult_button.button_pressed = true
+	description.text = tr("CHARACTER_AGE_ADULT_DESCRIPTION")
+	error_label.visible = false
+	create_button.text = tr("CHARACTER_CREATE_BUTTON")
+	print("DASHBOARD_CHARACTER_CREATION_PREVIEW_APPLIED=1")
 
 
 func _set_onboarding_texture(dashboard: Node, resource_path: String) -> void:

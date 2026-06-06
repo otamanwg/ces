@@ -776,6 +776,157 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 6
 
+[node name="CharacterCreationOverlay" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 40
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.025, 0.035, 0.045, 1)
+
+[node name="CharacterCreationBackdrop" type="TextureRect" parent="CharacterCreationOverlay"]
+modulate = Color(0.48, 0.52, 0.56, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="CharacterCreationCenter" type="CenterContainer" parent="CharacterCreationOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CharacterCreationPanel" type="PanelContainer" parent="CharacterCreationOverlay/CharacterCreationCenter"]
+custom_minimum_size = Vector2(780, 620)
+layout_mode = 2
+
+[node name="CharacterCreationMargin" type="MarginContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 38
+theme_override_constants/margin_top = 26
+theme_override_constants/margin_right = 38
+theme_override_constants/margin_bottom = 26
+
+[node name="CharacterCreationBox" type="VBoxContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CharacterContextLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "CHARACTER_CONTEXT_LABEL"
+horizontal_alignment = 1
+
+[node name="CharacterTitleLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "CHARACTER_TITLE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CharacterSubtitleLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+custom_minimum_size = Vector2(0, 66)
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "CHARACTER_SUBTITLE"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+text_overrun_behavior = 3
+max_lines_visible = 3
+
+[node name="CharacterNameLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "CHARACTER_NAME_LABEL"
+
+[node name="CharacterNameInput" type="LineEdit" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+placeholder_text = "CHARACTER_NAME_PLACEHOLDER"
+max_length = 24
+clear_button_enabled = true
+
+[node name="CharacterAgeLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "CHARACTER_AGE_LABEL"
+
+[node name="CharacterAgeSegments" type="HBoxContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="CharacterTeenButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterAgeSegments"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(210, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "CHARACTER_AGE_TEEN"
+
+[node name="CharacterAdultButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterAgeSegments"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(210, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+button_pressed = true
+text = "CHARACTER_AGE_ADULT"
+
+[node name="CharacterMatureButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterAgeSegments"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(210, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "CHARACTER_AGE_MATURE"
+
+[node name="CharacterAgeDescriptionLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+text = "CHARACTER_AGE_ADULT_DESCRIPTION"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+text_overrun_behavior = 3
+max_lines_visible = 3
+
+[node name="CharacterErrorLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.45, 0.42, 1)
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+text_overrun_behavior = 3
+max_lines_visible = 2
+
+[node name="CharacterCreateButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 58)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "CHARACTER_CREATE_BUTTON"
+
 [connection signal="pressed" from="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/OpenBuildingButton" to="." method="OnOpenBuildingButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildingPortfolioPanel/BuildingPortfolioBox/BuildingPortfolioActions/RepairBuildingButton" to="." method="OnRepairBuildingButtonPressed"]
 [connection signal="pressed" from="RootMargin/LandscapeGrid/ActionRail/ApplyJobButton" to="." method="OnApplyJobButtonPressed"]

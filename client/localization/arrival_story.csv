@@ -28,3 +28,21 @@ POLICE_RECOVERY_PENDING,Отримуємо...,Claiming...
 POLICE_RECOVERY_CLAIM,Забрати {amount} ₴,Claim {amount} ₴
 POLICE_RECOVERY_PENDING_TOOLTIP,Поліція оформлює повернення.,The police are processing the recovery.
 POLICE_RECOVERY_CLAIM_TOOLTIP,Отримати знайдену поліцією частину втрачених коштів.,Claim the portion of the stolen money recovered by police.
+CHARACTER_CONTEXT_LABEL,НОВА ІСТОРІЯ  •  ПРОФІЛЬ,NEW STORY  •  PROFILE
+CHARACTER_TITLE,Створіть персонажа,Create Your Character
+CHARACTER_SUBTITLE,"Ім'я бачитимуть інші гравці. Вікова група змінює тон перших підказок, але не обмежує механіки.","Other players will see your name. The age group changes the tone of early guidance but does not limit gameplay."
+CHARACTER_NAME_LABEL,Ім'я персонажа,Character name
+CHARACTER_NAME_PLACEHOLDER,Введіть ім'я,Enter a name
+CHARACTER_AGE_LABEL,Вікова група персонажа,Character age group
+CHARACTER_AGE_TEEN,16–17,16–17
+CHARACTER_AGE_ADULT,18–49,18–49
+CHARACTER_AGE_MATURE,50+,50+
+CHARACTER_AGE_TEEN_DESCRIPTION,Більше прямих пояснень і нагадувань про безпечні наступні кроки.,More direct explanations and reminders about safe next steps.
+CHARACTER_AGE_ADULT_DESCRIPTION,"Збалансовані підказки про роботу, зв'язки, бізнес і поступовий розвиток.","Balanced guidance about work, connections, business, and gradual progress."
+CHARACTER_AGE_MATURE_DESCRIPTION,"Підказки з акцентом на планування, резерви, активи та довгі рішення.","Guidance focused on planning, reserves, assets, and long-term decisions."
+CHARACTER_CREATE_BUTTON,Почати нове життя,Start a new life
+CHARACTER_CREATING_BUTTON,Створюємо персонажа...,Creating character...
+CHARACTER_ERROR_NAME_LENGTH,Ім'я має містити від 2 до 24 символів.,The name must contain 2 to 24 characters.
+CHARACTER_ERROR_NAME_TAKEN,Це ім'я вже зайняте. Спробуйте інше.,That name is already taken. Try another one.
+CHARACTER_ERROR_SERVER,Сервер недоступний. Перевірте підключення та спробуйте ще раз.,The server is unavailable. Check your connection and try again.
+CHARACTER_ERROR_SESSION,Попередня сесія недійсна. Створіть нового персонажа.,The previous session is invalid. Create a new character.

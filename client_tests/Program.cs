@@ -285,6 +285,20 @@ AssertEqual(
 AssertEqual(DashboardTutorialAgeGroup.Adult, DashboardTutorialProfile.ParseAgeGroup(""), "Missing age group defaults to adult");
 AssertEqual(DashboardTutorialAgeGroup.Teen, DashboardTutorialProfile.ParseAgeGroup("TEEN"), "Age group parsing ignores case");
 AssertEqual("mature", DashboardTutorialProfile.ToApiValue(DashboardTutorialAgeGroup.Mature), "Mature age group API value");
+AssertEqual("New Citizen", DashboardCharacterCreation.NormalizeUsername("  New Citizen  "), "Character name is trimmed");
+AssertEqual("", DashboardCharacterCreation.ValidateUsername("Player"), "Valid character name has no error");
+AssertEqual(
+	DashboardCharacterCreation.InvalidUsernameKey,
+	DashboardCharacterCreation.ValidateUsername("a"),
+	"Short character name returns a semantic error"
+);
+AssertEqual(
+	DashboardCharacterCreation.InvalidUsernameKey,
+	DashboardCharacterCreation.ValidateUsername(new string('x', 25)),
+	"Long character name returns a semantic error"
+);
+AssertEqual("adult", DashboardCharacterCreation.NormalizeAgeGroup("unknown"), "Unknown guidance group falls back to adult");
+AssertEqual("mature", DashboardCharacterCreation.NormalizeAgeGroup("MATURE"), "Guidance group normalization ignores case");
 AssertEqual(DashboardArrivalVisual.WaitingHall, DashboardArrivalStory.Get(0).Visual, "First beat uses waiting hall");
 AssertEqual(DashboardArrivalVisual.WaitingHall, DashboardArrivalStory.Get(1).Visual, "Second beat reuses waiting hall");
 AssertEqual(DashboardArrivalVisual.TaxiRide, DashboardArrivalStory.Get(2).Visual, "Final story beat uses taxi ride");

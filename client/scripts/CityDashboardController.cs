@@ -58,6 +58,15 @@ public partial class CityDashboardController : Control
 	private Button _onboardingHousingButton;
 	private Button _onboardingContinueButton;
 	private Button _policeRecoveryButton;
+	private Control _characterCreationOverlay;
+	private TextureRect _characterCreationBackdrop;
+	private LineEdit _characterNameInput;
+	private Label _characterAgeDescriptionLabel;
+	private Label _characterErrorLabel;
+	private Button _characterTeenButton;
+	private Button _characterAdultButton;
+	private Button _characterMatureButton;
+	private Button _characterCreateButton;
 	private DashboardStatusPresenter _statusPresenter;
 	private DashboardActionPresenter _actionPresenter;
 	private DashboardOnboardingState _onboardingState = new();
@@ -76,6 +85,7 @@ public partial class CityDashboardController : Control
 	private bool _pendingBuildLandCatalog;
 	private bool _pendingBuildBlueprintCatalog;
 	private bool _pendingOnboarding;
+	private bool _pendingRegistration;
 	private bool _bootstrapPending = true;
 	private bool _hasJob;
 	private bool _canApplyJob;
@@ -111,6 +121,7 @@ public partial class CityDashboardController : Control
 	private string _buildFlowAction = "";
 	private string _onboardingBackdropPath = "";
 	private string _onboardingPortraitPath = "";
+	private string _selectedCharacterAgeGroup = DashboardCharacterCreation.DefaultAgeGroup;
 	private double _playerBalance;
 	private JsonNode _landCatalogData;
 	private JsonNode _blueprintCatalogData;
@@ -160,6 +171,26 @@ public partial class CityDashboardController : Control
 		{
 			_policeRecoveryButton.Pressed += OnPoliceRecoveryButtonPressed;
 		}
+		if (_characterTeenButton != null)
+		{
+			_characterTeenButton.Pressed += OnCharacterTeenButtonPressed;
+		}
+		if (_characterAdultButton != null)
+		{
+			_characterAdultButton.Pressed += OnCharacterAdultButtonPressed;
+		}
+		if (_characterMatureButton != null)
+		{
+			_characterMatureButton.Pressed += OnCharacterMatureButtonPressed;
+		}
+		if (_characterCreateButton != null)
+		{
+			_characterCreateButton.Pressed += OnCharacterCreateButtonPressed;
+		}
+		if (_characterNameInput != null)
+		{
+			_characterNameInput.TextSubmitted += _ => OnCharacterCreateButtonPressed();
+		}
 
 		_apiClient = GetNodeOrNull<ApiClient>("/root/ApiClient");
 		_session = GetNodeOrNull<GameSession>("/root/GameSession");
@@ -167,6 +198,8 @@ public partial class CityDashboardController : Control
 		_examPanel = GetNodeOrNull<ExamPanelController>("ExamOverlay");
 		_cityVisualOverlay?.SetStyleCode(_session?.VisualStyleCode);
 		ConfigureOnboardingPortraitMaterial();
+		ConfigureCharacterCreationVisual();
+		UpdateCharacterCreationUi();
 
 		if (_apiClient != null)
 		{
@@ -267,6 +300,15 @@ public partial class CityDashboardController : Control
 		_onboardingHousingButton ??= GetNodeOrNull<Button>("%OnboardingHousingButton");
 		_onboardingContinueButton ??= GetNodeOrNull<Button>("%OnboardingContinueButton");
 		_policeRecoveryButton ??= GetNodeOrNull<Button>("%PoliceRecoveryButton");
+		_characterCreationOverlay ??= GetNodeOrNull<Control>("%CharacterCreationOverlay");
+		_characterCreationBackdrop ??= GetNodeOrNull<TextureRect>("CharacterCreationOverlay/CharacterCreationBackdrop");
+		_characterNameInput ??= GetNodeOrNull<LineEdit>("%CharacterNameInput");
+		_characterAgeDescriptionLabel ??= GetNodeOrNull<Label>("%CharacterAgeDescriptionLabel");
+		_characterErrorLabel ??= GetNodeOrNull<Label>("%CharacterErrorLabel");
+		_characterTeenButton ??= GetNodeOrNull<Button>("%CharacterTeenButton");
+		_characterAdultButton ??= GetNodeOrNull<Button>("%CharacterAdultButton");
+		_characterMatureButton ??= GetNodeOrNull<Button>("%CharacterMatureButton");
+		_characterCreateButton ??= GetNodeOrNull<Button>("%CharacterCreateButton");
 	}
 
 	private void ConfigureTextSafety()
@@ -288,6 +330,19 @@ public partial class CityDashboardController : Control
 		ConfigureLabel(_onboardingTitleLabel, 2, 52);
 		ConfigureLabel(_onboardingNarrativeLabel, 5, 120);
 		ConfigureLabel(_onboardingPoliceStatusLabel, 2, 48);
+		ConfigureLabel(_characterAgeDescriptionLabel, 3, 62);
+		ConfigureLabel(_characterErrorLabel, 2, 44);
+	}
+
+	private void ConfigureCharacterCreationVisual()
+	{
+		if (_characterCreationBackdrop == null)
+		{
+			return;
+		}
+
+		_characterCreationBackdrop.Texture = ResourceLoader.Load<Texture2D>(
+			"res://assets/visual/core/arrival_waiting_hall_core.png");
 	}
 
 	private static void ConfigureLabel(Label label, int maxLines, float minimumHeight)
@@ -375,6 +430,13 @@ public partial class CityDashboardController : Control
 
 		if (!apiSuccess)
 		{
+			if (endpoint == "/api/player/register")
+			{
+				_pendingRegistration = false;
+				ShowCharacterCreation(LocalizeRegistrationError(message));
+				return;
+			}
+
 			if (IsSessionError(message))
 			{
 				HandleInvalidSession(message);
@@ -399,6 +461,10 @@ public partial class CityDashboardController : Control
 		{
 			_bootstrapPending = false;
 		}
+		if (endpoint == "/api/player/register")
+		{
+			_pendingRegistration = false;
+		}
 
 		ClearErrorState();
 		SetStatus(message, true);
@@ -407,6 +473,7 @@ public partial class CityDashboardController : Control
 
 		if (data != null && data["username"] != null)
 		{
+			HideCharacterCreation();
 			UpdatePlayerUI(data);
 		}
 
@@ -469,11 +536,18 @@ public partial class CityDashboardController : Control
 		_pendingBuildLandCatalog = false;
 		_pendingBuildBlueprintCatalog = false;
 		_pendingOnboarding = false;
+		_pendingRegistration = false;
 		_pendingLandBuyKey = "";
 		_pendingBuildingApplicationKey = "";
 		_pendingBuildingActivationKey = "";
 		ClearPendingAction(endpoint);
 		_examPanel?.SetSubmitEnabled(true);
+
+		if (endpoint == "/api/player/register")
+		{
+			ShowCharacterCreation(Tr("CHARACTER_ERROR_SERVER"));
+			return;
+		}
 
 		if (!string.IsNullOrWhiteSpace(jsonBody))
 		{
@@ -520,9 +594,9 @@ public partial class CityDashboardController : Control
 		_playerBalance = 0.0;
 		ClearBuildingPortfolio();
 		ClearBuildFlow();
-		SetErrorState($"{message} Створюємо нового гравця...");
+		SetErrorState(message);
 		UpdateActionButtons();
-		RegisterNewPlayer();
+		ShowCharacterCreation(Tr("CHARACTER_ERROR_SESSION"));
 	}
 
 	private void HandleCityStatus(JsonNode root)
@@ -555,13 +629,138 @@ public partial class CityDashboardController : Control
 			return;
 		}
 
-		RegisterNewPlayer();
+		ShowCharacterCreation();
 	}
 
-	private void RegisterNewPlayer()
+	private void ShowCharacterCreation(string errorMessage = "")
 	{
-		string username = $"Гравець_{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
-		string payload = ApiClient.BuildJson(new { username });
+		if (_characterCreationOverlay == null)
+		{
+			SetErrorState("Character creation UI is unavailable.");
+			return;
+		}
+
+		_characterCreationOverlay.Visible = true;
+		if (_characterErrorLabel != null)
+		{
+			_characterErrorLabel.Text = errorMessage;
+			_characterErrorLabel.Visible = !string.IsNullOrWhiteSpace(errorMessage);
+		}
+		UpdateCharacterCreationUi();
+	}
+
+	private void HideCharacterCreation()
+	{
+		if (_characterCreationOverlay != null)
+		{
+			_characterCreationOverlay.Visible = false;
+		}
+	}
+
+	private string LocalizeRegistrationError(string message)
+	{
+		if (message.Contains("від 2 до 24", StringComparison.Ordinal))
+		{
+			return Tr(DashboardCharacterCreation.InvalidUsernameKey);
+		}
+		if (message.Contains("вже зареєстрований", StringComparison.Ordinal))
+		{
+			return Tr("CHARACTER_ERROR_NAME_TAKEN");
+		}
+		return string.IsNullOrWhiteSpace(message) ? Tr("CHARACTER_ERROR_SERVER") : message;
+	}
+
+	private void SelectCharacterAgeGroup(string ageGroup)
+	{
+		if (_pendingRegistration)
+		{
+			return;
+		}
+
+		_selectedCharacterAgeGroup = DashboardCharacterCreation.NormalizeAgeGroup(ageGroup);
+		UpdateCharacterCreationUi();
+	}
+
+	private void UpdateCharacterCreationUi()
+	{
+		if (_characterTeenButton != null)
+		{
+			_characterTeenButton.ButtonPressed = _selectedCharacterAgeGroup == "teen";
+			_characterTeenButton.Disabled = _pendingRegistration;
+		}
+		if (_characterAdultButton != null)
+		{
+			_characterAdultButton.ButtonPressed = _selectedCharacterAgeGroup == "adult";
+			_characterAdultButton.Disabled = _pendingRegistration;
+		}
+		if (_characterMatureButton != null)
+		{
+			_characterMatureButton.ButtonPressed = _selectedCharacterAgeGroup == "mature";
+			_characterMatureButton.Disabled = _pendingRegistration;
+		}
+		if (_characterNameInput != null)
+		{
+			_characterNameInput.Editable = !_pendingRegistration;
+		}
+		if (_characterAgeDescriptionLabel != null)
+		{
+			string descriptionKey = _selectedCharacterAgeGroup switch
+			{
+				"teen" => "CHARACTER_AGE_TEEN_DESCRIPTION",
+				"mature" => "CHARACTER_AGE_MATURE_DESCRIPTION",
+				_ => "CHARACTER_AGE_ADULT_DESCRIPTION",
+			};
+			_characterAgeDescriptionLabel.Text = Tr(descriptionKey);
+		}
+		if (_characterCreateButton != null)
+		{
+			_characterCreateButton.Disabled = _pendingRegistration;
+			_characterCreateButton.Text = Tr(
+				_pendingRegistration ? "CHARACTER_CREATING_BUTTON" : "CHARACTER_CREATE_BUTTON");
+		}
+	}
+
+	public void OnCharacterTeenButtonPressed()
+	{
+		SelectCharacterAgeGroup("teen");
+	}
+
+	public void OnCharacterAdultButtonPressed()
+	{
+		SelectCharacterAgeGroup("adult");
+	}
+
+	public void OnCharacterMatureButtonPressed()
+	{
+		SelectCharacterAgeGroup("mature");
+	}
+
+	public void OnCharacterCreateButtonPressed()
+	{
+		if (_pendingRegistration || _characterNameInput == null)
+		{
+			return;
+		}
+
+		string username = DashboardCharacterCreation.NormalizeUsername(_characterNameInput.Text);
+		string validationKey = DashboardCharacterCreation.ValidateUsername(username);
+		if (!string.IsNullOrEmpty(validationKey))
+		{
+			ShowCharacterCreation(Tr(validationKey));
+			return;
+		}
+
+		_pendingRegistration = true;
+		if (_characterErrorLabel != null)
+		{
+			_characterErrorLabel.Visible = false;
+		}
+		UpdateCharacterCreationUi();
+		string payload = ApiClient.BuildJson(new
+		{
+			username,
+			tutorial_age_group = _selectedCharacterAgeGroup,
+		});
 		_apiClient?.Post("/api/player/register", payload);
 	}
 

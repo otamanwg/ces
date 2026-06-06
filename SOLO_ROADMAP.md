@@ -774,6 +774,20 @@ DoD:
 
 ---
 
+## Sprint 46 — Character Creation Bootstrap
+
+Ціль: нова сесія більше не створює випадкового гравця автоматично; гравець вводить ім'я та обирає вікову групу персонажа перед arrival story.
+
+Порядок:
+
+1. ✅ Backend/tests: єдиний username contract 2–24 символи та збереження tutorial age group.
+2. ✅ Client model: normalization/validation без залежності від Godot UI.
+3. ✅ Godot MCP: landscape character-creation overlay з name input і трьома age-group сегментами.
+4. ✅ Runtime: bootstrap чекає submit, обробляє duplicate/transport errors і запускає arrival flow.
+5. ✅ Localized capture QA, повний checkpoint, MCP smoke і commit.
+
+---
+
 ## Checkpoints Де Потрібен Користувач
 
 | Checkpoint | Коли | Що потрібно |

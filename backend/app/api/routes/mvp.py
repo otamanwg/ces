@@ -583,8 +583,8 @@ def run_city_day_tick(db: Session = Depends(get_db)):
 @router.post("/player/register")
 def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
     username = data.username.strip()
-    if not username:
-        return api_error("Ім'я не може бути порожнім.")
+    if len(username) < 2 or len(username) > 24:
+        return api_error("Ім'я має містити від 2 до 24 символів.")
 
     existing = db.query(Player).filter(Player.username == username).first()
     if existing:
