@@ -32,6 +32,9 @@ func _capture_dashboard() -> void:
 	if _has_argument("--arrival-story"):
 		_apply_arrival_story_preview(dashboard)
 		await get_tree().create_timer(0.25).timeout
+	if _has_argument("--taxi-story"):
+		_apply_taxi_story_preview(dashboard)
+		await get_tree().create_timer(0.25).timeout
 	RenderingServer.force_draw(false)
 	await RenderingServer.frame_post_draw
 
@@ -110,6 +113,7 @@ func _apply_onboarding_preview(dashboard: Node) -> void:
 	var police_status := dashboard.find_child("OnboardingPoliceStatusLabel", true, false) as Label
 	if police_status != null:
 		police_status.visible = false
+	_set_onboarding_texture(dashboard, "res://assets/visual/core/arrival_bus_station_core_v2.png")
 	print("DASHBOARD_ONBOARDING_PREVIEW_APPLIED=1")
 
 
@@ -146,7 +150,42 @@ func _apply_arrival_story_preview(dashboard: Node) -> void:
 		"У залі очікування автовокзалу випадковий співрозмовник помічає ваш квиток. "
 		+ "Ви кажете, що їдете починати нове життя у місті, де нікого не знаєте."
 	)
+	_set_onboarding_texture(dashboard, "res://assets/visual/core/arrival_waiting_hall_core.png")
 	print("DASHBOARD_ARRIVAL_STORY_PREVIEW_APPLIED=1")
+
+
+func _apply_taxi_story_preview(dashboard: Node) -> void:
+	var overlay := dashboard.find_child("OnboardingOverlay", true, false) as Control
+	var continue_button := dashboard.find_child("OnboardingContinueButton", true, false) as Button
+	var police_button := dashboard.find_child("OnboardingPoliceButton", true, false) as Button
+	var housing_button := dashboard.find_child("OnboardingHousingButton", true, false) as Button
+	if overlay == null or continue_button == null or police_button == null or housing_button == null:
+		push_error("Dashboard capture: taxi story controls not found")
+		return
+
+	overlay.visible = true
+	police_button.visible = false
+	housing_button.visible = false
+	continue_button.visible = true
+	continue_button.text = "Прибути до міста"
+	_set_label(dashboard, "OnboardingTitleLabel", "Перші хвилини")
+	_set_label(
+		dashboard,
+		"OnboardingNarrativeLabel",
+		"Автобус прибуває надвечір. Ви ловите таксі біля вокзалу, кладете багаж у машину "
+		+ "і називаєте адресу. За кілька кварталів водій раптом зупиняється."
+	)
+	_set_onboarding_texture(dashboard, "res://assets/visual/core/arrival_taxi_ride_core.png")
+	print("DASHBOARD_TAXI_STORY_PREVIEW_APPLIED=1")
+
+
+func _set_onboarding_texture(dashboard: Node, resource_path: String) -> void:
+	var backdrop := dashboard.find_child("OnboardingBackdrop", true, false) as TextureRect
+	var texture := load(resource_path) as Texture2D
+	if backdrop == null or texture == null:
+		push_error("Dashboard capture: onboarding texture unavailable: %s" % resource_path)
+		return
+	backdrop.texture = texture
 
 
 func _set_label(root_node: Node, unique_name: String, value: String) -> bool:

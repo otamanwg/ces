@@ -750,6 +750,7 @@ text = "Далі"
 text_overrun_behavior = 3
 
 [node name="OnboardingBackdrop" type="TextureRect" parent="OnboardingOverlay"]
+unique_name_in_owner = true
 z_index = -1
 layout_mode = 1
 anchors_preset = 15

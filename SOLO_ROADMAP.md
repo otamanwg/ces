@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 40: Arrival Visual Narrative.**
+**Sprint 41: Arrival Style-Pack Assets.**
 
-Мета: замінити нейтральне затемнення на окремий візуальний шар автовокзалу та короткі діалогові beats до моменту крадіжки, не змінюючи серверну механіку.
+Мета: дати кожному вступному beat окремий кадр і відокремити semantic visual keys від конкретного style pack, не змінюючи gameplay-код.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -695,8 +695,22 @@ DoD:
 
 Наступний visual крок:
 
-1. Додати окремі per-beat зображення для залу очікування та поїздки в таксі.
-2. Винести список arrival assets у style-pack manifest, щоб `anime`, `hyperreal` і `mafia` не змінювали gameplay-код.
+1. Додати portrait layer для співрозмовника та водія поверх core backgrounds.
+2. Винести репліки вступу в локалізований narrative catalog.
+
+---
+
+## Sprint 41 — Arrival Style-Pack Assets
+
+Ціль: story beat обирає семантичний visual key, а style pack підставляє свій ресурс із безпечним fallback на `core`.
+
+Порядок:
+
+1. ✅ Client architecture: manifest для `core`, `anime`, `hyperreal`, `mafia` та fallback без розгалужень у gameplay-коді.
+2. ✅ Imagegen core assets: окремий зал очікування та поїздка в таксі.
+3. ✅ Godot runtime: перемикання `OnboardingBackdrop` відповідно до story beat.
+4. ✅ Visual QA: окремі capture states для waiting hall, taxi ride і фінального choice screen.
+5. ✅ Повний checkpoint, MCP smoke і commit.
 
 ---
 

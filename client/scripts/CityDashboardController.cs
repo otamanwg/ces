@@ -49,6 +49,7 @@ public partial class CityDashboardController : Control
 	private Button _buyStarterLandButton;
 	private Button _visualFocusButton;
 	private Control _onboardingOverlay;
+	private TextureRect _onboardingBackdrop;
 	private Label _onboardingTitleLabel;
 	private Label _onboardingNarrativeLabel;
 	private Label _onboardingPoliceStatusLabel;
@@ -106,6 +107,7 @@ public partial class CityDashboardController : Control
 	private string _starterBlueprintId = "";
 	private string _approvedApplicationId = "";
 	private string _buildFlowAction = "";
+	private string _onboardingBackdropPath = "";
 	private double _playerBalance;
 	private JsonNode _landCatalogData;
 	private JsonNode _blueprintCatalogData;
@@ -238,6 +240,7 @@ public partial class CityDashboardController : Control
 		_buyStarterLandButton ??= GetNodeOrNull<Button>("%BuyStarterLandButton");
 		_visualFocusButton ??= GetNodeOrNull<Button>("%VisualFocusButton");
 		_onboardingOverlay ??= GetNodeOrNull<Control>("%OnboardingOverlay");
+		_onboardingBackdrop ??= GetNodeOrNull<TextureRect>("%OnboardingBackdrop");
 		_onboardingTitleLabel ??= GetNodeOrNull<Label>("%OnboardingTitleLabel");
 		_onboardingNarrativeLabel ??= GetNodeOrNull<Label>("%OnboardingNarrativeLabel");
 		_onboardingPoliceStatusLabel ??= GetNodeOrNull<Label>("%OnboardingPoliceStatusLabel");
@@ -1472,6 +1475,7 @@ public partial class CityDashboardController : Control
 		}
 
 		var storyBeat = showingStory ? DashboardArrivalStory.Get(_arrivalStoryBeat) : null;
+		UpdateOnboardingBackdrop(storyBeat?.Visual ?? DashboardArrivalVisual.BaggageTheft);
 		if (_onboardingTitleLabel != null)
 		{
 			_onboardingTitleLabel.Text = storyBeat?.Title ?? _onboardingState.Title;
@@ -1505,6 +1509,30 @@ public partial class CityDashboardController : Control
 				? "Далі"
 				: "Прибути до міста";
 		}
+	}
+
+	private void UpdateOnboardingBackdrop(DashboardArrivalVisual visual)
+	{
+		if (_onboardingBackdrop == null)
+		{
+			return;
+		}
+
+		string assetPath = DashboardVisualStylePacks.ResolveArrivalAsset(_session?.VisualStyleCode, visual);
+		if (assetPath == _onboardingBackdropPath)
+		{
+			return;
+		}
+
+		var texture = ResourceLoader.Load<Texture2D>(assetPath);
+		if (texture == null)
+		{
+			GD.PushError($"Не вдалося завантажити arrival asset: {assetPath}");
+			return;
+		}
+
+		_onboardingBackdrop.Texture = texture;
+		_onboardingBackdropPath = assetPath;
 	}
 
 	private void SubmitOnboardingChoice(string choice)

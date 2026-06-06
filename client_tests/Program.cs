@@ -242,6 +242,24 @@ AssertEqual(true, arrivalSnapshot.Onboarding.CanFindHousing, "Arrival offers hou
 AssertEqual(3, DashboardArrivalStory.Count, "Arrival story has three setup beats");
 AssertEqual("Новий маршрут", DashboardArrivalStory.Get(0).Title, "Arrival story starts before the city");
 AssertEqual("Перші хвилини", DashboardArrivalStory.Get(2).Title, "Arrival story ends at the taxi event");
+AssertEqual(DashboardArrivalVisual.WaitingHall, DashboardArrivalStory.Get(0).Visual, "First beat uses waiting hall");
+AssertEqual(DashboardArrivalVisual.WaitingHall, DashboardArrivalStory.Get(1).Visual, "Second beat reuses waiting hall");
+AssertEqual(DashboardArrivalVisual.TaxiRide, DashboardArrivalStory.Get(2).Visual, "Final story beat uses taxi ride");
+AssertEqual(
+	"res://assets/visual/core/arrival_waiting_hall_core.png",
+	DashboardVisualStylePacks.ResolveArrivalAsset("core", DashboardArrivalVisual.WaitingHall),
+	"Core style resolves waiting hall asset"
+);
+AssertEqual(
+	"res://assets/visual/core/arrival_taxi_ride_core.png",
+	DashboardVisualStylePacks.ResolveArrivalAsset("anime", DashboardArrivalVisual.TaxiRide),
+	"Missing anime scene falls back to core asset"
+);
+AssertEqual(
+	"res://assets/visual/core/arrival_bus_station_core_v2.png",
+	DashboardVisualStylePacks.ResolveArrivalAsset("unknown", DashboardArrivalVisual.BaggageTheft),
+	"Unknown style falls back to core theft scene"
+);
 
 var visualCityJson = JsonNode.Parse(
 	"""
