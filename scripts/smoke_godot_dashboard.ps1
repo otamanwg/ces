@@ -81,6 +81,15 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Start-Sleep -Seconds 5
 
+$playStateJson = & "$Root\scripts\invoke_godot_mcp.ps1" -Tool is_playing -ArgsJson '{}' -TimeoutSeconds 20
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+$playStateJson | Write-Output
+$playState = $playStateJson | ConvertFrom-Json
+if (-not $playState.success -or -not $playState.result.playing) {
+    Write-Host "Godot reported run_scene success, but the dashboard is not playing."
+    exit 1
+}
+
 & "$Root\scripts\invoke_godot_mcp.ps1" -Tool get_errors -ArgsJson '{"include_warnings":true}' -TimeoutSeconds 20
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

@@ -273,12 +273,6 @@ public partial class CityVisualOverlay : Control
 			DrawArc(marker, 17.0f + pulse * 5.0f, 0.0f, MathF.Tau, 32, AsGodot(_palette.Danger.WithAlpha(0.35f + pulse * 0.45f)), 2.0f, true);
 		}
 		DrawBuildingMarkers(size);
-
-		Font font = GetThemeDefaultFont();
-		string assetText = _model.BuildingCount > 0
-			? $"Активи: {_model.BuildingCount} | active {_model.ActiveBuildingCount} | repair {_model.ProblemBuildingCount}"
-			: "Активи: ще немає";
-		DrawString(font, new Vector2(size.X - 250, 28), assetText, HorizontalAlignment.Left, 230, 13, new Color(0.96f, 0.96f, 0.91f, 0.92f));
 	}
 
 	private void DrawBuildingMarkers(Vector2 size)

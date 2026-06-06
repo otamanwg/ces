@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 34: Visual Style Tokens.**
+**Sprint 36: Visual Style Preference.**
 
-Мета: відокремити semantic visual tokens від Godot drawing code, щоб майбутні `anime`, `hyperreal` і `mafia` паки могли змінювати presentation layer без зміни mechanics.
+Мета: зберігати вибраний style code у локальній player session і безпечно застосовувати його до overlay; UI selector лишається відкладеним до готовності першого повного alternative asset pack.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -573,8 +573,8 @@ DoD:
 Наступний visual крок після Sprint 32:
 
 1. ✅ Легка idle-анімація overlay: traffic pulse, asset attention pulse.
-2. Style-token palette для майбутніх visual packs.
-3. Підготовка screenshot/playtest script для швидкого показу результату.
+2. ✅ Style-token palette для майбутніх visual packs.
+3. ✅ Підготовка screenshot/playtest script для швидкого показу результату.
 
 ---
 
@@ -605,9 +605,35 @@ DoD:
 
 Наступний visual крок після Sprint 34:
 
-1. Підготовка screenshot/playtest script для швидкого показу результату.
+1. ✅ Підготовка screenshot/playtest script для швидкого показу результату.
 2. Збереження visual style preference у player session.
 3. UI selector додавати лише після готовності першого повного alternative asset pack.
+
+---
+
+## Sprint 35 — Visual Capture Automation
+
+Ціль: одна команда має зібрати client, підняти backend, відкрити службову capture-сцену і зберегти валідний PNG `1280x720`.
+
+Порядок:
+
+1. ✅ Godot tool scene: dashboard capture runner з очікуванням API/render.
+2. ✅ Script: `scripts/capture_dashboard.ps1` з output path і PNG validation.
+3. ✅ Docs: команда швидкого visual QA.
+4. ✅ Реальний screenshot + Godot MCP errors 0 + `scripts/check.ps1` + commit.
+
+---
+
+## Sprint 36 — Visual Style Preference
+
+Ціль: style code має переживати перезапуск клієнта і завжди проходити через allowlist/fallback, навіть до появи selector UI.
+
+Порядок:
+
+1. ⏳ Client session: `VisualStyleCode` із fallback на `core`.
+2. ⏳ Controller: застосувати session preference до `CityVisualOverlay`.
+3. ⏳ Client tests: normalization/fallback contract.
+4. ⏳ Godot MCP smoke + `scripts/check.ps1` + commit.
 
 ---
 

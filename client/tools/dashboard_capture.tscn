@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://gsb8h3lpkt3n"]
+
+[ext_resource type="Script" path="res://tools/DashboardCaptureRunner.gd" id="1_3wqu1"]
+
+[node name="DashboardCapture" type="Node"]
+script = ExtResource("1_3wqu1")
