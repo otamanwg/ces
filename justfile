@@ -1,0 +1,65 @@
+# Task runner для City Economic Simulator
+# Використання: just <task>
+# Приклад: just test
+
+set shell := ["powershell.exe", "-c"]
+
+# Запуск backend в режимі розробки
+run:
+    .venv/Scripts/python.exe -m uvicorn backend.main:app --reload --port 8000
+
+# Запуск усіх тестів backend
+test:
+    .venv/Scripts/python.exe -m pytest backend/tests -q
+
+# Запуск тестів із verbose output
+test-verbose:
+    .venv/Scripts/python.exe -m pytest backend/tests -v --tb=short
+
+# Форматування Python коду
+format-python:
+    .venv/Scripts/python.exe -m black backend/app backend/main.py
+
+# Форматування C# коду (Godot client)
+format-csharp:
+    C:\tools\dotnet-sdk\dotnet.exe format client/city_economic_simulator.csproj
+
+# Форматування всього коду
+format: format-python format-csharp
+
+# Збірка Godot C# проєкту
+build-client:
+    C:\tools\dotnet-sdk\dotnet.exe build client/city_economic_simulator.csproj
+
+# Перевірка стилю Python (black --check)
+check-python:
+    .venv/Scripts/python.exe -m black --check backend/app backend/main.py
+
+# Міграції бази даних (upgrade)
+migrate:
+    .venv/Scripts/python.exe -m alembic upgrade head
+
+# Створення нової міграції (потребує аргумент msg)
+migrate-create msg:
+    .venv/Scripts/python.exe -m alembic revision --autogenerate -m "{{msg}}"
+
+# Запуск Godot MCP bridge
+mcp-bridge:
+    .venv/Scripts/python.exe scripts/godot_mcp_bridge.py
+
+# Статус Godot MCP bridge
+mcp-status:
+    Invoke-RestMethod -Uri "http://127.0.0.1:6507/status" -Method Get | ConvertTo-Json
+
+# Очистка кешів Python
+clean:
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue backend/app/__pycache__, backend/tests/__pycache__
+    Write-Host "Кеш очищено."
+
+# Запуск PostgreSQL через Docker
+postgres-up:
+    docker compose up -d postgres
+
+# Зупинка PostgreSQL
+postgres-down:
+    docker compose down

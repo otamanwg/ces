@@ -9,7 +9,6 @@ from backend.app.seed import seed_initial_data
 from backend.main import app
 from backend.tests.db import make_test_session
 
-
 TEST_DATABASE_URL = os.getenv("CITY_TEST_DATABASE_URL")
 os.environ["CITY_SKIP_DB_INIT"] = "true"
 

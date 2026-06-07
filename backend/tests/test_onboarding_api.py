@@ -22,7 +22,6 @@ from backend.app.services.onboarding import (
 from backend.main import app
 from backend.tests.db import make_test_session
 
-
 TEST_DATABASE_URL = os.getenv("CITY_TEST_DATABASE_URL")
 os.environ["CITY_SKIP_DB_INIT"] = "true"
 
@@ -272,12 +271,7 @@ def test_due_police_recovery_credits_player_once(client):
     assert Decimal(str(first["data"]["balance"])) == starting_balance + Decimal("75.00")
     assert first["data"]["onboarding"]["police_report_status"] == POLICE_RECOVERED
     assert first["data"]["onboarding"]["police_recovery_claimable"] is False
-    assert (
-        db.query(TransactionModelLog)
-        .filter(TransactionModelLog.purpose == "police_recovery")
-        .count()
-        == 1
-    )
+    assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "police_recovery").count() == 1
 
     repeated = test_client.post(
         "/api/player/onboarding/police-recovery",

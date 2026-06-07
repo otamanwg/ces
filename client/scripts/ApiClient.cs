@@ -123,7 +123,7 @@ public partial class ApiClient : Node
         string body = bodyBytes.Length > 0 ? Encoding.UTF8.GetString(bodyBytes) : "";
         bool success = result == (long)HttpRequest.Result.Success && responseCode >= 200 && responseCode < 300;
 
-        GD.Print($"ApiClient: done { _pendingPath } success={success} code={responseCode}");
+        GD.Print($"ApiClient: done {_pendingPath} success={success} code={responseCode}");
 
         if (!success)
         {

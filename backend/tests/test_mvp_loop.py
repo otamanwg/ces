@@ -42,7 +42,6 @@ from backend.app.services.needs import process_meal_purchase
 from backend.app.services.sports import sign_athlete_contract, simulate_league_matches, train_at_gym
 from backend.tests.db import make_test_session
 
-
 TEST_DATABASE_URL = os.getenv("CITY_TEST_DATABASE_URL")
 
 pytestmark = pytest.mark.skipif(

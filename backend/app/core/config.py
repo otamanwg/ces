@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DATABASE_URL = "postgresql+psycopg2://city:city_dev_password@127.0.0.1:5432/city_game"
 

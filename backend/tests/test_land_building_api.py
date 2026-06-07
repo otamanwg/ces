@@ -5,7 +5,16 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.app.database import get_db
-from backend.app.models import Business, Building, BuildingApplication, BusinessBlueprint, City, LandParcel, Player, TransactionModelLog
+from backend.app.models import (
+    Business,
+    Building,
+    BuildingApplication,
+    BusinessBlueprint,
+    City,
+    LandParcel,
+    Player,
+    TransactionModelLog,
+)
 from backend.app.schemas.mvp import (
     BuildingActivationActionData,
     BuildingApplicationData,
@@ -22,7 +31,6 @@ from backend.app.services.land import OWNED
 from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE
 from backend.main import app
 from backend.tests.db import make_test_session
-
 
 TEST_DATABASE_URL = os.getenv("CITY_TEST_DATABASE_URL")
 os.environ["CITY_SKIP_DB_INIT"] = "true"

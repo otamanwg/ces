@@ -17,10 +17,15 @@ from backend.app.services.needs import DAY_HUNGER_INCREASE, SLEEP_HUNGER_INCREAS
 
 def _active_money_supply(db: Session, city_id) -> Decimal:
     players_balance = db.query(func.sum(Player.balance)).filter(Player.city_id == city_id).scalar() or 0
-    businesses_balance = db.query(func.sum(Business.cash_balance)).filter(
-        Business.city_id == city_id,
-        Business.owner_player_id.isnot(None),
-    ).scalar() or 0
+    businesses_balance = (
+        db.query(func.sum(Business.cash_balance))
+        .filter(
+            Business.city_id == city_id,
+            Business.owner_player_id.isnot(None),
+        )
+        .scalar()
+        or 0
+    )
     return money(players_balance) + money(businesses_balance)
 
 
@@ -37,13 +42,20 @@ def process_shift_work(db: Session, player_id: str) -> dict:
 
     # Перевірка на активний страйк профспілки
     from backend.app.models import LaborUnion
+
     union = db.query(LaborUnion).filter(LaborUnion.business_id == job.business_id).first()
     if union and union.strike_active:
-        return {"success": False, "message": f"❌ СТРАЙК! Профспілка підприємства '{job.business.name}' оголосила страйк. Робочі зміни заблоковано."}
+        return {
+            "success": False,
+            "message": f"❌ СТРАЙК! Профспілка підприємства '{job.business.name}' оголосила страйк. Робочі зміни заблоковано.",
+        }
 
     # Перевірка ліміту енергії
     if player.energy < job.energy_cost_per_shift:
-        return {"success": False, "message": f"Недостатньо енергії! Необхідно: {job.energy_cost_per_shift}, у вас: {player.energy}. Спочатку відпочиньте."}
+        return {
+            "success": False,
+            "message": f"Недостатньо енергії! Необхідно: {job.energy_cost_per_shift}, у вас: {player.energy}. Спочатку відпочиньте.",
+        }
 
     city = db.query(City).filter(City.id == player.city_id).first()
     business = db.query(Business).filter(Business.id == job.business_id).first()
@@ -51,7 +63,7 @@ def process_shift_work(db: Session, player_id: str) -> dict:
     # Розрахунок ЗП
     hours = 8
     gross_salary = money(job.salary_per_hour) * hours
-    
+
     # Розрахунок податку
     income_tax_rate = money(city.tax_rate_income) / Decimal("100.00")
     tax_amount = gross_salary * income_tax_rate
@@ -61,10 +73,10 @@ def process_shift_work(db: Session, player_id: str) -> dict:
     player.energy -= job.energy_cost_per_shift
     increase_hunger(player, WORK_HUNGER_INCREASE)
     credit(db, player, "balance", net_salary)
-    
+
     # Зміна балансів казначейства та бізнесу
     credit(db, city, "treasury_balance", tax_amount)
-    
+
     # Зарплата виплачується з балансу бізнесу (якщо це приватний) або казначейства (державний)
     if business.owner_player_id is None:  # Комунальне/державне підприємство
         debit(db, city, "treasury_balance", gross_salary)
@@ -75,11 +87,15 @@ def process_shift_work(db: Session, player_id: str) -> dict:
     salary_sender_id = city.id if business.owner_player_id is None else business.id
     salary_sender_type = "treasury" if business.owner_player_id is None else "business"
     log_transaction(
-        db, city.id, 
-        sender_id=salary_sender_id, sender_type=salary_sender_type,
-        receiver_id=player.id, receiver_type="player",
-        amount=float(net_salary), tax=float(tax_amount),
-        purpose="salary"
+        db,
+        city.id,
+        sender_id=salary_sender_id,
+        sender_type=salary_sender_type,
+        receiver_id=player.id,
+        receiver_type="player",
+        amount=float(net_salary),
+        tax=float(tax_amount),
+        purpose="salary",
     )
 
     db.commit()
@@ -92,10 +108,9 @@ def process_shift_work(db: Session, player_id: str) -> dict:
             "energy": player.energy,
             "hunger": player.hunger,
         },
-        city={
-            "treasury_balance": float(city.treasury_balance)
-        },
+        city={"treasury_balance": float(city.treasury_balance)},
     ).model_dump()
+
 
 def process_rent_payment(db: Session, player_id: str) -> dict:
     """Нічний сон гравця: одноразова оплата оренди та відновлення енергії/настрою."""
@@ -116,10 +131,10 @@ def process_rent_payment(db: Session, player_id: str) -> dict:
     # Перевірка наявності коштів
     if money(player.balance) >= rent_price:
         debit(db, player, "balance", rent_price)
-        player.energy = min(100, player.energy + (hostel.energy_regen_per_hour * 8)) # 8 годин сну
+        player.energy = min(100, player.energy + (hostel.energy_regen_per_hour * 8))  # 8 годин сну
         player.mood = min(100, player.mood + 15)
         increase_hunger(player, SLEEP_HUNGER_INCREASE)
-        
+
         # Гроші за оренду йдуть власнику хостелу (приватний бізнес або Скарбниця міста)
         if business.owner_player_id is None:
             credit(db, city, "treasury_balance", rent_price)
@@ -127,12 +142,15 @@ def process_rent_payment(db: Session, player_id: str) -> dict:
             credit(db, business, "cash_balance", rent_price)
 
         log_transaction(
-            db, city.id,
-            sender_id=player.id, sender_type="player",
+            db,
+            city.id,
+            sender_id=player.id,
+            sender_type="player",
             receiver_id=city.id if business.owner_player_id is None else business.id,
             receiver_type="treasury" if business.owner_player_id is None else "business",
-            amount=float(rent_price), tax=0.0,
-            purpose="rent"
+            amount=float(rent_price),
+            tax=0.0,
+            purpose="rent",
         )
         message = f"Сплачено {rent_price:.2f} ₴ за оренду хостелу. Ви чудово виспались!"
     else:
@@ -154,6 +172,7 @@ def process_rent_payment(db: Session, player_id: str) -> dict:
         },
     ).model_dump()
 
+
 def update_inflation_rate(db: Session, city_id: str) -> float:
     """Автоматичний прорахунок активної грошової маси та інфляції"""
     city_uuid = to_uuid(city_id)
@@ -164,17 +183,19 @@ def update_inflation_rate(db: Session, city_id: str) -> float:
     # Грошова маса у гравців
     players_balance = db.query(func.sum(Player.balance)).filter(Player.city_id == city_uuid).scalar() or 0.0
     # Грошова маса в приватному бізнесі
-    businesses_balance = db.query(func.sum(Business.cash_balance)).filter(
-        Business.city_id == city_uuid, 
-        Business.owner_player_id.isnot(None)
-    ).scalar() or 0.0
+    businesses_balance = (
+        db.query(func.sum(Business.cash_balance))
+        .filter(Business.city_id == city_uuid, Business.owner_player_id.isnot(None))
+        .scalar()
+        or 0.0
+    )
 
     active_money = float(players_balance) + float(businesses_balance)
-    
+
     # Базове цільове зростання (наприклад, 500 ₴ на кожного гравця)
     num_players = db.query(func.count(Player.id)).filter(Player.city_id == city_uuid).scalar() or 1
     target_circulation = num_players * 600.00
-    
+
     if active_money > target_circulation:
         growth = (active_money - target_circulation) / target_circulation
         city.inflation_rate = money(round(growth * 100, 2))
@@ -194,9 +215,10 @@ def game_day_tick(db: Session, city_id: str) -> dict:
 
     # Очищення застарілих записів ідемпотентності (старших за 1 день)
     from backend.app.models import IdempotencyRecord
-    db.query(IdempotencyRecord).filter(
-        IdempotencyRecord.created_at < func.now() - text("INTERVAL '1 day'")
-    ).delete(synchronize_session=False)
+
+    db.query(IdempotencyRecord).filter(IdempotencyRecord.created_at < func.now() - text("INTERVAL '1 day'")).delete(
+        synchronize_session=False
+    )
 
     active_before = _active_money_supply(db, city_uuid)
     players_updated = 0

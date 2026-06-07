@@ -3,7 +3,6 @@ from decimal import Decimal
 
 from backend.app.models import CityDistrict
 
-
 APPROVED = "approved"
 REVISION_REQUIRED = "revision_required"
 

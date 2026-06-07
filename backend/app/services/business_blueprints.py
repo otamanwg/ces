@@ -270,10 +270,7 @@ STARTER_BUSINESS_BLUEPRINTS: tuple[StarterBusinessBlueprint, ...] = (
 
 
 def ensure_business_blueprints(db: Session) -> None:
-    existing_by_code = {
-        blueprint.code: blueprint
-        for blueprint in db.query(BusinessBlueprint).all()
-    }
+    existing_by_code = {blueprint.code: blueprint for blueprint in db.query(BusinessBlueprint).all()}
 
     for starter in STARTER_BUSINESS_BLUEPRINTS:
         data = _starter_to_model_data(starter)

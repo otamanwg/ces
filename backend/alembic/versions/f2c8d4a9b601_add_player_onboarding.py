@@ -10,7 +10,6 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
-
 revision: str = "f2c8d4a9b601"
 down_revision: Union[str, None] = "e7a4d9c2b8f1"
 branch_labels: Union[str, Sequence[str], None] = None
@@ -30,8 +29,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["player_id"], ["players.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("player_id"),
     )
-    op.execute(
-        """
+    op.execute("""
         INSERT INTO player_onboarding (
             player_id,
             stage,
@@ -40,8 +38,7 @@ def upgrade() -> None:
         )
         SELECT id, 'completed', 'not_filed', now()
         FROM players
-        """
-    )
+        """)
 
 
 def downgrade() -> None:

@@ -70,9 +70,11 @@ def get_sports_clubs(db: Session = Depends(get_db)):
                 "id": str(c.id),
                 "name": c.name,
                 "sport_type": c.sport_type,
-                "owner": db.query(Player).filter(Player.id == c.owner_player_id).first().username
-                if c.owner_player_id
-                else "ШІ-Управління",
+                "owner": (
+                    db.query(Player).filter(Player.id == c.owner_player_id).first().username
+                    if c.owner_player_id
+                    else "ШІ-Управління"
+                ),
                 "cash_balance": float(c.cash_balance),
                 "stadium_capacity": c.stadium_capacity,
                 "ticket_price": float(c.ticket_price),

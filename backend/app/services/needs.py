@@ -1,11 +1,12 @@
 from sqlalchemy.orm import Session
 
 from backend.app.models import City, Player
+from backend.app.repositories.city import CityRepository
+from backend.app.repositories.player import PlayerRepository
 from backend.app.schemas.service_results import MealPurchaseServiceResult
 from backend.app.services.ids import to_uuid
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
-
 
 MEAL_COST = money("25.00")
 MEAL_HUNGER_REDUCTION = 35
@@ -29,7 +30,7 @@ def decrease_hunger(player: Player, amount: int) -> None:
 
 def process_meal_purchase(db: Session, player_id: str) -> dict:
     player_uuid = to_uuid(player_id)
-    player = db.query(Player).filter(Player.id == player_uuid).with_for_update().first()
+    player = PlayerRepository(db).get_by_id_for_update(player_uuid)
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
 
@@ -39,7 +40,7 @@ def process_meal_purchase(db: Session, player_id: str) -> dict:
     if money(player.balance) < MEAL_COST:
         return {"success": False, "message": f"Недостатньо коштів на їжу! Потрібно: {MEAL_COST:.2f} ₴."}
 
-    city = db.query(City).filter(City.id == player.city_id).first()
+    city = CityRepository(db).get_by_id(player.city_id)
     if not city:
         return {"success": False, "message": "Місто не знайдено"}
 

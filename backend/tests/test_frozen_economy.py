@@ -34,7 +34,6 @@ from backend.app.services.economy import process_shift_work
 from backend.app.services.education import purchase_fake_diploma, run_police_audit
 from backend.tests.db import make_test_session
 
-
 TEST_DATABASE_URL = os.getenv("CITY_TEST_DATABASE_URL")
 
 pytestmark = pytest.mark.skipif(
@@ -73,7 +72,9 @@ def test_fake_diploma_purchase_and_audit_do_not_create_treasury_money():
         assert player.diploma_verified is False
         assert db.query(PoliceRecord).filter(PoliceRecord.player_id == player.id).count() == 1
 
-        purchase_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "fake_diploma_purchase").one()
+        purchase_log = (
+            db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "fake_diploma_purchase").one()
+        )
         assert purchase_log.sender_id == player.id
         assert purchase_log.sender_type == "player"
         assert purchase_log.receiver_id == city.id
@@ -131,7 +132,9 @@ def test_insurance_policy_moves_premium_from_player_to_provider():
         assert Decimal(str(provider.cash_balance)) == starting_provider_cash + Decimal("75.00")
         assert db.query(InsurancePolicy).filter(InsurancePolicy.player_id == player.id).count() == 1
 
-        premium_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "insurance_premium_initial").one()
+        premium_log = (
+            db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "insurance_premium_initial").one()
+        )
         assert premium_log.sender_id == player.id
         assert premium_log.sender_type == "player"
         assert premium_log.receiver_id == provider.id
@@ -205,7 +208,9 @@ def test_loan_installments_and_collector_seizure_transfer_available_money_to_tre
 
         repayment_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "loan_repayment").one()
         assert repayment_log.amount == Decimal("80.00")
-        seizure_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "collector_debt_seizure").one()
+        seizure_log = (
+            db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "collector_debt_seizure").one()
+        )
         assert seizure_log.amount == Decimal("20.00")
     finally:
         db.close()

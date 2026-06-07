@@ -8,7 +8,6 @@ from backend.app.models import Hostel, Player, PlayerOnboarding, PoliceRecord
 from backend.app.services.ledger import credit, log_transaction
 from backend.app.services.money import money
 
-
 ARRIVAL_CHOICE = "arrival_choice"
 HOUSING_SEARCH = "housing_search"
 COMPLETED = "completed"
@@ -114,9 +113,7 @@ def build_onboarding_snapshot(
         "available_choices": choices,
         "police_report_status": onboarding.police_report_status,
         "police_recovery_amount": (
-            float(onboarding.police_recovery_amount)
-            if onboarding.police_recovery_amount is not None
-            else None
+            float(onboarding.police_recovery_amount) if onboarding.police_recovery_amount is not None else None
         ),
         "police_recovery_available_at": (
             onboarding.police_recovery_available_at.isoformat()

@@ -8,7 +8,6 @@ from backend.app.seed import seed_initial_data
 from backend.app.services.city_news import build_city_news, build_day_tick_news
 from backend.tests.db import make_test_session
 
-
 TEST_DATABASE_URL = os.getenv("CITY_TEST_DATABASE_URL")
 
 pytestmark = pytest.mark.skipif(

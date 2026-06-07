@@ -22,7 +22,7 @@ func _init_tools() -> void:
 	if _initialized:
 		return
 	_initialized = true
-	
+
 	_file_tools = preload("res://addons/godot_mcp/tools/file_tools.gd").new()
 	_file_tools.name = "FileTools"
 	add_child(_file_tools)
@@ -103,10 +103,10 @@ func _init_tools() -> void:
 
 func set_editor_plugin(plugin: EditorPlugin) -> void:
 	_editor_plugin = plugin
-	
+
 	# Initialize tools first (must be done synchronously)
 	_init_tools()
-	
+
 	# Pass editor plugin reference to all tool handlers
 	if _file_tools: _file_tools.set_editor_plugin(plugin)
 	if _scene_tools: _scene_tools.set_editor_plugin(plugin)
@@ -120,7 +120,7 @@ func set_editor_plugin(plugin: EditorPlugin) -> void:
 
 func execute_tool(tool_name: String, args: Dictionary) -> Dictionary:
 	"""Execute a tool by name with the given arguments."""
-	
+
 	# Handle internal visualizer commands (not exposed as MCP tools)
 	if tool_name.begins_with("visualizer._internal_"):
 		var method: String = tool_name.replace("visualizer.", "")
@@ -128,7 +128,7 @@ func execute_tool(tool_name: String, args: Dictionary) -> Dictionary:
 			return _visualizer_tools.call(method, args)
 		else:
 			return {&"ok": false, &"error": "Internal method not found: " + method}
-	
+
 	if not _tool_map.has(tool_name):
 		return {
 			&"ok": false,

@@ -24,6 +24,7 @@ def money(value) -> Decimal:
 GYM_COST = money("40.00")
 GYM_ENERGY_COST = 40
 
+
 def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
     """Тренування у Спортзалі (Витрачає енергію та гроші, прокачує силу/витривалість)"""
     player_uuid = to_uuid(player_id)
@@ -49,7 +50,7 @@ def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
     # Списання ресурсів
     debit(db, player, "balance", GYM_COST)
     player.energy -= GYM_ENERGY_COST
-    
+
     # Гроші за спортзал йдуть у міську скарбницю (або власнику спортзалу)
     city = db.query(City).filter(City.id == player.city_id).first()
     credit(db, city, "treasury_balance", GYM_COST)
@@ -79,15 +80,10 @@ def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
     return SportsTrainServiceResult(
         success=True,
         message=message,
-        player={
-            "balance": float(player.balance),
-            "energy": player.energy
-        },
-        stats={
-            "strength": contract.strength_stat,
-            "stamina": contract.stamina_stat
-        },
+        player={"balance": float(player.balance), "energy": player.energy},
+        stats={"strength": contract.strength_stat, "stamina": contract.stamina_stat},
     ).model_dump()
+
 
 def sign_athlete_contract(db: Session, player_id: str, club_id: str, salary: float) -> dict:
     """Підписання контракту спортсмена з клубом"""
@@ -102,7 +98,10 @@ def sign_athlete_contract(db: Session, player_id: str, club_id: str, salary: flo
     # Перевірка наявності чинного контракту
     existing = db.query(PlayerAthleteContract).filter(PlayerAthleteContract.player_id == player_uuid).first()
     if existing:
-        return {"success": False, "message": "У вас вже є чинний спортивний контракт! Розірвіть старий контракт спочатку."}
+        return {
+            "success": False,
+            "message": "У вас вже є чинний спортивний контракт! Розірвіть старий контракт спочатку.",
+        }
 
     # Підписання
     contract = PlayerAthleteContract(
@@ -112,7 +111,7 @@ def sign_athlete_contract(db: Session, player_id: str, club_id: str, salary: flo
         role="player",
         contract_status="active",
         strength_stat=10,
-        stamina_stat=10
+        stamina_stat=10,
     )
     db.add(contract)
     db.commit()
@@ -121,6 +120,7 @@ def sign_athlete_contract(db: Session, player_id: str, club_id: str, salary: flo
         success=True,
         message=f"Вітаємо! Ви стали професійним атлетом клубу '{club.name}' із зарплатою {salary:.2f} ₴ за матч!",
     ).model_dump()
+
 
 def simulate_league_matches(db: Session, city_id: str) -> list:
     """Симуляція матчів ліги міста (ШІ-симуляція на основі сили команд)"""
@@ -134,7 +134,7 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
         ]
 
     results = []
-    
+
     # Проста кругова система: кожен грає з кожним (парами)
     for i in range(len(clubs)):
         for j in range(i + 1, len(clubs)):
@@ -143,17 +143,19 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
 
             # Розрахунок сили команди А
             # Сила = Базова ефективність клубу + сума статсів усіх залучених реальних гравців
-            contracts_a = db.query(PlayerAthleteContract).filter(
-                PlayerAthleteContract.club_id == club_a.id,
-                PlayerAthleteContract.contract_status == "active"
-            ).all()
+            contracts_a = (
+                db.query(PlayerAthleteContract)
+                .filter(PlayerAthleteContract.club_id == club_a.id, PlayerAthleteContract.contract_status == "active")
+                .all()
+            )
             strength_a = 50 + sum(c.strength_stat + c.stamina_stat for c in contracts_a)
 
             # Розрахунок сили команди Б
-            contracts_b = db.query(PlayerAthleteContract).filter(
-                PlayerAthleteContract.club_id == club_b.id,
-                PlayerAthleteContract.contract_status == "active"
-            ).all()
+            contracts_b = (
+                db.query(PlayerAthleteContract)
+                .filter(PlayerAthleteContract.club_id == club_b.id, PlayerAthleteContract.contract_status == "active")
+                .all()
+            )
             strength_b = 50 + sum(c.strength_stat + c.stamina_stat for c in contracts_b)
 
             # Симуляція матчу на основі шансів
@@ -186,7 +188,7 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
             fill_rate = min(1.0, 0.4 + (winner.league_points * 0.05))
             tickets_sold = int(winner.stadium_capacity * fill_rate)
             revenue = money(tickets_sold) * money(winner.ticket_price)
-            
+
             # Нарахування прибутку на рахунок клубу
             credit(db, winner, "cash_balance", revenue)
             log_transaction(
@@ -203,7 +205,12 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
 
             # ВИПЛАТА ЗАРПЛАТ АТЛЕТАМ:
             # Зарплати виплачуються з бюджету клубу
-            winner_contracts = db.query(PlayerAthleteContract).options(joinedload(PlayerAthleteContract.player)).filter(PlayerAthleteContract.club_id == winner.id).all()
+            winner_contracts = (
+                db.query(PlayerAthleteContract)
+                .options(joinedload(PlayerAthleteContract.player))
+                .filter(PlayerAthleteContract.club_id == winner.id)
+                .all()
+            )
             for c in winner_contracts:
                 p = c.player
                 salary = money(c.salary_per_match)
@@ -211,11 +218,15 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
                 debit(db, winner, "cash_balance", salary)
 
                 log_transaction(
-                    db, city_id,
-                    sender_id=winner.id, sender_type="business",
-                    receiver_id=p.id, receiver_type="player",
-                    amount=float(salary), tax=0.0,
-                    purpose="athlete_match_salary"
+                    db,
+                    city_id,
+                    sender_id=winner.id,
+                    sender_type="business",
+                    receiver_id=p.id,
+                    receiver_type="player",
+                    amount=float(salary),
+                    tax=0.0,
+                    purpose="athlete_match_salary",
                 )
 
     db.commit()

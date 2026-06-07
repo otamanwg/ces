@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 
 from backend.app.models import Business, City, Hostel, Player
+from backend.app.repositories.business import BusinessRepository
+from backend.app.repositories.player import PlayerRepository
 from backend.app.schemas.mvp import CityNewsItem
 
 
@@ -31,14 +33,9 @@ def build_city_news(db: Session, city: City, max_items: int = 4) -> list[dict]:
         )
         .count()
     )
-    owned_count = db.query(Business).filter(Business.city_id == city.id, Business.owner_player_id.isnot(None)).count()
-    hungry_count = db.query(Player).filter(Player.city_id == city.id, Player.hunger >= 70).count()
-    homeless_count = (
-        db.query(Player)
-        .outerjoin(Hostel, Hostel.tenant_player_id == Player.id)
-        .filter(Player.city_id == city.id, Hostel.id.is_(None))
-        .count()
-    )
+    owned_count = BusinessRepository(db).count_owned_in_city(city.id)
+    hungry_count = PlayerRepository(db).count_hungry_in_city(city.id)
+    homeless_count = PlayerRepository(db).count_homeless_in_city(city.id)
 
     news: list[dict] = []
     if buyable_count:

@@ -5,7 +5,6 @@ from backend.app.models import Business, City, Hostel, Job, SportsClub
 from backend.app.services.business_blueprints import ensure_business_blueprints
 from backend.app.services.land import ensure_starter_land_parcels
 
-
 logger = logging.getLogger("CityServer")
 
 

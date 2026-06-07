@@ -3,6 +3,7 @@ import secrets
 from sqlalchemy.orm import Session
 
 from backend.app.models import Player
+from backend.app.repositories.player import PlayerRepository
 from backend.app.services.ids import try_uuid
 
 
@@ -17,8 +18,4 @@ def get_authorized_player(db: Session, player_id: str, player_token: str | None)
     if player_uuid is None:
         return None
 
-    return (
-        db.query(Player)
-        .filter(Player.id == player_uuid, Player.auth_token == player_token)
-        .first()
-    )
+    return PlayerRepository(db).get_by_auth_token(player_uuid, player_token)

@@ -3,11 +3,11 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from backend.app.models import Business, City, Player
+from backend.app.repositories.business import BusinessRepository
 from backend.app.schemas.service_results import BusinessDividendServiceResult, BusinessPurchaseServiceResult
 from backend.app.services.ids import to_uuid
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
-
 
 BUSINESS_PURCHASE_PRICES = {
     "shop": money("1200.00"),
@@ -36,7 +36,7 @@ def get_buyable_businesses(db: Session) -> list[Business]:
 
 
 def get_owned_businesses(db: Session, player_id) -> list[Business]:
-    return db.query(Business).filter(Business.owner_player_id == player_id).order_by(Business.name).all()
+    return BusinessRepository(db).get_by_owner(player_id)
 
 
 def cheapest_business_price(db: Session) -> Decimal | None:
@@ -119,7 +119,10 @@ def process_business_dividend_collection(db: Session, player_id: str, business_i
 
     dividend = (money(business.cash_balance) * DIVIDEND_RATE).quantize(money("0.01"))
     if dividend < MIN_DIVIDEND_AMOUNT:
-        return {"success": False, "message": f"У бізнесу замало вільної каси для дивідендів. Мінімум: {MIN_DIVIDEND_AMOUNT:.2f} ₴."}
+        return {
+            "success": False,
+            "message": f"У бізнесу замало вільної каси для дивідендів. Мінімум: {MIN_DIVIDEND_AMOUNT:.2f} ₴.",
+        }
 
     debit(db, business, "cash_balance", dividend)
     credit(db, player, "balance", dividend)

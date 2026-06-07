@@ -10,7 +10,6 @@ from backend.app.services.ids import to_uuid
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
 
-
 CITY_OWNED = "city_owned"
 OWNED = "owned"
 
@@ -88,15 +87,9 @@ def ensure_starter_land_parcels(db: Session, city: City) -> None:
     ensure_starter_districts(db, city)
     db.flush()
     district_by_code = {
-        district.code: district
-        for district in db.query(CityDistrict).filter(CityDistrict.city_id == city.id).all()
+        district.code: district for district in db.query(CityDistrict).filter(CityDistrict.city_id == city.id).all()
     }
-    existing_codes = {
-        row[0]
-        for row in db.query(LandParcel.code)
-        .filter(LandParcel.city_id == city.id)
-        .all()
-    }
+    existing_codes = {row[0] for row in db.query(LandParcel.code).filter(LandParcel.city_id == city.id).all()}
     missing_parcels = [parcel for parcel in STARTER_LAND_PARCELS if parcel.code not in existing_codes]
     if not missing_parcels:
         return
@@ -191,11 +184,7 @@ def calculate_player_city_land_share_pct(db: Session, city_id: UUID, player_id: 
         return Decimal("0.00")
 
     owned_area = sum(
-        (
-            Decimal(str(parcel.area_hectares))
-            for parcel in all_parcels
-            if parcel.owner_player_id == player_id
-        ),
+        (Decimal(str(parcel.area_hectares)) for parcel in all_parcels if parcel.owner_player_id == player_id),
         Decimal("0.00"),
     )
     return (owned_area / total_area * Decimal("100.00")).quantize(Decimal("0.01"))

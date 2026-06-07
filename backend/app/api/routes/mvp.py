@@ -731,10 +731,7 @@ def get_player_buildings(
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
 
     data = BuildingPortfolioData(
-        buildings=[
-            building_portfolio_item(building)
-            for building in get_player_building_portfolio(db, player)
-        ]
+        buildings=[building_portfolio_item(building) for building in get_player_building_portfolio(db, player)]
     )
     return api_success("Будівлі гравця.", data.model_dump())
 
@@ -1098,10 +1095,7 @@ def get_exam_details():
         passing_score=exam["passing_score"],
         time_limit_seconds=exam["time_limit_seconds"],
         description=exam["description"],
-        questions=[
-            ExamQuestionData(id=q["id"], text=q["text"], options=q["options"])
-            for q in exam["questions"]
-        ],
+        questions=[ExamQuestionData(id=q["id"], text=q["text"], options=q["options"]) for q in exam["questions"]],
     )
     return api_success("Інформація про іспит.", clean_exam.model_dump())
 

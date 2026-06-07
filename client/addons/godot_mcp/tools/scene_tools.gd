@@ -475,7 +475,7 @@ func duplicate_node(args: Dictionary) -> Dictionary:
 		return {&"ok": false, &"error": "Cannot duplicate - no parent"}
 
 	var duplicate = target.duplicate()
-	
+
 	if new_name.is_empty():
 		var base_name = target.name
 		var counter = 2
@@ -483,12 +483,12 @@ func duplicate_node(args: Dictionary) -> Dictionary:
 		while parent.has_node(NodePath(new_name)):
 			counter += 1
 			new_name = base_name + str(counter)
-	
+
 	duplicate.name = new_name
 	parent.add_child(duplicate)
-	
+
 	_set_owner_recursive(duplicate, root)
-	
+
 	var original_index = target.get_index()
 	parent.move_child(duplicate, original_index + 1)
 
@@ -537,7 +537,7 @@ func reorder_node(args: Dictionary) -> Dictionary:
 	var old_index = target.get_index()
 	var max_index = parent.get_child_count() - 1
 	new_index = clampi(new_index, 0, max_index)
-	
+
 	if old_index == new_index:
 		root.queue_free()
 		return {&"ok": true, &"message": "No change needed"}

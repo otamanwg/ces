@@ -13,7 +13,6 @@ from backend.app.services.player_progress import build_goal_effects
 from backend.app.services.sports import GYM_COST, GYM_ENERGY_COST, sign_athlete_contract
 from backend.tests.db import make_test_session
 
-
 TEST_DATABASE_URL = os.getenv("CITY_TEST_DATABASE_URL")
 
 pytestmark = pytest.mark.skipif(

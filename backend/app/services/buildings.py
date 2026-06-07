@@ -6,7 +6,6 @@ from backend.app.models import Business, Building, BuildingApplication, City, Pl
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
 
-
 BUILT = "built"
 INACTIVE = "inactive"
 ACTIVE = "active"
@@ -32,10 +31,7 @@ BUILDING_OPENING_FEES = {
 
 def activate_building_application(db: Session, player: Player, application_id: UUID) -> dict:
     application = (
-        db.query(BuildingApplication)
-        .filter(BuildingApplication.id == application_id)
-        .with_for_update()
-        .first()
+        db.query(BuildingApplication).filter(BuildingApplication.id == application_id).with_for_update().first()
     )
     if not application or application.city_id != player.city_id:
         return {"success": False, "message": "Будівельну заявку не знайдено."}
@@ -55,10 +51,7 @@ def activate_building_application(db: Session, player: Player, application_id: U
 
     existing_building = (
         db.query(Building)
-        .filter(
-            (Building.land_parcel_id == parcel.id)
-            | (Building.source_application_id == application.id)
-        )
+        .filter((Building.land_parcel_id == parcel.id) | (Building.source_application_id == application.id))
         .first()
     )
     if existing_building:
@@ -97,7 +90,9 @@ def get_building_opening_fee(building: Building):
 
 def get_building_repair_fee(building: Building):
     if building.business_blueprint:
-        return max(money(building.business_blueprint.upkeep_daily) * BUILDING_REPAIR_UPKEEP_MULTIPLIER, MIN_BUILDING_REPAIR_FEE)
+        return max(
+            money(building.business_blueprint.upkeep_daily) * BUILDING_REPAIR_UPKEEP_MULTIPLIER, MIN_BUILDING_REPAIR_FEE
+        )
     return money("50.00")
 
 

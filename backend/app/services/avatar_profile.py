@@ -2,7 +2,6 @@ from sqlalchemy.orm import Session
 
 from backend.app.models import Player, PlayerAvatar
 
-
 BODY_PRESET_CODES = ("body_standard", "body_sturdy")
 FACE_PRESET_CODES = tuple(f"face_{index:02d}" for index in range(1, 21))
 SKIN_TONE_CODES = tuple(f"skin_{index:02d}" for index in range(1, 7))

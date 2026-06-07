@@ -3,6 +3,7 @@ import uuid
 from sqlalchemy.orm import Session
 
 from backend.app.models import Job
+from backend.app.repositories.job import JobRepository
 
 
 def education_rank(value: str) -> int:
@@ -10,23 +11,19 @@ def education_rank(value: str) -> int:
 
 
 def get_job(db: Session, job_id: uuid.UUID) -> Job | None:
-    return db.query(Job).filter(Job.id == job_id).first()
+    return JobRepository(db).get_by_id(job_id)
 
 
 def get_vacant_jobs(db: Session) -> list[Job]:
-    return db.query(Job).filter(Job.filled_by_player_id.is_(None)).all()
+    return JobRepository(db).get_vacant()
 
 
 def get_active_job(db: Session, player_id: uuid.UUID) -> Job | None:
-    return db.query(Job).filter(Job.filled_by_player_id == player_id).first()
+    return JobRepository(db).get_active_for_player(player_id)
 
 
 def get_first_vacant_job_by_min_education(db: Session, min_education: str) -> Job | None:
-    return (
-        db.query(Job)
-        .filter(Job.min_education == min_education, Job.filled_by_player_id.is_(None))
-        .first()
-    )
+    return JobRepository(db).get_first_vacant_by_min_education(min_education)
 
 
 def has_eligible_vacancy(db: Session, education_level: str) -> bool:

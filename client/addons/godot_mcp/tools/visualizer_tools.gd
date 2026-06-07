@@ -144,11 +144,11 @@ func _parse_script(path: String) -> Dictionary:
 	# Match: obj.signal.connect(...) pattern (Godot 4 style)
 	var re_connect_obj := RegEx.new()
 	re_connect_obj.compile("(\\w+)\\.(\\w+)\\.connect\\s*\\(")
-	
+
 	# Match: signal.connect(...) pattern (direct signal)
 	var re_connect_direct := RegEx.new()
 	re_connect_direct.compile("^\\s*(\\w+)\\.connect\\s*\\(")
-	
+
 	# Map of variable names to their types (for resolving signal connections)
 	var var_type_map: Dictionary = {}
 
@@ -194,7 +194,7 @@ func _parse_script(path: String) -> Dictionary:
 				# Try to infer type from default value if no explicit type
 				if var_type.is_empty() and not default_val.is_empty():
 					var_type = _infer_type(default_val)
-				
+
 				# Track variable types for signal connection resolution
 				if not var_type.is_empty():
 					var_type_map[var_name] = var_type
@@ -420,21 +420,21 @@ func _parse_scene(path: String) -> Dictionary:
 	# Parse .tscn format
 	var lines: PackedStringArray = content.split("\n")
 	var current_node: Dictionary = {}
-	
+
 	var re_ext_resource := RegEx.new()
 	re_ext_resource.compile('\\[ext_resource.*path="([^"]+)".*type="([^"]+)"')
-	
+
 	var re_node := RegEx.new()
 	re_node.compile('\\[node name="([^"]+)".*type="([^"]+)"')
-	
+
 	var re_node_instance := RegEx.new()
 	re_node_instance.compile('\\[node name="([^"]+)".*instance=ExtResource\\("([^"]+)"\\)')
-	
+
 	var re_script := RegEx.new()
 	re_script.compile('script = ExtResource\\("([^"]+)"\\)')
 
 	var ext_resources: Dictionary = {}  # id -> {path, type}
-	
+
 	for line: String in lines:
 		# External resources
 		var m_ext := re_ext_resource.search(line)
@@ -498,27 +498,27 @@ func _internal_create_script_file(args: Dictionary) -> Dictionary:
 	var script_path: String = args.get(&"path", "")
 	var extends_type: String = args.get(&"extends", "Node")
 	var class_name_str: String = args.get(&"class_name", "")
-	
+
 	if script_path.is_empty():
 		return {&"ok": false, &"error": "No path provided"}
-	
+
 	if not script_path.begins_with("res://"):
 		script_path = "res://" + script_path
-	
+
 	if not script_path.ends_with(".gd"):
 		script_path += ".gd"
-	
+
 	# Check if file already exists
 	if FileAccess.file_exists(script_path):
 		return {&"ok": false, &"error": "File already exists: " + script_path}
-	
+
 	# Create directory if needed
 	var dir_path: String = script_path.get_base_dir()
 	if not DirAccess.dir_exists_absolute(dir_path):
 		var err := DirAccess.make_dir_recursive_absolute(dir_path)
 		if err != OK:
 			return {&"ok": false, &"error": "Failed to create directory"}
-	
+
 	# Build script content
 	var content := ""
 	if not class_name_str.is_empty():
@@ -527,15 +527,15 @@ func _internal_create_script_file(args: Dictionary) -> Dictionary:
 	content += "\n\n"
 	content += "func _ready() -> void:\n"
 	content += "\tpass\n"
-	
+
 	# Write file
 	var file := FileAccess.open(script_path, FileAccess.WRITE)
 	if file == null:
 		return {&"ok": false, &"error": "Cannot create file: " + script_path}
-	
+
 	file.store_string(content)
 	file.close()
-	
+
 	return {&"ok": true, &"path": script_path}
 
 
@@ -549,20 +549,20 @@ func _internal_modify_variable(args: Dictionary) -> Dictionary:
 	var default_val: String = args.get(&"default", "")
 	var exported: bool = args.get(&"exported", false)
 	var onready: bool = args.get(&"onready", false)
-	
+
 	if script_path.is_empty():
 		return {&"ok": false, &"error": "No script path provided"}
-	
+
 	var file := FileAccess.open(script_path, FileAccess.READ)
 	if file == null:
 		return {&"ok": false, &"error": "Cannot open file: " + script_path}
-	
+
 	var content: String = file.get_as_text()
 	file.close()
-	
+
 	var lines: Array = Array(content.split("\n"))
 	var modified := false
-	
+
 	if action == "delete":
 		# Find and remove the variable declaration
 		var pattern := RegEx.new()
@@ -572,7 +572,7 @@ func _internal_modify_variable(args: Dictionary) -> Dictionary:
 				lines.remove_at(i)
 				modified = true
 				break
-	
+
 	elif action == "update":
 		# Find and update the variable declaration
 		var pattern := RegEx.new()
@@ -585,14 +585,14 @@ func _internal_modify_variable(args: Dictionary) -> Dictionary:
 				lines[i] = new_line
 				modified = true
 				break
-	
+
 	elif action == "add":
 		# Find position to insert (after last variable, before first function)
 		var insert_pos := _find_var_insert_position(lines, exported)
 		var new_line := _build_var_line(new_name, var_type, default_val, exported, false)
 		lines.insert(insert_pos, new_line)
 		modified = true
-	
+
 	if modified:
 		var new_content := "\n".join(PackedStringArray(lines))
 		var write_file := FileAccess.open(script_path, FileAccess.WRITE)
@@ -601,7 +601,7 @@ func _internal_modify_variable(args: Dictionary) -> Dictionary:
 		write_file.store_string(new_content)
 		write_file.close()
 		return {&"ok": true, &"action": action, &"variable": new_name}
-	
+
 	return {&"ok": false, &"error": "Variable not found: " + old_name}
 
 
@@ -612,20 +612,20 @@ func _internal_modify_signal(args: Dictionary) -> Dictionary:
 	var old_name: String = args.get(&"old_name", "")
 	var new_name: String = args.get(&"name", "")
 	var params: String = args.get(&"params", "")
-	
+
 	if script_path.is_empty():
 		return {&"ok": false, &"error": "No script path provided"}
-	
+
 	var file := FileAccess.open(script_path, FileAccess.READ)
 	if file == null:
 		return {&"ok": false, &"error": "Cannot open file: " + script_path}
-	
+
 	var content: String = file.get_as_text()
 	file.close()
-	
+
 	var lines: Array = Array(content.split("\n"))
 	var modified := false
-	
+
 	if action == "delete":
 		var pattern := RegEx.new()
 		pattern.compile("^signal\\s+" + old_name + "(?:\\s*\\(|$)")
@@ -634,7 +634,7 @@ func _internal_modify_signal(args: Dictionary) -> Dictionary:
 				lines.remove_at(i)
 				modified = true
 				break
-	
+
 	elif action == "update":
 		var pattern := RegEx.new()
 		pattern.compile("^signal\\s+" + old_name + "(?:\\s*\\([^)]*\\))?$")
@@ -646,7 +646,7 @@ func _internal_modify_signal(args: Dictionary) -> Dictionary:
 				lines[i] = new_line
 				modified = true
 				break
-	
+
 	elif action == "add":
 		var insert_pos := _find_signal_insert_position(lines)
 		var new_line := "signal " + new_name
@@ -654,7 +654,7 @@ func _internal_modify_signal(args: Dictionary) -> Dictionary:
 			new_line += "(" + params + ")"
 		lines.insert(insert_pos, new_line)
 		modified = true
-	
+
 	if modified:
 		var new_content := "\n".join(PackedStringArray(lines))
 		var write_file := FileAccess.open(script_path, FileAccess.WRITE)
@@ -663,7 +663,7 @@ func _internal_modify_signal(args: Dictionary) -> Dictionary:
 		write_file.store_string(new_content)
 		write_file.close()
 		return {&"ok": true, &"action": action, &"signal": new_name}
-	
+
 	return {&"ok": false, &"error": "Signal not found: " + old_name}
 
 
@@ -672,26 +672,26 @@ func _internal_modify_function(args: Dictionary) -> Dictionary:
 	var script_path: String = args.get(&"path", "")
 	var func_name: String = args.get(&"name", "")
 	var new_body: String = args.get(&"body", "")
-	
+
 	if script_path.is_empty() or func_name.is_empty():
 		return {&"ok": false, &"error": "Missing path or function name"}
-	
+
 	var file := FileAccess.open(script_path, FileAccess.READ)
 	if file == null:
 		return {&"ok": false, &"error": "Cannot open file: " + script_path}
-	
+
 	var content: String = file.get_as_text()
 	file.close()
-	
+
 	var lines: Array = Array(content.split("\n"))
-	
+
 	# Find the function
 	var re_func := RegEx.new()
 	re_func.compile("^func\\s+" + func_name + "\\s*\\(")
-	
+
 	var func_start := -1
 	var func_end := -1
-	
+
 	for i: int in range(lines.size()):
 		if func_start == -1:
 			if re_func.search(lines[i].strip_edges()):
@@ -702,35 +702,35 @@ func _internal_modify_function(args: Dictionary) -> Dictionary:
 			if not stripped.is_empty() and not lines[i].begins_with("\t") and not lines[i].begins_with(" ") and not stripped.begins_with("#"):
 				func_end = i
 				break
-	
+
 	if func_start == -1:
 		return {&"ok": false, &"error": "Function not found: " + func_name}
-	
+
 	if func_end == -1:
 		func_end = lines.size()
-	
+
 	# Remove trailing empty lines from function body
 	while func_end > func_start + 1 and lines[func_end - 1].strip_edges().is_empty():
 		func_end -= 1
-	
+
 	# Replace function body
 	var new_lines := Array(new_body.split("\n"))
-	
+
 	# Remove old function lines
 	for i: int in range(func_end - 1, func_start - 1, -1):
 		lines.remove_at(i)
-	
+
 	# Insert new function lines
 	for i: int in range(new_lines.size()):
 		lines.insert(func_start + i, new_lines[i])
-	
+
 	var new_content := "\n".join(PackedStringArray(lines))
 	var write_file := FileAccess.open(script_path, FileAccess.WRITE)
 	if write_file == null:
 		return {&"ok": false, &"error": "Cannot write to file: " + script_path}
 	write_file.store_string(new_content)
 	write_file.close()
-	
+
 	return {&"ok": true, &"function": func_name}
 
 
@@ -738,26 +738,26 @@ func _internal_modify_function_delete(args: Dictionary) -> Dictionary:
 	"""Delete a function from a script file."""
 	var script_path: String = args.get(&"path", "")
 	var func_name: String = args.get(&"name", "")
-	
+
 	if script_path.is_empty() or func_name.is_empty():
 		return {&"ok": false, &"error": "Missing path or function name"}
-	
+
 	var file := FileAccess.open(script_path, FileAccess.READ)
 	if file == null:
 		return {&"ok": false, &"error": "Cannot open file: " + script_path}
-	
+
 	var content: String = file.get_as_text()
 	file.close()
-	
+
 	var lines: Array = Array(content.split("\n"))
-	
+
 	# Find the function
 	var re_func := RegEx.new()
 	re_func.compile("^func\\s+" + func_name + "\\s*\\(")
-	
+
 	var func_start := -1
 	var func_end := -1
-	
+
 	for i: int in range(lines.size()):
 		if func_start == -1:
 			if re_func.search(lines[i].strip_edges()):
@@ -768,31 +768,31 @@ func _internal_modify_function_delete(args: Dictionary) -> Dictionary:
 			if not stripped.is_empty() and not lines[i].begins_with("\t") and not lines[i].begins_with(" ") and not stripped.begins_with("#"):
 				func_end = i
 				break
-	
+
 	if func_start == -1:
 		return {&"ok": false, &"error": "Function not found: " + func_name}
-	
+
 	if func_end == -1:
 		func_end = lines.size()
-	
+
 	# Remove trailing empty lines before the function
 	while func_end > func_start + 1 and lines[func_end - 1].strip_edges().is_empty():
 		func_end -= 1
-	
+
 	# Remove the function lines
 	for i: int in range(func_end - 1, func_start - 1, -1):
 		lines.remove_at(i)
-	
+
 	# Remove extra blank lines that might be left
 	# (but keep at least one blank line between declarations)
-	
+
 	var new_content := "\n".join(PackedStringArray(lines))
 	var write_file := FileAccess.open(script_path, FileAccess.WRITE)
 	if write_file == null:
 		return {&"ok": false, &"error": "Cannot write to file: " + script_path}
 	write_file.store_string(new_content)
 	write_file.close()
-	
+
 	return {&"ok": true, &"deleted": func_name}
 
 
@@ -801,16 +801,16 @@ func _internal_find_usages(args: Dictionary) -> Dictionary:
 	var name: String = args.get(&"name", "")
 	var item_type: String = args.get(&"type", "")  # "variable", "signal", "function"
 	var root_path: String = args.get(&"root", "res://")
-	
+
 	if name.is_empty():
 		return {&"ok": false, &"error": "No name provided"}
-	
+
 	# Collect all scripts
 	var script_paths: Array = []
 	_collect_scripts(root_path, script_paths, false)
-	
+
 	var usages: Array = []
-	
+
 	# Build regex pattern based on type
 	var pattern := RegEx.new()
 	if item_type == "signal":
@@ -819,15 +819,15 @@ func _internal_find_usages(args: Dictionary) -> Dictionary:
 	else:
 		# Match word boundary for variables and functions
 		pattern.compile("\\b" + name + "\\b")
-	
+
 	for path: String in script_paths:
 		var file := FileAccess.open(path, FileAccess.READ)
 		if file == null:
 			continue
-		
+
 		var content: String = file.get_as_text()
 		file.close()
-		
+
 		var lines: PackedStringArray = content.split("\n")
 		for i: int in range(lines.size()):
 			var line: String = lines[i]
@@ -839,13 +839,13 @@ func _internal_find_usages(args: Dictionary) -> Dictionary:
 					continue
 				if item_type == "function" and RegEx.create_from_string("^\\s*func\\s+" + name + "\\s*\\(").search(line):
 					continue
-				
+
 				usages.append({
 					&"file": path,
 					&"line": i + 1,
 					&"code": line.strip_edges()
 				})
-	
+
 	return {&"ok": true, &"usages": usages, &"count": usages.size()}
 
 
@@ -870,14 +870,14 @@ func _find_var_insert_position(lines: Array, exported: bool) -> int:
 	var last_var_line := -1
 	var first_func_line := -1
 	var after_class_decl := 0
-	
+
 	var re_var := RegEx.new()
 	re_var.compile("^(@export)?\\s*(@onready)?\\s*var\\s+")
 	var re_func := RegEx.new()
 	re_func.compile("^func\\s+")
 	var re_class := RegEx.new()
 	re_class.compile("^(class_name|extends)\\s+")
-	
+
 	for i: int in range(lines.size()):
 		var stripped: String = lines[i].strip_edges()
 		if re_class.search(stripped):
@@ -887,7 +887,7 @@ func _find_var_insert_position(lines: Array, exported: bool) -> int:
 		if re_func.search(stripped) and first_func_line == -1:
 			first_func_line = i
 			break
-	
+
 	# Insert after last variable, or before first function, or after class declarations
 	if last_var_line != -1:
 		return last_var_line + 1
@@ -901,14 +901,14 @@ func _find_signal_insert_position(lines: Array) -> int:
 	var last_signal_line := -1
 	var first_var_line := -1
 	var after_class_decl := 0
-	
+
 	var re_signal := RegEx.new()
 	re_signal.compile("^signal\\s+")
 	var re_var := RegEx.new()
 	re_var.compile("^(@export)?\\s*var\\s+")
 	var re_class := RegEx.new()
 	re_class.compile("^(class_name|extends)\\s+")
-	
+
 	for i: int in range(lines.size()):
 		var stripped: String = lines[i].strip_edges()
 		if re_class.search(stripped):
@@ -917,7 +917,7 @@ func _find_signal_insert_position(lines: Array) -> int:
 			last_signal_line = i
 		if re_var.search(stripped) and first_var_line == -1:
 			first_var_line = i
-	
+
 	# Insert after last signal, or before first var, or after class declarations
 	if last_signal_line != -1:
 		return last_signal_line + 1

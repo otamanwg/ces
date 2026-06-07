@@ -7,144 +7,144 @@ using System.Text.Json.Nodes;
 
 public sealed class DashboardCityVisualModel
 {
-	public static DashboardCityVisualModel Empty { get; } = new();
+    public static DashboardCityVisualModel Empty { get; } = new();
 
-	public string CityName { get; init; } = "Місто";
-	public IReadOnlyList<DashboardCityVisualDistrict> Districts { get; init; } = Array.Empty<DashboardCityVisualDistrict>();
-	public IReadOnlyList<DashboardCityVisualBuilding> Buildings { get; init; } = Array.Empty<DashboardCityVisualBuilding>();
-	public int BuildingCount { get; init; }
-	public int ActiveBuildingCount { get; init; }
-	public int InactiveBuildingCount { get; init; }
-	public int ProblemBuildingCount { get; init; }
+    public string CityName { get; init; } = "Місто";
+    public IReadOnlyList<DashboardCityVisualDistrict> Districts { get; init; } = Array.Empty<DashboardCityVisualDistrict>();
+    public IReadOnlyList<DashboardCityVisualBuilding> Buildings { get; init; } = Array.Empty<DashboardCityVisualBuilding>();
+    public int BuildingCount { get; init; }
+    public int ActiveBuildingCount { get; init; }
+    public int InactiveBuildingCount { get; init; }
+    public int ProblemBuildingCount { get; init; }
 
-	public string HeadlineText
-	{
-		get
-		{
-			if (Districts.Count == 0)
-			{
-				return $"{CityName}: райони завантажуються";
-			}
+    public string HeadlineText
+    {
+        get
+        {
+            if (Districts.Count == 0)
+            {
+                return $"{CityName}: райони завантажуються";
+            }
 
-			int jobSupply = Districts.Sum(district => district.JobSupply);
-			int maxCrime = Districts.Max(district => district.CrimeRisk);
-			return $"{CityName}: {Districts.Count} районів | робота {jobSupply} | злочинність max {maxCrime}";
-		}
-	}
+            int jobSupply = Districts.Sum(district => district.JobSupply);
+            int maxCrime = Districts.Max(district => district.CrimeRisk);
+            return $"{CityName}: {Districts.Count} районів | робота {jobSupply} | злочинність max {maxCrime}";
+        }
+    }
 
-	public DashboardCityVisualModel WithPortfolio(DashboardBuildingPortfolio portfolio)
-	{
-		return new DashboardCityVisualModel
-		{
-			CityName = CityName,
-			Districts = Districts,
-			Buildings = portfolio.Buildings.Select(DashboardCityVisualBuilding.FromPortfolioItem).ToArray(),
-			BuildingCount = portfolio.Buildings.Count,
-			ActiveBuildingCount = portfolio.Buildings.Count(building => building.OperatingStatus == "active"),
-			InactiveBuildingCount = portfolio.Buildings.Count(building => building.OperatingStatus == "inactive"),
-			ProblemBuildingCount = portfolio.Buildings.Count(building => building.OperatingStatus == "maintenance_due"),
-		};
-	}
+    public DashboardCityVisualModel WithPortfolio(DashboardBuildingPortfolio portfolio)
+    {
+        return new DashboardCityVisualModel
+        {
+            CityName = CityName,
+            Districts = Districts,
+            Buildings = portfolio.Buildings.Select(DashboardCityVisualBuilding.FromPortfolioItem).ToArray(),
+            BuildingCount = portfolio.Buildings.Count,
+            ActiveBuildingCount = portfolio.Buildings.Count(building => building.OperatingStatus == "active"),
+            InactiveBuildingCount = portfolio.Buildings.Count(building => building.OperatingStatus == "inactive"),
+            ProblemBuildingCount = portfolio.Buildings.Count(building => building.OperatingStatus == "maintenance_due"),
+        };
+    }
 
-	public static DashboardCityVisualModel FromCityStatus(JsonNode? data)
-	{
-		var districts = data?["districts"]?.AsArray();
-		if (districts == null || districts.Count == 0)
-		{
-			return new DashboardCityVisualModel
-			{
-				CityName = data?["name"]?.ToString() ?? "Місто",
-			};
-		}
+    public static DashboardCityVisualModel FromCityStatus(JsonNode? data)
+    {
+        var districts = data?["districts"]?.AsArray();
+        if (districts == null || districts.Count == 0)
+        {
+            return new DashboardCityVisualModel
+            {
+                CityName = data?["name"]?.ToString() ?? "Місто",
+            };
+        }
 
-		var items = new List<DashboardCityVisualDistrict>();
-		foreach (var district in districts)
-		{
-			if (district != null)
-			{
-				items.Add(DashboardCityVisualDistrict.FromJson(district));
-			}
-		}
+        var items = new List<DashboardCityVisualDistrict>();
+        foreach (var district in districts)
+        {
+            if (district != null)
+            {
+                items.Add(DashboardCityVisualDistrict.FromJson(district));
+            }
+        }
 
-		return new DashboardCityVisualModel
-		{
-			CityName = data?["name"]?.ToString() ?? "Місто",
-			Districts = items,
-		};
-	}
+        return new DashboardCityVisualModel
+        {
+            CityName = data?["name"]?.ToString() ?? "Місто",
+            Districts = items,
+        };
+    }
 }
 
 public sealed record DashboardCityVisualDistrict(
-	string Code,
-	string Name,
-	int RentLevel,
-	int JobSupply,
-	int CrimeRisk,
-	int Traffic,
-	int ServiceCoverage,
-	int MedicalCoverage,
-	int LandValue,
-	int Desirability)
+    string Code,
+    string Name,
+    int RentLevel,
+    int JobSupply,
+    int CrimeRisk,
+    int Traffic,
+    int ServiceCoverage,
+    int MedicalCoverage,
+    int LandValue,
+    int Desirability)
 {
-	public string ShortLabel => Code switch
-	{
-		"bus_station" => "Вокзал",
-		"commercial_core" => "Комерція",
-		"highrise_residential" => "Житло",
-		"industrial_edge" => "Промка",
-		"suburb_private_sector" => "Передмістя",
-		"outer_land" => "Розширення",
-		_ => Name,
-	};
+    public string ShortLabel => Code switch
+    {
+        "bus_station" => "Вокзал",
+        "commercial_core" => "Комерція",
+        "highrise_residential" => "Житло",
+        "industrial_edge" => "Промка",
+        "suburb_private_sector" => "Передмістя",
+        "outer_land" => "Розширення",
+        _ => Name,
+    };
 
-	public int PressureScore => CrimeRisk + Traffic + Math.Max(0, 60 - ServiceCoverage) + Math.Max(0, 60 - MedicalCoverage);
+    public int PressureScore => CrimeRisk + Traffic + Math.Max(0, 60 - ServiceCoverage) + Math.Max(0, 60 - MedicalCoverage);
 
-	public static DashboardCityVisualDistrict FromJson(JsonNode data)
-	{
-		return new DashboardCityVisualDistrict(
-			Code: data["code"]?.ToString() ?? "",
-			Name: data["name"]?.ToString() ?? "Район",
-			RentLevel: data["rent_level"]?.GetValue<int>() ?? 0,
-			JobSupply: data["job_supply"]?.GetValue<int>() ?? 0,
-			CrimeRisk: data["crime_risk"]?.GetValue<int>() ?? 0,
-			Traffic: data["traffic"]?.GetValue<int>() ?? 0,
-			ServiceCoverage: data["service_coverage"]?.GetValue<int>() ?? 0,
-			MedicalCoverage: data["medical_coverage"]?.GetValue<int>() ?? 0,
-			LandValue: data["land_value"]?.GetValue<int>() ?? 0,
-			Desirability: data["desirability"]?.GetValue<int>() ?? 0
-		);
-	}
+    public static DashboardCityVisualDistrict FromJson(JsonNode data)
+    {
+        return new DashboardCityVisualDistrict(
+            Code: data["code"]?.ToString() ?? "",
+            Name: data["name"]?.ToString() ?? "Район",
+            RentLevel: data["rent_level"]?.GetValue<int>() ?? 0,
+            JobSupply: data["job_supply"]?.GetValue<int>() ?? 0,
+            CrimeRisk: data["crime_risk"]?.GetValue<int>() ?? 0,
+            Traffic: data["traffic"]?.GetValue<int>() ?? 0,
+            ServiceCoverage: data["service_coverage"]?.GetValue<int>() ?? 0,
+            MedicalCoverage: data["medical_coverage"]?.GetValue<int>() ?? 0,
+            LandValue: data["land_value"]?.GetValue<int>() ?? 0,
+            Desirability: data["desirability"]?.GetValue<int>() ?? 0
+        );
+    }
 }
 
 public sealed record DashboardCityVisualBuilding(
-	string Id,
-	string Name,
-	string DistrictCode,
-	string BlueprintCode,
-	string ProjectType,
-	string OperatingStatus)
+    string Id,
+    string Name,
+    string DistrictCode,
+    string BlueprintCode,
+    string ProjectType,
+    string OperatingStatus)
 {
-	public string ArchetypeLabel => BlueprintCode switch
-	{
-		"station_kiosk" => "K",
-		"coffee_shop" => "C",
-		"neighborhood_market" => "M",
-		"repair_workshop" => "W",
-		"private_hostel" => "H",
-		"pharmacy" => "P",
-		"small_factory" => "F",
-		_ => ProjectType.Length > 0 ? ProjectType[..1].ToUpperInvariant() : "B",
-	};
+    public string ArchetypeLabel => BlueprintCode switch
+    {
+        "station_kiosk" => "K",
+        "coffee_shop" => "C",
+        "neighborhood_market" => "M",
+        "repair_workshop" => "W",
+        "private_hostel" => "H",
+        "pharmacy" => "P",
+        "small_factory" => "F",
+        _ => ProjectType.Length > 0 ? ProjectType[..1].ToUpperInvariant() : "B",
+    };
 
-	public static DashboardCityVisualBuilding FromPortfolioItem(DashboardBuildingItem item)
-	{
-		return new DashboardCityVisualBuilding(
-			item.Id,
-			item.DisplayName,
-			item.DistrictCode,
-			item.BlueprintCode,
-			item.ProjectType,
-			item.OperatingStatus
-		);
-	}
+    public static DashboardCityVisualBuilding FromPortfolioItem(DashboardBuildingItem item)
+    {
+        return new DashboardCityVisualBuilding(
+            item.Id,
+            item.DisplayName,
+            item.DistrictCode,
+            item.BlueprintCode,
+            item.ProjectType,
+            item.OperatingStatus
+        );
+    }
 }
