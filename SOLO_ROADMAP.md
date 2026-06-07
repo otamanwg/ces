@@ -942,6 +942,21 @@ DoD:
 
 ---
 
+## Sprint 57 — Day Tick Scheduler & Infra
+
+Ціль: економіка живе автоматично — day tick запускається кожні 5 хвилин без ручного виклику.
+
+Порядок:
+
+1. ✅ APScheduler `BackgroundScheduler` — day tick кожні 300 сек для кожного міста.
+2. ✅ Per-city ізольовані DB сесії — помилка одного міста не ламає інші.
+3. ✅ Bug fix: `inflation_rate` clamp до 999.99 (Decimal(5,2) overflow при великих балансах).
+4. ✅ CI: Python 3.13, `uv sync`, `astral-sh/setup-uv@v4`.
+5. ✅ Scripts: `dotnet-sdk` path у всіх скриптах, `pwsh 7.6.2` в PATH, `check.ps1 exit 0`.
+6. ✅ 10 unit тестів scheduler (config, singleton, start/stop, job registration, mock tick).
+
+---
+
 ## Future: Local LLM Integration (після живого playtest)
 
 Передумова: MVP loop стабільний, є живі гравці, economic balance підтверджений руками.
