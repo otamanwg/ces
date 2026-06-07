@@ -937,8 +937,8 @@ DoD:
 
 1. ✅ perf: eliminate N+1 у simulate_league_matches (1 query vs O(n²)), daily revenue competition cache (GROUP BY замість per-business COUNT).
 2. ✅ test: business management service regression coverage (18 тестів: tier/competition/AI revenue/mode switch/cache/filter).
-3. ⏳ Client: компактний economic status блок у dashboard — management mode, daily revenue stats для AI businesses.
-4. ⏳ Перевірка: `scripts/check.ps1`, commit.
+3. ✅ Client: компактний economic status блок у dashboard — management mode, daily revenue stats для AI businesses.
+4. ✅ Перевірка: `scripts/check.ps1`, commit.
 
 ---
 
