@@ -52,19 +52,19 @@ public static class DashboardVisualPalettes
 	public static readonly DashboardVisualPalette Anime = new(
 		"anime",
 		"Anime",
-		new DashboardVisualColor(0.05f, 0.07f, 0.12f, 0.18f),
-		new DashboardVisualColor(0.08f, 0.10f, 0.16f, 0.84f),
-		new DashboardVisualColor(0.10f, 0.12f, 0.18f, 0.74f),
-		new DashboardVisualColor(0.74f, 0.88f, 0.98f, 0.70f),
-		new DashboardVisualColor(1.00f, 0.58f, 0.48f, 0.94f),
-		new DashboardVisualColor(1.00f, 0.91f, 0.72f, 1.00f),
+		new DashboardVisualColor(0.72f, 0.88f, 0.96f, 0.18f),
+		new DashboardVisualColor(0.12f, 0.18f, 0.27f, 0.84f),
+		new DashboardVisualColor(0.16f, 0.22f, 0.30f, 0.74f),
+		new DashboardVisualColor(0.86f, 0.95f, 0.96f, 0.74f),
+		new DashboardVisualColor(0.98f, 0.45f, 0.48f, 0.94f),
+		new DashboardVisualColor(1.00f, 0.88f, 0.56f, 1.00f),
 		new DashboardVisualColor(0.98f, 0.98f, 1.00f, 0.96f),
-		new DashboardVisualColor(0.82f, 0.88f, 0.96f, 0.82f),
-		new DashboardVisualColor(0.36f, 0.78f, 0.98f, 0.96f),
-		new DashboardVisualColor(0.32f, 0.88f, 0.62f, 0.88f),
-		new DashboardVisualColor(1.00f, 0.73f, 0.30f, 0.88f),
-		new DashboardVisualColor(1.00f, 0.32f, 0.42f, 0.98f),
-		new DashboardVisualColor(1.00f, 0.88f, 0.62f, 0.48f)
+		new DashboardVisualColor(0.78f, 0.88f, 0.94f, 0.84f),
+		new DashboardVisualColor(0.24f, 0.76f, 0.84f, 0.96f),
+		new DashboardVisualColor(0.34f, 0.84f, 0.58f, 0.88f),
+		new DashboardVisualColor(1.00f, 0.70f, 0.27f, 0.90f),
+		new DashboardVisualColor(0.96f, 0.30f, 0.42f, 0.98f),
+		new DashboardVisualColor(1.00f, 0.90f, 0.62f, 0.52f)
 	);
 
 	public static readonly DashboardVisualPalette Hyperreal = new(

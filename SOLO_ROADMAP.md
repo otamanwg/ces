@@ -22,15 +22,15 @@
 
 ### Поточний Фокус
 
-**Sprint 44: Age-Aware Arrival Guidance.**
+**Sprint 49: Anime Visual Direction.**
 
-Мета: додати privacy-friendly вікові групи профілю та змінювати тон вступної підказки без зміни механік чи story sequence.
+Мета: підготувати оригінальний аніме-пак із візуальною мовою, натхненою The Legend of Neverland, але адаптованою до сучасного міста й SimCity 4 Deluxe-подібної камери.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
 ### Майбутні Visual Style Packs
 
-Гра має підтримувати кілька візуальних стилів за вподобанням гравця: наприклад `anime`, `hyperreal`, `mafia` або інші тематичні паки.
+Гра має підтримувати кілька візуальних стилів за вподобанням гравця: `anime`, `hyperreal`, `mafia` або інші тематичні паки. Першим повним альтернативним паком буде `anime`; The Legend of Neverland використовується як орієнтир для загальної мови рендерингу, а не як джерело персонажів чи асетів.
 
 Архітектурний принцип: style pack змінює тільки presentation layer — фон, палітру, портрети, іконки, VFX, звуки та шрифтовий настрій. Економічні механіки, API contracts, player progression, balance і backend simulation залишаються спільними для всіх стилів.
 
@@ -817,6 +817,26 @@ DoD:
 
 1. Виготовити один canonical `.glb` rig із одним outfit та core animation set.
 2. Перевірити street-zoom LOD і environment-driven `idle/walk/sit/phone/talk`.
+
+---
+
+## Sprint 49 — Anime Visual Direction
+
+Ціль: перетворити побажання щодо The Legend of Neverland на оригінальний і технічно вимірюваний art contract для нашого `anime` style pack.
+
+Порядок:
+
+1. ✅ Visual bible: персонажі, сучасне місто, матеріали, анімація і межі референсу.
+2. ✅ Client palette: світла природна схема sky/cyan/mint/coral/gold.
+3. ✅ Asset contract: окрема папка `anime`, naming і безпечний fallback на `core`.
+4. ✅ Performance contract: cinematic/street/distance LOD і texture/material budgets.
+5. ✅ Повний checkpoint, MCP smoke і commit.
+
+Наступний 3D-крок:
+
+1. Створити один оригінальний canonical anime avatar.
+2. Зібрати modern street-corner test у Godot із daylight/evening lighting.
+3. Перевірити `idle/walk/sit/phone/talk`, портрет і три рівні LOD.
 
 ---
 

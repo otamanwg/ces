@@ -16,12 +16,16 @@ direct character-control loop of The Sims.
 
 ## Recommended Base Style
 
-The first production style is stylized semi-realism with moderate geometry.
+The neutral `core` style remains the production fallback. The first complete
+alternative pack is `anime`, using the broad visual language of The Legend of
+Neverland as a reference: readable anime faces, sculpted hair masses, clean
+silhouettes, soft stylized lighting, and a bright welcoming world.
 
-It is easier to keep visually consistent than hyperrealism, avoids an uncanny
-face requirement, reads well from an isometric camera, and is light enough for
-mobile-class devices. Future `anime`, `hyperreal`, and `mafia` packs map the
-same semantic identity codes to different meshes and materials.
+Assets must remain original. The pack does not copy characters, costumes,
+flower-fairy motifs, UI, logos, or exact environments from the reference game.
+It translates the rendering principles into a modern city-life simulation.
+Future `hyperreal` and `mafia` packs map the same semantic identity codes to
+different meshes and materials.
 
 ## Canonical Avatar Contract
 

@@ -479,6 +479,9 @@ AssertEqual("mafia", DashboardVisualPalettes.Resolve("mafia").Code, "Visual pale
 AssertEqual("core", DashboardVisualPalettes.Resolve("unknown").Code, "Visual palette rejects unknown style");
 AssertEqual("core", DashboardVisualPalettes.Resolve("dark_fantasy").Code, "Removed visual style falls back to core");
 AssertNear(0.25, DashboardVisualPalettes.Core.Danger.WithAlpha(0.25f).Alpha, 0.0001, "Visual token alpha override");
+AssertNear(0.72, DashboardVisualPalettes.Anime.CanvasShade.Red, 0.0001, "Anime palette keeps an airy sky base");
+AssertNear(0.24, DashboardVisualPalettes.Anime.Accent.Red, 0.0001, "Anime palette uses a cyan accent");
+AssertNear(0.98, DashboardVisualPalettes.Anime.Traffic.Red, 0.0001, "Anime palette uses a coral activity accent");
 
 var landCatalogJson = JsonNode.Parse(
 	"""
