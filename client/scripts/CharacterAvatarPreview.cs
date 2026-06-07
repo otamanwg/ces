@@ -7,6 +7,26 @@ public partial class CharacterAvatarPreview : Node3D
 	private const string AvatarPath = "res://assets/visual/anime/avatar/canonical_anime_avatar.glb";
 	private const string StylizedShaderPath = "res://shaders/anime_stylized.gdshader";
 
+	private bool _showPlatform = true;
+	private MeshInstance3D? _platform;
+
+	[Export]
+	public bool ShowPlatform
+	{
+		get => _showPlatform;
+		set
+		{
+			_showPlatform = value;
+			if (_platform != null)
+			{
+				_platform.Visible = value;
+			}
+		}
+	}
+	[Export] public bool TransparentBackground { get; set; }
+	[Export] public float CameraSize { get; set; } = 3.55f;
+	[Export] public float AvatarScale { get; set; } = 1.28f;
+
 	private DashboardAvatarProfile _profile = new();
 	private PackedScene? _avatarScene;
 	private Node3D? _avatar;
@@ -36,12 +56,23 @@ public partial class CharacterAvatarPreview : Node3D
 		ReloadAppearance();
 	}
 
+	public void SetPreviewActive(bool active)
+	{
+		ProcessMode = active ? ProcessModeEnum.Inherit : ProcessModeEnum.Disabled;
+		if (active)
+		{
+			PlayIdle();
+		}
+	}
+
 	private void BuildStage()
 	{
 		var environment = new Godot.Environment
 		{
 			BackgroundMode = Godot.Environment.BGMode.Color,
-			BackgroundColor = new Color("bfeaf4"),
+			BackgroundColor = TransparentBackground
+				? new Color(0.75f, 0.92f, 0.96f, 0.0f)
+				: new Color("bfeaf4"),
 			AmbientLightSource = Godot.Environment.AmbientSource.Color,
 			AmbientLightColor = new Color("dff8ff"),
 			AmbientLightEnergy = 0.55f,
@@ -59,7 +90,7 @@ public partial class CharacterAvatarPreview : Node3D
 		var camera = new Camera3D
 		{
 			Projection = Camera3D.ProjectionType.Orthogonal,
-			Size = 3.55f,
+			Size = CameraSize,
 			Position = new Vector3(3.8f, 2.65f, 5.2f),
 			Current = true,
 		};
@@ -71,7 +102,7 @@ public partial class CharacterAvatarPreview : Node3D
 			AlbedoColor = new Color("78c7bd"),
 			Roughness = 0.82f,
 		};
-		AddChild(new MeshInstance3D
+		_platform = new MeshInstance3D
 		{
 			Name = "PreviewPlatform",
 			Mesh = new CylinderMesh
@@ -83,7 +114,9 @@ public partial class CharacterAvatarPreview : Node3D
 			},
 			MaterialOverride = platformMaterial,
 			Position = new Vector3(0.0f, -0.06f, 0.0f),
-		});
+			Visible = ShowPlatform,
+		};
+		AddChild(_platform);
 	}
 
 	private void LoadAvatar()
@@ -95,7 +128,7 @@ public partial class CharacterAvatarPreview : Node3D
 		}
 		_avatar = _avatarScene.Instantiate<Node3D>();
 		_avatar.Name = "CharacterPreviewAvatar";
-		_avatar.Scale = Vector3.One * 1.28f;
+		_avatar.Scale = Vector3.One * AvatarScale;
 		AddChild(_avatar);
 		_animationPlayer = CanonicalAvatarAppearanceApplier.FindDescendant<AnimationPlayer>(_avatar);
 		ReloadAppearance();
@@ -121,7 +154,7 @@ public partial class CharacterAvatarPreview : Node3D
 		}
 		_avatar = _avatarScene.Instantiate<Node3D>();
 		_avatar.Name = "CharacterPreviewAvatar";
-		_avatar.Scale = Vector3.One * 1.28f;
+		_avatar.Scale = Vector3.One * AvatarScale;
 		AddChild(_avatar);
 		MoveChild(_avatar, index);
 		CanonicalAvatarAppearanceApplier.Apply(

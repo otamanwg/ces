@@ -896,6 +896,20 @@ DoD:
 
 ---
 
+## Sprint 54 — Persisted Avatar In The City
+
+Ціль: avatar profile зі snapshot відображається після входу; city overview використовує marker, street focus — повний animated avatar.
+
+Порядок:
+
+1. ✅ Client presentation state/tests: username, avatar profile, fashion та LOD visibility.
+2. ✅ Compact profile preview у player rail.
+3. ✅ Street-focus avatar overlay зі збереженого profile.
+4. ✅ Godot MCP scene wiring і localized visual QA.
+5. ✅ Повний checkpoint, MCP smoke і commit.
+
+---
+
 ## Checkpoints Де Потрібен Користувач
 
 | Checkpoint | Коли | Що потрібно |

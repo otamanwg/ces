@@ -75,20 +75,57 @@ size_flags_vertical = 3
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="UsernameLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
+[node name="PlayerAvatarProfile" type="HBoxContainer" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 126)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PlayerAvatarViewportContainer" type="SubViewportContainer" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox/PlayerAvatarProfile"]
+custom_minimum_size = Vector2(108, 126)
+layout_mode = 2
+mouse_filter = 2
+stretch = true
+
+[node name="PlayerAvatarViewport" type="SubViewport" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox/PlayerAvatarProfile/PlayerAvatarViewportContainer"]
+own_world_3d = true
+handle_input_locally = false
+msaa_3d = 2
+size = Vector2i(108, 126)
+render_target_update_mode = 4
+
+[node name="PlayerAvatarPreview" type="Node3D" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox/PlayerAvatarProfile/PlayerAvatarViewportContainer/PlayerAvatarViewport"]
+unique_name_in_owner = true
+script = ExtResource("6_afu1s")
+CameraSize = 3.9
+AvatarScale = 1.15
+
+[node name="PlayerIdentityBox" type="VBoxContainer" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox/PlayerAvatarProfile"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="PlayerAvatarIdentityLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox/PlayerAvatarProfile/PlayerIdentityBox"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+text_overrun_behavior = 3
+max_lines_visible = 2
+
+[node name="UsernameLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox/PlayerAvatarProfile/PlayerIdentityBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Завантаження..."
 autowrap_mode = 3
 text_overrun_behavior = 3
 
-[node name="BalanceLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
+[node name="BalanceLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox/PlayerAvatarProfile/PlayerIdentityBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "0.00 ₴"
 autowrap_mode = 3
 
-[node name="EducationLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox"]
+[node name="EducationLabel" type="Label" parent="RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox/PlayerAvatarProfile/PlayerIdentityBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "-"
@@ -351,6 +388,53 @@ offset_right = -18.0
 offset_bottom = 52.0
 grow_horizontal = 0
 text = "Вулиця"
+text_overrun_behavior = 3
+
+[node name="StreetAvatarContainer" type="Control" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual"]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 0
+offset_left = 22.0
+offset_top = 78.0
+offset_right = 222.0
+offset_bottom = 352.0
+mouse_filter = 2
+
+[node name="StreetAvatarViewportContainer" type="SubViewportContainer" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual/StreetAvatarContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+stretch = true
+
+[node name="StreetAvatarViewport" type="SubViewport" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual/StreetAvatarContainer/StreetAvatarViewportContainer"]
+own_world_3d = true
+transparent_bg = true
+handle_input_locally = false
+msaa_3d = 2
+size = Vector2i(200, 274)
+render_target_update_mode = 0
+
+[node name="StreetAvatarPreview" type="Node3D" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual/StreetAvatarContainer/StreetAvatarViewportContainer/StreetAvatarViewport"]
+unique_name_in_owner = true
+script = ExtResource("6_afu1s")
+ShowPlatform = false
+TransparentBackground = true
+CameraSize = 3.65
+AvatarScale = 1.18
+
+[node name="StreetAvatarNameLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual/StreetAvatarContainer"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 8.0
+offset_top = 242.0
+offset_right = 192.0
+offset_bottom = 270.0
+horizontal_alignment = 1
+vertical_alignment = 1
 text_overrun_behavior = 3
 
 [node name="NextActionPanel" type="PanelContainer" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage"]
@@ -872,6 +956,7 @@ mouse_filter = 2
 stretch = true
 
 [node name="CharacterPreviewViewport" type="SubViewport" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterPreviewColumn/CharacterPreviewFrame/CharacterPreviewViewportContainer"]
+own_world_3d = true
 handle_input_locally = false
 msaa_3d = 2
 size = Vector2i(2, 2)

@@ -13,7 +13,8 @@ param(
     [switch]$GuidanceStory,
     [switch]$TaxiStory,
     [switch]$CharacterCreation,
-    [switch]$CharacterAvatarVariant
+    [switch]$CharacterAvatarVariant,
+    [switch]$StreetFocus
 )
 
 $ErrorActionPreference = "Stop"
@@ -90,6 +91,9 @@ if ($CharacterCreation) {
 }
 if ($CharacterAvatarVariant) {
     $godotArguments += "--character-avatar-variant"
+}
+if ($StreetFocus) {
+    $godotArguments += "--street-focus"
 }
 
 & $godot @godotArguments

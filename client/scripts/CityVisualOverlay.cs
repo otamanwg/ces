@@ -82,6 +82,7 @@ public partial class CityVisualOverlay : Control
 	}
 
 	public string FocusButtonText => _streetFocus ? "Огляд" : "Вулиця";
+	public bool IsStreetFocus => _streetFocus;
 
 	public override void _Draw()
 	{

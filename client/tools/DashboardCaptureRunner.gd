@@ -45,6 +45,9 @@ func _capture_dashboard() -> void:
 	if _has_argument("--character-avatar-variant"):
 		_apply_character_avatar_variant(dashboard)
 		await get_tree().create_timer(0.5).timeout
+	if _has_argument("--street-focus"):
+		_apply_street_focus(dashboard)
+		await get_tree().create_timer(0.5).timeout
 	RenderingServer.force_draw(false)
 	await RenderingServer.frame_post_draw
 
@@ -260,6 +263,12 @@ func _apply_character_creation_preview(dashboard: Node) -> void:
 		return
 
 	overlay.visible = true
+	var avatar_viewport := dashboard.find_child("CharacterPreviewViewport", true, false) as SubViewport
+	if avatar_viewport != null:
+		avatar_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	var avatar_preview := dashboard.find_child("CharacterAvatarPreview", true, false) as Node
+	if avatar_preview != null:
+		avatar_preview.process_mode = Node.PROCESS_MODE_INHERIT
 	name_input.text = "Alex"
 	adult_button.button_pressed = true
 	description.text = tr("CHARACTER_AGE_ADULT_DESCRIPTION")
@@ -284,6 +293,15 @@ func _apply_character_avatar_variant(dashboard: Node) -> void:
 		for _step in range(steps[button_name]):
 			button.emit_signal("pressed")
 	print("DASHBOARD_CHARACTER_AVATAR_VARIANT_APPLIED=1")
+
+
+func _apply_street_focus(dashboard: Node) -> void:
+	var focus_button := dashboard.find_child("VisualFocusButton", true, false) as Button
+	if focus_button == null:
+		push_error("Dashboard capture: visual focus button not found")
+		return
+	focus_button.emit_signal("pressed")
+	print("DASHBOARD_STREET_FOCUS_APPLIED=1")
 
 
 func _set_onboarding_texture(dashboard: Node, resource_path: String) -> void:

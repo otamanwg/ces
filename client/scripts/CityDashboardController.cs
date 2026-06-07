@@ -85,6 +85,15 @@ public partial class CityDashboardController : Control
 	private Button _characterHairNextButton;
 	private Button _characterHairColorPreviousButton;
 	private Button _characterHairColorNextButton;
+	private Control _playerAvatarProfile;
+	private CharacterAvatarPreview _playerAvatarPreview;
+	private SubViewport _playerAvatarViewport;
+	private Label _playerAvatarIdentityLabel;
+	private Control _streetAvatarContainer;
+	private CharacterAvatarPreview _streetAvatarPreview;
+	private SubViewport _streetAvatarViewport;
+	private Label _streetAvatarNameLabel;
+	private SubViewport _characterAvatarViewport;
 	private DashboardStatusPresenter _statusPresenter;
 	private DashboardActionPresenter _actionPresenter;
 	private DashboardOnboardingState _onboardingState = new();
@@ -141,6 +150,7 @@ public partial class CityDashboardController : Control
 	private string _onboardingPortraitPath = "";
 	private string _selectedCharacterAgeGroup = DashboardCharacterCreation.DefaultAgeGroup;
 	private DashboardAvatarSelection _selectedAvatar = DashboardAvatarSelection.Default;
+	private DashboardActiveAvatarState _activeAvatar = DashboardActiveAvatarState.Empty;
 	private double _playerBalance;
 	private JsonNode _landCatalogData;
 	private JsonNode _blueprintCatalogData;
@@ -228,6 +238,10 @@ public partial class CityDashboardController : Control
 		ConfigureOnboardingPortraitMaterial();
 		ConfigureCharacterCreationVisual();
 		UpdateCharacterCreationUi();
+		UpdateActiveAvatarPresentation();
+		bool characterCreationVisible = _characterCreationOverlay?.Visible ?? false;
+		SetViewportActive(_characterAvatarViewport, characterCreationVisible);
+		_characterAvatarPreview?.SetPreviewActive(characterCreationVisible);
 
 		if (_apiClient != null)
 		{
@@ -355,6 +369,18 @@ public partial class CityDashboardController : Control
 		_characterHairNextButton ??= GetNodeOrNull<Button>("%CharacterHairNextButton");
 		_characterHairColorPreviousButton ??= GetNodeOrNull<Button>("%CharacterHairColorPreviousButton");
 		_characterHairColorNextButton ??= GetNodeOrNull<Button>("%CharacterHairColorNextButton");
+		_playerAvatarProfile ??= GetNodeOrNull<Control>("%PlayerAvatarProfile");
+		_playerAvatarPreview ??= GetNodeOrNull<CharacterAvatarPreview>("%PlayerAvatarPreview");
+		_playerAvatarViewport ??= GetNodeOrNull<SubViewport>(
+			"RootMargin/LandscapeGrid/LeftRail/PlayerPanel/PlayerBox/PlayerAvatarProfile/PlayerAvatarViewportContainer/PlayerAvatarViewport");
+		_playerAvatarIdentityLabel ??= GetNodeOrNull<Label>("%PlayerAvatarIdentityLabel");
+		_streetAvatarContainer ??= GetNodeOrNull<Control>("%StreetAvatarContainer");
+		_streetAvatarPreview ??= GetNodeOrNull<CharacterAvatarPreview>("%StreetAvatarPreview");
+		_streetAvatarViewport ??= GetNodeOrNull<SubViewport>(
+			"RootMargin/LandscapeGrid/CenterScroll/CenterStage/CityVisualPanel/CityVisual/StreetAvatarContainer/StreetAvatarViewportContainer/StreetAvatarViewport");
+		_streetAvatarNameLabel ??= GetNodeOrNull<Label>("%StreetAvatarNameLabel");
+		_characterAvatarViewport ??= GetNodeOrNull<SubViewport>(
+			"CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterPreviewColumn/CharacterPreviewFrame/CharacterPreviewViewportContainer/CharacterPreviewViewport");
 	}
 
 	private void ConfigureTextSafety()
@@ -378,6 +404,8 @@ public partial class CityDashboardController : Control
 		ConfigureLabel(_onboardingPoliceStatusLabel, 2, 48);
 		ConfigureLabel(_characterAgeDescriptionLabel, 3, 62);
 		ConfigureLabel(_characterErrorLabel, 2, 44);
+		ConfigureLabel(_playerAvatarIdentityLabel, 2, 34);
+		ConfigureLabel(_streetAvatarNameLabel, 1, 24);
 	}
 
 	private void ConfigureCharacterCreationVisual()
@@ -638,6 +666,8 @@ public partial class CityDashboardController : Control
 		_canTrainSports = false;
 		_canTakeExam = false;
 		_playerBalance = 0.0;
+		_activeAvatar = DashboardActiveAvatarState.Empty;
+		UpdateActiveAvatarPresentation();
 		ClearBuildingPortfolio();
 		ClearBuildFlow();
 		SetErrorState(message);
@@ -687,6 +717,8 @@ public partial class CityDashboardController : Control
 		}
 
 		_characterCreationOverlay.Visible = true;
+		SetViewportActive(_characterAvatarViewport, true);
+		_characterAvatarPreview?.SetPreviewActive(true);
 		if (_characterErrorLabel != null)
 		{
 			_characterErrorLabel.Text = errorMessage;
@@ -701,6 +733,8 @@ public partial class CityDashboardController : Control
 		{
 			_characterCreationOverlay.Visible = false;
 		}
+		SetViewportActive(_characterAvatarViewport, false);
+		_characterAvatarPreview?.SetPreviewActive(false);
 	}
 
 	private string LocalizeRegistrationError(string message)
@@ -1315,6 +1349,8 @@ public partial class CityDashboardController : Control
 		UpdateAvailableActions(snapshot.Actions);
 		_tutorialAgeGroup = snapshot.TutorialAgeGroup;
 		_onboardingState = snapshot.Onboarding;
+		_activeAvatar = DashboardActiveAvatarState.FromSnapshot(snapshot);
+		UpdateActiveAvatarPresentation();
 		UpdateOnboardingUi();
 		UpdatePoliceRecoveryButton();
 		if (!string.IsNullOrEmpty(snapshot.Id))
@@ -2373,6 +2409,52 @@ public partial class CityDashboardController : Control
 		if (_visualFocusButton != null)
 		{
 			_visualFocusButton.Text = nextText;
+		}
+		UpdateActiveAvatarPresentation();
+	}
+
+	private void UpdateActiveAvatarPresentation()
+	{
+		bool hasIdentity = _activeAvatar.HasPlayerIdentity;
+		if (_playerAvatarProfile != null)
+		{
+			_playerAvatarProfile.Visible = hasIdentity;
+		}
+		SetViewportActive(_playerAvatarViewport, hasIdentity);
+		_playerAvatarPreview?.SetPreviewActive(hasIdentity);
+		if (_playerAvatarIdentityLabel != null)
+		{
+			_playerAvatarIdentityLabel.Text =
+				$"{Tr("PLAYER_AVATAR_FACE")} {_activeAvatar.FaceNumber:00} | " +
+				$"{Tr("PLAYER_AVATAR_FASHION")} {_activeAvatar.Profile.FashionScore}";
+		}
+		if (_streetAvatarNameLabel != null)
+		{
+			_streetAvatarNameLabel.Text = _activeAvatar.Username;
+		}
+		if (hasIdentity)
+		{
+			_playerAvatarPreview?.SetProfile(_activeAvatar.Profile);
+			_streetAvatarPreview?.SetProfile(_activeAvatar.Profile);
+		}
+		if (_streetAvatarContainer != null)
+		{
+			bool showStreetAvatar = _activeAvatar.ShowsFullAvatar(
+				_cityVisualOverlay?.IsStreetFocus ?? false
+			);
+			_streetAvatarContainer.Visible = showStreetAvatar;
+			SetViewportActive(_streetAvatarViewport, showStreetAvatar);
+			_streetAvatarPreview?.SetPreviewActive(showStreetAvatar);
+		}
+	}
+
+	private static void SetViewportActive(SubViewport viewport, bool active)
+	{
+		if (viewport != null)
+		{
+			viewport.RenderTargetUpdateMode = active
+				? SubViewport.UpdateMode.Always
+				: SubViewport.UpdateMode.Disabled;
 		}
 	}
 

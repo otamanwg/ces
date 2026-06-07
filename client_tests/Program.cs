@@ -342,6 +342,13 @@ AssertEqual(
 	"Avatar selection builds API payload"
 );
 AssertEqual("face_01", avatarSelection.ToProfile().FacePresetCode, "Avatar selection builds renderer profile");
+var activeAvatar = DashboardActiveAvatarState.FromSnapshot(richSnapshot);
+AssertEqual("solo-dev", activeAvatar.Username, "Active avatar uses snapshot username");
+AssertEqual(20, activeAvatar.FaceNumber, "Active avatar resolves persisted face");
+AssertEqual("solo-dev | face 20 | fashion 42", activeAvatar.IdentityText, "Active avatar identity text");
+AssertEqual(true, activeAvatar.ShowsFullAvatar(true), "Street focus shows full active avatar");
+AssertEqual(false, activeAvatar.ShowsFullAvatar(false), "City overview keeps marker representation");
+AssertEqual(false, DashboardActiveAvatarState.Empty.ShowsFullAvatar(true), "Guest identity does not render as player");
 AssertEqual("uk", DashboardLocaleProfile.Normalize(""), "Missing locale defaults to Ukrainian");
 AssertEqual("en", DashboardLocaleProfile.Normalize(" EN "), "Supported locale normalization trims and ignores case");
 AssertEqual("uk", DashboardLocaleProfile.Normalize("de"), "Unsupported locale falls back to Ukrainian");
