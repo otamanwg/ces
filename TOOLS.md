@@ -22,17 +22,20 @@
 | Інструмент | Версія | Шлях | Використання |
 |------------|--------|------|--------------|
 | PowerShell | 7.6.2 | `C:\Tools\PowerShell\7.6.2\pwsh.exe` | Shell для всіх скриптів |
-| .NET SDK | 8.0.421 | `C:\Tools\dotnet-sdk\dotnet.exe` | Godot C# build |
-| .NET runtime | legacy | `C:\Tools\dotnet\` | Не використовувати — тільки dotnet-sdk |
-| Godot | 4.3-stable mono | `C:\Tools\Godot\Godot_v4.3-stable_mono_win64\` | Ігровий рушій |
+| .NET SDK | 8.0.421 | `C:\Tools\dotnet-sdk\dotnet.exe` | Godot C# build — **використовувати цей** |
+| .NET runtime | legacy | `C:\Tools\dotnet\` | ⚠️ Стара версія — не використовувати |
+| Godot | 4.3-stable mono | `C:\Tools\Godot\Godot_v4.3-stable_mono_win64\Godot_v4.3-stable_mono_win64.exe` | **Активний** ігровий рушій |
+| Godot console | 4.3-stable mono | `C:\Tools\Godot\Godot_v4.3-stable_mono_win64\Godot_v4.3-stable_mono_win64_console.exe` | Для headless/screenshot скриптів |
 | Godot | 4.2.2-stable mono | `C:\Tools\Godot\Godot_v4.2.2-stable_mono_win64\` | Запасна версія |
-| MinGit | latest | `C:\Tools\MinGit\cmd\git.exe` | Git операції |
-| just | latest | `C:\Tools\just\just.exe` | Task runner |
-| Node.js | 22.14.0 | `C:\ces\.tools\node\node.exe` | **Основний** — MCP servers, npx, openapi-gen |
-| Node.js | 22.16.0 | `C:\Tools\nodejs\node.exe` | Дублікат — встановлено 07.06.2026, пакети MCP тут |
-| Blender | latest | `C:\Tools\Blender\` | 3D аватари (anime pipeline) |
-| Rufus | latest | `C:\Tools\Rufus\` | USB інструмент, не для dev |
-| NSwag | 14.7 | `C:\Users\agga\.dotnet\tools\nswag.exe` | OpenAPI → C# DTO gen |
+| MinGit | 2.54.0 | `C:\Tools\MinGit\cmd\git.exe` | Git операції |
+| just | 1.38.0 | `C:\Tools\just\just.exe` | Task runner (`justfile`) |
+| Node.js | 22.16.0 | `C:\Tools\nodejs\node.exe` | **Активний** — MCP пакети тут (Playwright, Context7) |
+| npm | 10.9.2 | `C:\Tools\nodejs\npm.cmd` | Встановлення Node пакетів |
+| npx | 10.9.2 | `C:\Tools\nodejs\npx.cmd` | Запуск MCP servers |
+| Node.js | 22.14.0 | `C:\ces\.tools\node\node.exe` | Старіша копія — містить openapi-generator-cli |
+| Blender | 4.5.4 | `C:\Tools\Blender\blender-4.5.4-windows-x64\blender.exe` | 3D аватари (anime pipeline) |
+| Rufus | — | `C:\Tools\Rufus\` | USB утиліта, не для розробки |
+| NSwag | 14.7 | `C:\Users\agga\.dotnet\tools\nswag.exe` | OpenAPI → C# DTO генерація |
 | uv | latest | `C:\Users\agga\.local\bin\uv.exe` | Python package manager |
 
 ---
