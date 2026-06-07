@@ -14,7 +14,9 @@ param(
     [switch]$TaxiStory,
     [switch]$CharacterCreation,
     [switch]$CharacterAvatarVariant,
-    [switch]$StreetFocus
+    [switch]$StreetFocus,
+    [ValidateSet("", "idle", "walk", "sit", "phone", "talk")]
+    [string]$StreetActivity = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -94,6 +96,9 @@ if ($CharacterAvatarVariant) {
 }
 if ($StreetFocus) {
     $godotArguments += "--street-focus"
+}
+if ($StreetActivity) {
+    $godotArguments += "--street-activity=$StreetActivity"
 }
 
 & $godot @godotArguments

@@ -346,9 +346,71 @@ var activeAvatar = DashboardActiveAvatarState.FromSnapshot(richSnapshot);
 AssertEqual("solo-dev", activeAvatar.Username, "Active avatar uses snapshot username");
 AssertEqual(20, activeAvatar.FaceNumber, "Active avatar resolves persisted face");
 AssertEqual("solo-dev | face 20 | fashion 42", activeAvatar.IdentityText, "Active avatar identity text");
+AssertEqual(AvatarActivity.Phone, activeAvatar.Activity.Activity, "Housing search drives phone activity");
+AssertEqual(
+	DashboardAvatarActivityResolver.HousingSearchReason,
+	activeAvatar.Activity.ReasonCode,
+	"Avatar activity keeps its environment reason"
+);
 AssertEqual(true, activeAvatar.ShowsFullAvatar(true), "Street focus shows full active avatar");
 AssertEqual(false, activeAvatar.ShowsFullAvatar(false), "City overview keeps marker representation");
 AssertEqual(false, DashboardActiveAvatarState.Empty.ShowsFullAvatar(true), "Guest identity does not render as player");
+AssertEqual(
+	AvatarActivity.Talk,
+	DashboardAvatarActivityResolver.Resolve(new DashboardPlayerSnapshot
+	{
+		Onboarding = new DashboardOnboardingState { Stage = "arrival_choice", Completed = false },
+	}).Activity,
+	"Arrival conversation drives talk activity"
+);
+AssertEqual(
+	AvatarActivity.Sit,
+	DashboardAvatarActivityResolver.Resolve(new DashboardPlayerSnapshot
+	{
+		Energy = 20,
+		Hostel = "Hostel A",
+	}).Activity,
+	"Low energy drives sit activity"
+);
+AssertEqual(
+	AvatarActivity.Phone,
+	DashboardAvatarActivityResolver.Resolve(new DashboardPlayerSnapshot
+	{
+		Energy = 80,
+		Hostel = "Вулиця",
+	}).Activity,
+	"Missing housing drives phone activity"
+);
+AssertEqual(
+	AvatarActivity.Talk,
+	DashboardAvatarActivityResolver.Resolve(new DashboardPlayerSnapshot
+	{
+		Energy = 80,
+		Hostel = "Apartment",
+		OwnedBusinessId = "business-1",
+		Job = "Бариста",
+	}).Activity,
+	"Business operations take priority over commute activity"
+);
+AssertEqual(
+	AvatarActivity.Walk,
+	DashboardAvatarActivityResolver.Resolve(new DashboardPlayerSnapshot
+	{
+		Energy = 80,
+		Hostel = "Apartment",
+		Job = "Бариста",
+	}).Activity,
+	"Active job drives commute activity"
+);
+AssertEqual(
+	AvatarActivity.Idle,
+	DashboardAvatarActivityResolver.Resolve(new DashboardPlayerSnapshot
+	{
+		Energy = 80,
+		Hostel = "Apartment",
+	}).Activity,
+	"Stable player state uses ambient idle"
+);
 AssertEqual("uk", DashboardLocaleProfile.Normalize(""), "Missing locale defaults to Ukrainian");
 AssertEqual("en", DashboardLocaleProfile.Normalize(" EN "), "Supported locale normalization trims and ignores case");
 AssertEqual("uk", DashboardLocaleProfile.Normalize("de"), "Unsupported locale falls back to Ukrainian");

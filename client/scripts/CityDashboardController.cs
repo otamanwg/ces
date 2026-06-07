@@ -2436,6 +2436,7 @@ public partial class CityDashboardController : Control
 		{
 			_playerAvatarPreview?.SetProfile(_activeAvatar.Profile);
 			_streetAvatarPreview?.SetProfile(_activeAvatar.Profile);
+			_streetAvatarPreview?.SetActivity(_activeAvatar.Activity.Activity);
 		}
 		if (_streetAvatarContainer != null)
 		{

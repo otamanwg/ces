@@ -48,6 +48,10 @@ func _capture_dashboard() -> void:
 	if _has_argument("--street-focus"):
 		_apply_street_focus(dashboard)
 		await get_tree().create_timer(0.5).timeout
+	var street_activity := _street_activity()
+	if not street_activity.is_empty():
+		_apply_street_activity(dashboard, street_activity)
+		await get_tree().create_timer(0.5).timeout
 	RenderingServer.force_draw(false)
 	await RenderingServer.frame_post_draw
 
@@ -103,6 +107,13 @@ func _tutorial_age_group() -> String:
 		if argument.begins_with("--tutorial-age-group="):
 			return argument.trim_prefix("--tutorial-age-group=")
 	return "adult"
+
+
+func _street_activity() -> String:
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--street-activity="):
+			return argument.trim_prefix("--street-activity=")
+	return ""
 
 
 func _apply_stress_text(dashboard: Node) -> void:
@@ -302,6 +313,21 @@ func _apply_street_focus(dashboard: Node) -> void:
 		return
 	focus_button.emit_signal("pressed")
 	print("DASHBOARD_STREET_FOCUS_APPLIED=1")
+
+
+func _apply_street_activity(dashboard: Node, activity_code: String) -> void:
+	var avatar_preview := dashboard.find_child("StreetAvatarPreview", true, false)
+	if avatar_preview == null:
+		push_error("Dashboard capture: street avatar preview not found")
+		return
+	var method_name := &"SetActivityCode"
+	if not avatar_preview.has_method(method_name):
+		method_name = &"set_activity_code"
+	if not avatar_preview.has_method(method_name):
+		push_error("Dashboard capture: street avatar activity API not found")
+		return
+	avatar_preview.call(method_name, activity_code)
+	print("DASHBOARD_STREET_ACTIVITY_APPLIED=", activity_code)
 
 
 func _set_onboarding_texture(dashboard: Node, resource_path: String) -> void:

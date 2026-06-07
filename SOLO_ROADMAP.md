@@ -910,6 +910,20 @@ DoD:
 
 ---
 
+## Sprint 55 — Environment-Driven Avatar Activity
+
+Ціль: street-focus avatar відтворює `idle/walk/sit/phone/talk` із контексту гравця, без прямого керування персонажем.
+
+Порядок:
+
+1. ✅ Test-first resolver: onboarding, базові потреби, житло, бізнес і робота.
+2. ✅ Stateful animation API у shared avatar preview.
+3. ✅ Context prop для phone activity та runtime wiring.
+4. ✅ Visual capture QA для environment-driven activity.
+5. ✅ Повний checkpoint, asset smoke, MCP smoke і commit.
+
+---
+
 ## Checkpoints Де Потрібен Користувач
 
 | Checkpoint | Коли | Що потрібно |

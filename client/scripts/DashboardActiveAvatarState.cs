@@ -2,11 +2,16 @@
 
 public sealed record DashboardActiveAvatarState(
 	string Username,
-	DashboardAvatarProfile Profile
+	DashboardAvatarProfile Profile,
+	DashboardAvatarActivityState Activity
 )
 {
 	public static DashboardActiveAvatarState Empty { get; } =
-		new("Гість", new DashboardAvatarProfile());
+		new(
+			"Гість",
+			new DashboardAvatarProfile(),
+			new DashboardAvatarActivityState(AvatarActivity.Idle, DashboardAvatarActivityResolver.AmbientIdleReason)
+		);
 
 	public string IdentityText =>
 		$"{Username} | face {FaceNumber:00} | fashion {Profile.FashionScore}";
@@ -19,7 +24,11 @@ public sealed record DashboardActiveAvatarState(
 
 	public static DashboardActiveAvatarState FromSnapshot(DashboardPlayerSnapshot snapshot)
 	{
-		return new DashboardActiveAvatarState(snapshot.Username, snapshot.Avatar);
+		return new DashboardActiveAvatarState(
+			snapshot.Username,
+			snapshot.Avatar,
+			DashboardAvatarActivityResolver.Resolve(snapshot)
+		);
 	}
 
 	public bool ShowsFullAvatar(bool streetFocus)
