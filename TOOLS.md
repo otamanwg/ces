@@ -28,9 +28,8 @@
 | Godot | 4.2.2-stable mono | `C:\Tools\Godot\Godot_v4.2.2-stable_mono_win64\` | Запасна версія |
 | MinGit | latest | `C:\Tools\MinGit\cmd\git.exe` | Git операції |
 | just | latest | `C:\Tools\just\just.exe` | Task runner |
-| Node.js | 22.16.0 | `C:\Tools\nodejs\node.exe` | MCP servers, npx |
-| npm | 10.9.2 | `C:\Tools\nodejs\npm.cmd` | Node пакети |
-| npx | 10.9.2 | `C:\Tools\nodejs\npx.cmd` | Запуск MCP servers |
+| Node.js | 22.14.0 | `C:\ces\.tools\node\node.exe` | **Основний** — MCP servers, npx, openapi-gen |
+| Node.js | 22.16.0 | `C:\Tools\nodejs\node.exe` | Дублікат — встановлено 07.06.2026, пакети MCP тут |
 | Blender | latest | `C:\Tools\Blender\` | 3D аватари (anime pipeline) |
 | Rufus | latest | `C:\Tools\Rufus\` | USB інструмент, не для dev |
 | NSwag | 14.7 | `C:\Users\agga\.dotnet\tools\nswag.exe` | OpenAPI → C# DTO gen |
@@ -238,6 +237,23 @@ CITY_TEST_DATABASE_URL=postgresql+psycopg2://city:city_dev_password@127.0.0.1:54
 CITY_CORS_ORIGINS=*
 CITY_DEBUG=true
 ```
+
+## Папка `.tools/` — проектні інструменти та артефакти
+
+| Що | Шлях | Призначення |
+|----|------|-------------|
+| Node.js 22.14.0 | `.tools/node/node.exe` | Основна копія Node + npm + npx + openapi-generator-cli |
+| openapi-generator-cli | `.tools/node/openapi-generator-cli.cmd` | Генерація C# клієнта з OpenAPI spec |
+| Godot MCP plugin | `.tools/godot-mcp-main/addons/` | Старий Godot MCP плагін (GDScript) |
+| Godot MCP archive | `.tools/godot-mcp-server-0.5.0.tgz` | npm пакет MCP сервера для Godot |
+| MCP server package | `.tools/mcp-server-package/package/` | Розпакований MCP сервер |
+| Screenshots | `.tools/screenshots/` | Visual QA — скриншоти від `capture_dashboard.ps1` |
+| Blender assets | `.tools/blender/` | Заготовки для 3D pipeline (порожня зараз) |
+| `.tools/*.png` | `.tools/godot_*.png` тощо | Скриншоти з попередніх dev сесій |
+
+> **Примітка:** Node.js є в двох місцях. Для нових пакетів (Playwright MCP, Context7) використовується `C:\Tools\nodejs\`. Для `openapi-generator-cli` — `.tools\node\`.
+
+---
 
 ## Scripts у `scripts/` — що є і коли використовувати
 
