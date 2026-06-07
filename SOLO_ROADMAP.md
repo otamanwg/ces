@@ -942,6 +942,21 @@ DoD:
 
 ---
 
+## Future: Local LLM Integration (після живого playtest)
+
+Передумова: MVP loop стабільний, є живі гравці, economic balance підтверджений руками.
+
+Архітектура: Ollama (GTX 1060 6GB → Gemma 3 4B, ~3 GB VRAM) + FastAPI AI service.
+
+Агенти:
+- `CityGovernorAgent` — LLM-мер: пояснює рішення по будівельних заявках, генерує policy текстом.
+- `EconomyWatcherAgent` — аналізує `game_day_tick` результати, помічає дисбаланси, коригує параметри.
+- `GameMasterAgent` — CLI для власника міста: природна мова → SQL/API calls → звіт.
+
+Не брати раніше ніж після першого живого playtest сесії.
+
+---
+
 ## Checkpoints Де Потрібен Користувач
 
 | Checkpoint | Коли | Що потрібно |
