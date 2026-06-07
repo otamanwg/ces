@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 49: Anime Visual Direction.**
+**Sprint 50: Anime Avatar Street Prototype.**
 
-Мета: підготувати оригінальний аніме-пак із візуальною мовою, натхненою The Legend of Neverland, але адаптованою до сучасного міста й SimCity 4 Deluxe-подібної камери.
+Мета: перевірити environment-driven avatar, SimCity-подібну камеру та LOD у реальній Godot 3D-сцені до виробництва фінального `.glb`.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -837,6 +837,20 @@ DoD:
 1. Створити один оригінальний canonical anime avatar.
 2. Зібрати modern street-corner test у Godot із daylight/evening lighting.
 3. Перевірити `idle/walk/sit/phone/talk`, портрет і три рівні LOD.
+
+---
+
+## Sprint 50 — Anime Avatar Street Prototype
+
+Ціль: перевірити в Godot технічний вертикальний зріз аватара до виробництва фінального `.glb`.
+
+Порядок:
+
+1. ✅ Client rules/tests: environment-driven `idle/walk/sit/phone/talk` і cinematic/street/distance/marker LOD.
+2. ✅ Godot scene через MCP: procedural anime proxy на сучасній міській вулиці.
+3. ✅ Stylized-PBR shader, SimCity-подібна orthographic camera і LOD camera presets.
+4. ✅ Automated PNG capture для visual QA.
+5. ✅ Повний checkpoint, MCP smoke і commit.
 
 ---
 

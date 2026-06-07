@@ -482,6 +482,15 @@ AssertNear(0.25, DashboardVisualPalettes.Core.Danger.WithAlpha(0.25f).Alpha, 0.0
 AssertNear(0.72, DashboardVisualPalettes.Anime.CanvasShade.Red, 0.0001, "Anime palette keeps an airy sky base");
 AssertNear(0.24, DashboardVisualPalettes.Anime.Accent.Red, 0.0001, "Anime palette uses a cyan accent");
 AssertNear(0.98, DashboardVisualPalettes.Anime.Traffic.Red, 0.0001, "Anime palette uses a coral activity accent");
+AssertEqual(AvatarActivity.Phone, AvatarPresentationRules.ParseActivity(" PHONE "), "Avatar activity normalizes code");
+AssertEqual(AvatarActivity.Idle, AvatarPresentationRules.ParseActivity("combat"), "Unsupported avatar activity falls back");
+AssertEqual(AvatarActivity.Walk, AvatarPresentationRules.NextActivity(AvatarActivity.Idle), "Avatar activity sequence advances");
+AssertEqual(AvatarActivity.Idle, AvatarPresentationRules.NextActivity(AvatarActivity.Talk), "Avatar activity sequence wraps");
+AssertEqual(AvatarLodLevel.Cinematic, AvatarPresentationRules.ResolveLod(50.0f, true), "Cinematic camera forces full detail");
+AssertEqual(AvatarLodLevel.Street, AvatarPresentationRules.ResolveLod(8.0f), "Near camera uses street avatar");
+AssertEqual(AvatarLodLevel.Distance, AvatarPresentationRules.ResolveLod(18.0f), "District camera uses distance avatar");
+AssertEqual(AvatarLodLevel.Marker, AvatarPresentationRules.ResolveLod(40.0f), "City camera uses marker");
+AssertEqual(false, AvatarPresentationRules.UsesSkinnedAvatar(AvatarLodLevel.Distance), "Distance LOD disables skinned avatar");
 
 var landCatalogJson = JsonNode.Parse(
 	"""

@@ -17,3 +17,9 @@ Required arrival assets:
 
 Until a complete set exists, the style-pack resolver must continue falling back
 to the neutral `core` assets.
+
+Technical avatar preview:
+
+```powershell
+.\scripts\capture_anime_avatar.ps1 -Activity talk -Lod street
+```

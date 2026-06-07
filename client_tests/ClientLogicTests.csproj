@@ -15,6 +15,7 @@
     <Compile Include="..\client\scripts\DashboardVisualAnimation.cs" Link="DashboardVisualAnimation.cs" />
     <Compile Include="..\client\scripts\DashboardVisualPalette.cs" Link="DashboardVisualPalette.cs" />
     <Compile Include="..\client\scripts\DashboardVisualStylePack.cs" Link="DashboardVisualStylePack.cs" />
+    <Compile Include="..\client\scripts\AvatarPresentationRules.cs" Link="AvatarPresentationRules.cs" />
     <Compile Include="..\client\scripts\DashboardTutorialProfile.cs" Link="DashboardTutorialProfile.cs" />
     <Compile Include="..\client\scripts\DashboardCharacterCreation.cs" Link="DashboardCharacterCreation.cs" />
     <Compile Include="..\client\scripts\DashboardAvatarProfile.cs" Link="DashboardAvatarProfile.cs" />

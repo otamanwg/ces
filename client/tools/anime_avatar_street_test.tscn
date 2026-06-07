@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://mqr8hic876uc"]
+
+[ext_resource type="Script" path="res://scripts/AnimeAvatarStreetTest.cs" id="1_l3v8t"]
+
+[node name="AnimeAvatarStreetTest" type="Node3D"]
+script = ExtResource("1_l3v8t")
