@@ -6,7 +6,9 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session, joinedload
 
-from backend.app.models import City, Player, PlayerAthleteContract, SportsClub
+from backend.app.models import PlayerAthleteContract, SportsClub
+from backend.app.repositories.city import CityRepository
+from backend.app.repositories.player import PlayerRepository
 from backend.app.schemas.service_results import (
     SportsContractServiceResult,
     SportsLeagueMatchServiceResult,
@@ -28,7 +30,7 @@ GYM_ENERGY_COST = 40
 def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
     """Тренування у Спортзалі (Витрачає енергію та гроші, прокачує силу/витривалість)"""
     player_uuid = to_uuid(player_id)
-    player = db.query(Player).filter(Player.id == player_uuid).first()
+    player = PlayerRepository(db).get_by_id(player_uuid)
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
 
@@ -61,7 +63,7 @@ def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
     player.energy -= GYM_ENERGY_COST
 
     # Гроші за спортзал йдуть у міську скарбницю (або власнику спортзалу)
-    city = db.query(City).filter(City.id == player.city_id).first()
+    city = CityRepository(db).get_by_id(player.city_id)
     if city is None:
         return {"success": False, "message": "Місто не знайдено."}
     credit(db, city, "treasury_balance", GYM_COST)
@@ -100,7 +102,7 @@ def sign_athlete_contract(db: Session, player_id: str, club_id: str, salary: flo
     """Підписання контракту спортсмена з клубом"""
     player_uuid = to_uuid(player_id)
     club_uuid = to_uuid(club_id)
-    player = db.query(Player).filter(Player.id == player_uuid).first()
+    player = PlayerRepository(db).get_by_id(player_uuid)
     club = db.query(SportsClub).filter(SportsClub.id == club_uuid).first()
 
     if not player or not club:

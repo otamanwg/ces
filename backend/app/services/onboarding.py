@@ -1,10 +1,11 @@
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
 import secrets
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from backend.app.models import Hostel, Player, PlayerOnboarding, PoliceRecord
+from backend.app.models import Player, PlayerOnboarding, PoliceRecord
+from backend.app.repositories.hostel import HostelRepository
 from backend.app.services.ledger import credit, log_transaction
 from backend.app.services.money import money
 
@@ -43,11 +44,7 @@ def create_player_onboarding(db: Session, player: Player) -> PlayerOnboarding:
 def get_player_onboarding(db: Session, player: Player) -> PlayerOnboarding | None:
     if player.onboarding is not None:
         return player.onboarding
-    return (
-        db.query(PlayerOnboarding)
-        .filter(PlayerOnboarding.player_id == player.id)
-        .first()
-    )
+    return db.query(PlayerOnboarding).filter(PlayerOnboarding.player_id == player.id).first()
 
 
 def is_onboarding_complete(db: Session, player: Player) -> bool:
@@ -67,9 +64,7 @@ def is_police_recovery_claimable(
         or money(onboarding.police_recovery_amount or 0) <= Decimal("0.00")
     ):
         return False
-    return (
-        now or datetime.now(timezone.utc)
-    ) >= onboarding.police_recovery_available_at
+    return (now or datetime.now(UTC)) >= onboarding.police_recovery_available_at
 
 
 def build_onboarding_snapshot(
@@ -108,9 +103,7 @@ def build_onboarding_snapshot(
         choices = [FIND_HOUSING]
     else:
         title = "Прибуття завершено"
-        narrative = (
-            "Ви знайшли тимчасове житло. Місто відкрите для роботи, навчання і бізнесу."
-        )
+        narrative = "Ви знайшли тимчасове житло. Місто відкрите для роботи, навчання і бізнесу."
         choices = []
 
     return {
@@ -121,9 +114,7 @@ def build_onboarding_snapshot(
         "available_choices": choices,
         "police_report_status": onboarding.police_report_status,
         "police_recovery_amount": (
-            float(onboarding.police_recovery_amount)
-            if onboarding.police_recovery_amount is not None
-            else None
+            float(onboarding.police_recovery_amount) if onboarding.police_recovery_amount is not None else None
         ),
         "police_recovery_available_at": (
             onboarding.police_recovery_available_at.isoformat()
@@ -146,7 +137,7 @@ def choose_onboarding_path(
     if onboarding is None or onboarding.stage == COMPLETED:
         return {"success": False, "message": "Прибуття вже завершено."}
 
-    current_time = now or datetime.now(timezone.utc)
+    current_time = now or datetime.now(UTC)
 
     if choice == REPORT_TO_POLICE:
         if onboarding.stage != ARRIVAL_CHOICE:
@@ -157,9 +148,7 @@ def choose_onboarding_path(
         if recovery_possible:
             onboarding.police_report_status = POLICE_PENDING
             onboarding.police_recovery_amount = money(source.randint(40, 120))
-            onboarding.police_recovery_available_at = current_time + timedelta(
-                hours=source.randint(12, 72)
-            )
+            onboarding.police_recovery_available_at = current_time + timedelta(hours=source.randint(12, 72))
             recovery_message = "Поліція повідомить, якщо частину майна знайдуть."
         else:
             onboarding.police_report_status = POLICE_CLOSED_NO_RECOVERY
@@ -183,12 +172,7 @@ def choose_onboarding_path(
         }
 
     if choice == FIND_HOUSING:
-        free_room = (
-            db.query(Hostel)
-            .filter(Hostel.tenant_player_id.is_(None))
-            .order_by(Hostel.rent_price_per_day, Hostel.room_number)
-            .first()
-        )
+        free_room = HostelRepository(db).get_first_free()
         if free_room is None:
             return {
                 "success": False,
@@ -221,11 +205,8 @@ def claim_police_recovery(
             "message": "Немає активного повернення майна від поліції.",
         }
 
-    current_time = now or datetime.now(timezone.utc)
-    if (
-        onboarding.police_recovery_available_at is None
-        or current_time < onboarding.police_recovery_available_at
-    ):
+    current_time = now or datetime.now(UTC)
+    if onboarding.police_recovery_available_at is None or current_time < onboarding.police_recovery_available_at:
         return {
             "success": False,
             "message": "Розслідування ще триває.",

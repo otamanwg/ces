@@ -2,7 +2,8 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session, joinedload
 
-from backend.app.models import Business, Building, BuildingApplication, City, Player
+from backend.app.models import Building, BuildingApplication, Business, City, Player
+from backend.app.repositories.city import CityRepository
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
 
@@ -29,14 +30,9 @@ BUILDING_OPENING_FEES = {
 }
 
 
-def activate_building_application(
-    db: Session, player: Player, application_id: UUID
-) -> dict:
+def activate_building_application(db: Session, player: Player, application_id: UUID) -> dict:
     application = (
-        db.query(BuildingApplication)
-        .filter(BuildingApplication.id == application_id)
-        .with_for_update()
-        .first()
+        db.query(BuildingApplication).filter(BuildingApplication.id == application_id).with_for_update().first()
     )
     if not application or application.city_id != player.city_id:
         return {"success": False, "message": "Будівельну заявку не знайдено."}
@@ -65,10 +61,7 @@ def activate_building_application(
 
     existing_building = (
         db.query(Building)
-        .filter(
-            (Building.land_parcel_id == parcel.id)
-            | (Building.source_application_id == application.id)
-        )
+        .filter((Building.land_parcel_id == parcel.id) | (Building.source_application_id == application.id))
         .first()
     )
     if existing_building:
@@ -111,8 +104,7 @@ def get_building_opening_fee(building: Building):
 def get_building_repair_fee(building: Building):
     if building.business_blueprint:
         return max(
-            money(building.business_blueprint.upkeep_daily)
-            * BUILDING_REPAIR_UPKEEP_MULTIPLIER,
+            money(building.business_blueprint.upkeep_daily) * BUILDING_REPAIR_UPKEEP_MULTIPLIER,
             MIN_BUILDING_REPAIR_FEE,
         )
     return money("50.00")
@@ -143,18 +135,14 @@ def get_player_building_portfolio(db: Session, player: Player) -> list[Building]
             joinedload(Building.business_blueprint),
             joinedload(Building.business),
         )
-        .filter(
-            Building.city_id == player.city_id, Building.owner_player_id == player.id
-        )
+        .filter(Building.city_id == player.city_id, Building.owner_player_id == player.id)
         .order_by(Building.created_at.desc(), Building.name)
         .all()
     )
 
 
 def open_building_operations(db: Session, player: Player, building_id: UUID) -> dict:
-    building = (
-        db.query(Building).filter(Building.id == building_id).with_for_update().first()
-    )
+    building = db.query(Building).filter(Building.id == building_id).with_for_update().first()
     if not building or building.city_id != player.city_id:
         return {"success": False, "message": "Будівлю не знайдено."}
 
@@ -177,7 +165,7 @@ def open_building_operations(db: Session, player: Player, building_id: UUID) -> 
             "message": f"Недостатньо коштів для відкриття будівлі! Потрібно: {fee:.2f} ₴.",
         }
 
-    city = db.query(City).filter(City.id == player.city_id).first()
+    city = CityRepository(db).get_by_id(player.city_id)
     if not city:
         return {"success": False, "message": "Місто не знайдено"}
 
@@ -231,9 +219,7 @@ def open_building_operations(db: Session, player: Player, building_id: UUID) -> 
 
 
 def repair_building_operations(db: Session, player: Player, building_id: UUID) -> dict:
-    building = (
-        db.query(Building).filter(Building.id == building_id).with_for_update().first()
-    )
+    building = db.query(Building).filter(Building.id == building_id).with_for_update().first()
     if not building or building.city_id != player.city_id:
         return {"success": False, "message": "Будівлю не знайдено."}
 
@@ -259,7 +245,7 @@ def repair_building_operations(db: Session, player: Player, building_id: UUID) -
             "message": f"Недостатньо коштів для ремонту будівлі! Потрібно: {fee:.2f} ₴.",
         }
 
-    city = db.query(City).filter(City.id == player.city_id).first()
+    city = CityRepository(db).get_by_id(player.city_id)
     if not city:
         return {"success": False, "message": "Місто не знайдено"}
 
@@ -342,9 +328,7 @@ def process_daily_building_upkeep(db: Session, city: City) -> dict:
             tax=0.0,
             purpose=BUILDING_UPKEEP_PURPOSE,
         )
-        stats["building_upkeep_charged"] = float(
-            money(stats["building_upkeep_charged"]) + upkeep
-        )
+        stats["building_upkeep_charged"] = float(money(stats["building_upkeep_charged"]) + upkeep)
         stats["buildings_upkeep_charged"] += 1
 
     return stats

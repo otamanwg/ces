@@ -280,9 +280,7 @@ STARTER_BUSINESS_BLUEPRINTS: tuple[StarterBusinessBlueprint, ...] = (
 
 
 def ensure_business_blueprints(db: Session) -> None:
-    existing_by_code = {
-        blueprint.code: blueprint for blueprint in db.query(BusinessBlueprint).all()
-    }
+    existing_by_code = {blueprint.code: blueprint for blueprint in db.query(BusinessBlueprint).all()}
 
     for starter in STARTER_BUSINESS_BLUEPRINTS:
         data = _starter_to_model_data(starter)
@@ -310,16 +308,12 @@ def get_active_business_blueprints(db: Session) -> list[BusinessBlueprint]:
 def get_business_blueprint(db: Session, blueprint_id: UUID) -> BusinessBlueprint | None:
     return (
         db.query(BusinessBlueprint)
-        .filter(
-            BusinessBlueprint.id == blueprint_id, BusinessBlueprint.is_active.is_(True)
-        )
+        .filter(BusinessBlueprint.id == blueprint_id, BusinessBlueprint.is_active.is_(True))
         .first()
     )
 
 
-def validate_blueprint_for_parcel(
-    blueprint: BusinessBlueprint, parcel: LandParcel
-) -> str | None:
+def validate_blueprint_for_parcel(blueprint: BusinessBlueprint, parcel: LandParcel) -> str | None:
     allowed_land_types = blueprint.allowed_land_types or []
     if allowed_land_types and parcel.land_type not in allowed_land_types:
         return "Цей бізнес не підходить для типу землі обраної ділянки."

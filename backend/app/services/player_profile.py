@@ -3,6 +3,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from backend.app.models import Hostel, Job, Player
+from backend.app.repositories.player import PlayerRepository
 from backend.app.schemas.mvp import PlayerActionsData, PlayerSnapshotData
 from backend.app.services.avatar_profile import build_avatar_snapshot
 from backend.app.services.business_market import (
@@ -25,9 +26,7 @@ from backend.app.services.player_progress import build_goal_effects
 from backend.app.services.sports import GYM_COST, GYM_ENERGY_COST
 
 
-def build_player_actions(
-    db: Session, player: Player, job: Job | None, hostel: Hostel | None
-) -> dict:
+def build_player_actions(db: Session, player: Player, job: Job | None, hostel: Hostel | None) -> dict:
     if not is_onboarding_complete(db, player):
         return PlayerActionsData(
             can_apply_job=False,
@@ -49,20 +48,15 @@ def build_player_actions(
         can_work=bool(job and player.energy >= job.energy_cost_per_shift),
         can_sleep=hostel is not None,
         can_eat=(player.hunger or 0) > 0 and money(player.balance) >= MEAL_COST,
-        can_buy_business=(cheapest_business_price(db) or Decimal("999999999.00"))
-        <= money(player.balance),
+        can_buy_business=(cheapest_business_price(db) or Decimal("999999999.00")) <= money(player.balance),
         can_collect_dividend=any(
-            money(b.cash_balance) >= Decimal("250.00")
-            for b in get_owned_businesses(db, player.id)
+            money(b.cash_balance) >= Decimal("250.00") for b in get_owned_businesses(db, player.id)
         ),
         can_join_sports=player.athlete_contract is None,
         can_train_sports=bool(
-            player.athlete_contract
-            and money(player.balance) >= GYM_COST
-            and player.energy >= GYM_ENERGY_COST
+            player.athlete_contract and money(player.balance) >= GYM_COST and player.energy >= GYM_ENERGY_COST
         ),
-        can_take_exam=player.education_level == "High School"
-        and money(player.balance) >= exam_cost,
+        can_take_exam=player.education_level == "High School" and money(player.balance) >= exam_cost,
     ).model_dump()
 
 
@@ -114,7 +108,7 @@ def build_player_snapshot(db: Session, player: Player) -> dict:
 
 
 def get_player_snapshot(db: Session, player_id: str) -> dict | None:
-    player = db.query(Player).filter(Player.id == to_uuid(player_id)).first()
+    player = PlayerRepository(db).get_by_id(to_uuid(player_id))
     if not player:
         return None
     return build_player_snapshot(db, player)

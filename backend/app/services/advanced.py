@@ -1,27 +1,28 @@
 # Логіка додаткових ігрових механік: Профспілки (Страйки), Кредити (Колектори), Страхування та Картелі
 # Файл: backend/app/services/advanced.py
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
 from backend.app.models import (
-    Player,
-    Business,
-    LaborUnion,
     BankLoan,
-    InsurancePolicy,
     Cartel,
     City,
+    InsurancePolicy,
+    LaborUnion,
 )
+from backend.app.repositories.business import BusinessRepository
+from backend.app.repositories.city import CityRepository
+from backend.app.repositories.player import PlayerRepository
 from backend.app.schemas.service_results import (
     InsurancePolicyPurchaseServiceResult,
     LaborUnionStrikeServiceResult,
     LoanDailyServiceResult,
     LobbyFundDonationServiceResult,
 )
-from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.ids import to_uuid
+from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
 
 
@@ -29,15 +30,13 @@ def toggle_labor_union_strike(db: Session, business_id: str, union_name: str) ->
     """Оголошення або завершення страйку профспілкою підприємства"""
     business_uuid = to_uuid(business_id)
     union = db.query(LaborUnion).filter(LaborUnion.business_id == business_uuid).first()
-    business = db.query(Business).filter(Business.id == business_uuid).first()
+    business = BusinessRepository(db).get_by_id(business_uuid)
     if not business:
         return {"success": False, "message": "Підприємство не знайдено"}
 
     if not union:
         # Якщо профспілки немає, створюємо її
-        union = LaborUnion(
-            business_id=business_uuid, name=union_name, strike_active=False
-        )
+        union = LaborUnion(business_id=business_uuid, name=union_name, strike_active=False)
         db.add(union)
         db.commit()
 
@@ -45,10 +44,10 @@ def toggle_labor_union_strike(db: Session, business_id: str, union_name: str) ->
     union.strike_active = not union.strike_active
 
     if union.strike_active:
-        union.strike_ends_at = datetime.now(timezone.utc) + timedelta(
-            days=1
-        )  # страйк на 1 день
-        message = f"✊ УВАГА! Робітники компанії '{business.name}' оголосили СТРАЙК! Робочі зміни заблоковано на 24 години."
+        union.strike_ends_at = datetime.now(UTC) + timedelta(days=1)  # страйк на 1 день
+        message = (
+            f"✊ УВАГА! Робітники компанії '{business.name}' оголосили СТРАЙК! Робочі зміни заблоковано на 24 години."
+        )
     else:
         union.strike_ends_at = None
         message = f"🤝 Профспілка припинила страйк на '{business.name}'. Виробництво відновлено."
@@ -73,8 +72,8 @@ def buy_insurance_policy(
     player_uuid = to_uuid(player_id)
     business_uuid = to_uuid(business_id)
     provider_uuid = to_uuid(provider_business_id)
-    player = db.query(Player).filter(Player.id == player_uuid).first()
-    provider = db.query(Business).filter(Business.id == provider_uuid).first()
+    player = PlayerRepository(db).get_by_id(player_uuid)
+    provider = BusinessRepository(db).get_by_id(provider_uuid)
 
     if not player or not provider:
         return {
@@ -125,7 +124,7 @@ def buy_insurance_policy(
 def process_daily_loan_installments_and_collectors(db: Session, player_id: str) -> dict:
     """Списання щоденних платежів за кредитом. При несплаті запускаються ШІ-Колектори!"""
     player_uuid = to_uuid(player_id)
-    player = db.query(Player).filter(Player.id == player_uuid).first()
+    player = PlayerRepository(db).get_by_id(player_uuid)
     loans = (
         db.query(BankLoan)
         .filter(
@@ -138,7 +137,7 @@ def process_daily_loan_installments_and_collectors(db: Session, player_id: str) 
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
 
-    city = db.query(City).filter(City.id == player.city_id).first()
+    city = CityRepository(db).get_by_id(player.city_id)
     results = []
 
     for loan in loans:
@@ -147,9 +146,7 @@ def process_daily_loan_installments_and_collectors(db: Session, player_id: str) 
         if money(player.balance) >= payment:
             # Успішна сплата кредиту
             debit(db, player, "balance", payment)
-            loan.remaining_debt = max(
-                money("0.00"), money(loan.remaining_debt) - payment
-            )
+            loan.remaining_debt = max(money("0.00"), money(loan.remaining_debt) - payment)
 
             # Гроші повертаються в міський банк (Скарбницю)
             credit(db, city, "treasury_balance", payment)
@@ -159,9 +156,7 @@ def process_daily_loan_installments_and_collectors(db: Session, player_id: str) 
                 results.append(f"🎉 Кредит №{str(loan.id)[:8]} повністю виплачено!")
             else:
                 loan.status = "active"
-                results.append(
-                    f"✅ Сплачено внесок за кредит: -{payment:.2f} ₴. Борг: {loan.remaining_debt:.2f} ₴."
-                )
+                results.append(f"✅ Сплачено внесок за кредит: -{payment:.2f} ₴. Борг: {loan.remaining_debt:.2f} ₴.")
 
             log_transaction(
                 db,
@@ -181,9 +176,7 @@ def process_daily_loan_installments_and_collectors(db: Session, player_id: str) 
             # Колектори конфісковують 50% від усіх поточних грошей гравця на рахунку
             seizure = money(player.balance) * money("0.50")
             debit(db, player, "balance", seizure)
-            loan.remaining_debt = max(
-                money("0.00"), money(loan.remaining_debt) - seizure
-            )
+            loan.remaining_debt = max(money("0.00"), money(loan.remaining_debt) - seizure)
 
             # Кошти вилучаються в Скарбницю
             credit(db, city, "treasury_balance", seizure)
@@ -220,7 +213,7 @@ def donate_to_lobby_fund(
     """Внесення коштів гравцем до Лобістського Фонду промислового Картелю"""
     player_uuid = to_uuid(player_id)
     city_uuid = to_uuid(city_id)
-    player = db.query(Player).filter(Player.id == player_uuid).first()
+    player = PlayerRepository(db).get_by_id(player_uuid)
     donation = money(amount)
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
@@ -230,11 +223,7 @@ def donate_to_lobby_fund(
             "message": "Недостатньо грошей для внеску в лобі-фонд!",
         }
 
-    cartel = (
-        db.query(Cartel)
-        .filter(Cartel.city_id == city_uuid, Cartel.industry_type == industry)
-        .first()
-    )
+    cartel = db.query(Cartel).filter(Cartel.city_id == city_uuid, Cartel.industry_type == industry).first()
     if not cartel:
         cartel = Cartel(
             city_id=city_uuid,
@@ -269,9 +258,7 @@ def donate_to_lobby_fund(
     action_triggered = False
     if money(cartel.lobby_fund) >= money("5000.00"):
         city = db.query(City).filter(City.id == city_uuid).first()
-        city.tax_rate_property = max(
-            money("0.50"), money(city.tax_rate_property) - money("2.00")
-        )
+        city.tax_rate_property = max(money("0.50"), money(city.tax_rate_property) - money("2.00"))
         debit(db, cartel, "lobby_fund", money("5000.00"))
         action_triggered = True
         message = (
