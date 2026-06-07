@@ -352,6 +352,7 @@ def get_city_status(db: Session = Depends(get_db)):
     data = CityStatusData(
         id=str(city.id),
         name=city.name,
+        game_day=city.game_day or 1,
         treasury_balance=float(city.treasury_balance),
         tax_rate_income=float(city.tax_rate_income),
         tax_rate_property=float(city.tax_rate_property),

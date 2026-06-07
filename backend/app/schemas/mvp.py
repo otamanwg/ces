@@ -195,6 +195,7 @@ class CityDistrictItem(BaseModel):
 class CityStatusData(BaseModel):
     id: str
     name: str
+    game_day: int
     treasury_balance: float
     tax_rate_income: float
     tax_rate_property: float

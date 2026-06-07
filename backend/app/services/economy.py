@@ -275,6 +275,7 @@ def game_day_tick(db: Session, city_id: str) -> dict:
     else:
         city.inflation_rate = money("0.00")
 
+    city.game_day = (city.game_day or 0) + 1
     db.commit()
 
     return DayTickServiceResult(
@@ -282,6 +283,7 @@ def game_day_tick(db: Session, city_id: str) -> dict:
         message="Настав новий день. Оренду сплачуйте кнопкою «Спати».",
         city={
             "id": str(city.id),
+            "game_day": city.game_day,
             "inflation_rate": float(city.inflation_rate),
             "treasury_balance": float(city.treasury_balance),
         },

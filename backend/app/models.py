@@ -196,6 +196,7 @@ class City(Base):
     tax_rate_income: Mapped[float] = mapped_column(Decimal(5, 2), default=10.00)
     tax_rate_property: Mapped[float] = mapped_column(Decimal(5, 2), default=2.00)
     inflation_rate: Mapped[float] = mapped_column(Decimal(5, 2), default=0.00)
+    game_day: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     mayor_player_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
             "players.id",

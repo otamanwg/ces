@@ -83,7 +83,7 @@ def build_city_news(db: Session, city: City, max_items: int = 4) -> list[dict]:
             _news_item(
                 "inflation",
                 "Інфляція",
-                f"Інфляція міста: {float(city.inflation_rate):.1f}%.",
+                f"Інфляція міста: {float(city.inflation_rate):.2f}%.",
                 "watch",
                 60,
             )
