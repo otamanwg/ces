@@ -12,7 +12,8 @@ param(
     [switch]$ArrivalStory,
     [switch]$GuidanceStory,
     [switch]$TaxiStory,
-    [switch]$CharacterCreation
+    [switch]$CharacterCreation,
+    [switch]$CharacterAvatarVariant
 )
 
 $ErrorActionPreference = "Stop"
@@ -86,6 +87,9 @@ if ($TaxiStory) {
 }
 if ($CharacterCreation) {
     $godotArguments += "--character-creation"
+}
+if ($CharacterAvatarVariant) {
+    $godotArguments += "--character-avatar-variant"
 }
 
 & $godot @godotArguments

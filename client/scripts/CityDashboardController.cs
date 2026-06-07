@@ -69,6 +69,22 @@ public partial class CityDashboardController : Control
 	private Button _characterCreateButton;
 	private Button _characterUkrainianButton;
 	private Button _characterEnglishButton;
+	private CharacterAvatarPreview _characterAvatarPreview;
+	private Label _characterBodyValueLabel;
+	private Label _characterFaceValueLabel;
+	private Label _characterSkinValueLabel;
+	private Label _characterHairValueLabel;
+	private Label _characterHairColorValueLabel;
+	private Button _characterBodyPreviousButton;
+	private Button _characterBodyNextButton;
+	private Button _characterFacePreviousButton;
+	private Button _characterFaceNextButton;
+	private Button _characterSkinPreviousButton;
+	private Button _characterSkinNextButton;
+	private Button _characterHairPreviousButton;
+	private Button _characterHairNextButton;
+	private Button _characterHairColorPreviousButton;
+	private Button _characterHairColorNextButton;
 	private DashboardStatusPresenter _statusPresenter;
 	private DashboardActionPresenter _actionPresenter;
 	private DashboardOnboardingState _onboardingState = new();
@@ -124,6 +140,7 @@ public partial class CityDashboardController : Control
 	private string _onboardingBackdropPath = "";
 	private string _onboardingPortraitPath = "";
 	private string _selectedCharacterAgeGroup = DashboardCharacterCreation.DefaultAgeGroup;
+	private DashboardAvatarSelection _selectedAvatar = DashboardAvatarSelection.Default;
 	private double _playerBalance;
 	private JsonNode _landCatalogData;
 	private JsonNode _blueprintCatalogData;
@@ -197,6 +214,7 @@ public partial class CityDashboardController : Control
 		{
 			_characterEnglishButton.Pressed += OnCharacterEnglishButtonPressed;
 		}
+		BindCharacterAvatarControls();
 		if (_characterNameInput != null)
 		{
 			_characterNameInput.TextSubmitted += _ => OnCharacterCreateButtonPressed();
@@ -321,6 +339,22 @@ public partial class CityDashboardController : Control
 		_characterCreateButton ??= GetNodeOrNull<Button>("%CharacterCreateButton");
 		_characterUkrainianButton ??= GetNodeOrNull<Button>("%CharacterUkrainianButton");
 		_characterEnglishButton ??= GetNodeOrNull<Button>("%CharacterEnglishButton");
+		_characterAvatarPreview ??= GetNodeOrNull<CharacterAvatarPreview>("%CharacterAvatarPreview");
+		_characterBodyValueLabel ??= GetNodeOrNull<Label>("%CharacterBodyValueLabel");
+		_characterFaceValueLabel ??= GetNodeOrNull<Label>("%CharacterFaceValueLabel");
+		_characterSkinValueLabel ??= GetNodeOrNull<Label>("%CharacterSkinValueLabel");
+		_characterHairValueLabel ??= GetNodeOrNull<Label>("%CharacterHairValueLabel");
+		_characterHairColorValueLabel ??= GetNodeOrNull<Label>("%CharacterHairColorValueLabel");
+		_characterBodyPreviousButton ??= GetNodeOrNull<Button>("%CharacterBodyPreviousButton");
+		_characterBodyNextButton ??= GetNodeOrNull<Button>("%CharacterBodyNextButton");
+		_characterFacePreviousButton ??= GetNodeOrNull<Button>("%CharacterFacePreviousButton");
+		_characterFaceNextButton ??= GetNodeOrNull<Button>("%CharacterFaceNextButton");
+		_characterSkinPreviousButton ??= GetNodeOrNull<Button>("%CharacterSkinPreviousButton");
+		_characterSkinNextButton ??= GetNodeOrNull<Button>("%CharacterSkinNextButton");
+		_characterHairPreviousButton ??= GetNodeOrNull<Button>("%CharacterHairPreviousButton");
+		_characterHairNextButton ??= GetNodeOrNull<Button>("%CharacterHairNextButton");
+		_characterHairColorPreviousButton ??= GetNodeOrNull<Button>("%CharacterHairColorPreviousButton");
+		_characterHairColorNextButton ??= GetNodeOrNull<Button>("%CharacterHairColorNextButton");
 	}
 
 	private void ConfigureTextSafety()
@@ -739,6 +773,150 @@ public partial class CityDashboardController : Control
 			_characterCreateButton.Text = Tr(
 				_pendingRegistration ? "CHARACTER_CREATING_BUTTON" : "CHARACTER_CREATE_BUTTON");
 		}
+		UpdateCharacterAvatarUi();
+	}
+
+	private void BindCharacterAvatarControls()
+	{
+		if (_characterBodyPreviousButton != null)
+		{
+			_characterBodyPreviousButton.Pressed += () => CycleCharacterAvatar(selection => selection.CycleBody(-1));
+		}
+		if (_characterBodyNextButton != null)
+		{
+			_characterBodyNextButton.Pressed += () => CycleCharacterAvatar(selection => selection.CycleBody(1));
+		}
+		if (_characterFacePreviousButton != null)
+		{
+			_characterFacePreviousButton.Pressed += () => CycleCharacterAvatar(selection => selection.CycleFace(-1));
+		}
+		if (_characterFaceNextButton != null)
+		{
+			_characterFaceNextButton.Pressed += () => CycleCharacterAvatar(selection => selection.CycleFace(1));
+		}
+		if (_characterSkinPreviousButton != null)
+		{
+			_characterSkinPreviousButton.Pressed += () => CycleCharacterAvatar(selection => selection.CycleSkin(-1));
+		}
+		if (_characterSkinNextButton != null)
+		{
+			_characterSkinNextButton.Pressed += () => CycleCharacterAvatar(selection => selection.CycleSkin(1));
+		}
+		if (_characterHairPreviousButton != null)
+		{
+			_characterHairPreviousButton.Pressed += () => CycleCharacterAvatar(selection => selection.CycleHairStyle(-1));
+		}
+		if (_characterHairNextButton != null)
+		{
+			_characterHairNextButton.Pressed += () => CycleCharacterAvatar(selection => selection.CycleHairStyle(1));
+		}
+		if (_characterHairColorPreviousButton != null)
+		{
+			_characterHairColorPreviousButton.Pressed += () => CycleCharacterAvatar(selection => selection.CycleHairColor(-1));
+		}
+		if (_characterHairColorNextButton != null)
+		{
+			_characterHairColorNextButton.Pressed += () => CycleCharacterAvatar(selection => selection.CycleHairColor(1));
+		}
+	}
+
+	private void CycleCharacterAvatar(
+		Func<DashboardAvatarSelection, DashboardAvatarSelection> update
+	)
+	{
+		if (_pendingRegistration)
+		{
+			return;
+		}
+		_selectedAvatar = update(_selectedAvatar);
+		UpdateCharacterAvatarUi();
+	}
+
+	private void UpdateCharacterAvatarUi()
+	{
+		if (_characterBodyValueLabel != null)
+		{
+			_characterBodyValueLabel.Text = Tr(
+				_selectedAvatar.BodyPresetCode == "body_sturdy"
+					? "CHARACTER_BODY_STURDY"
+					: "CHARACTER_BODY_STANDARD"
+			);
+		}
+		if (_characterFaceValueLabel != null)
+		{
+			int position = DashboardAvatarSelection.PositionOf(
+				DashboardAvatarSelection.FacePresetCodes,
+				_selectedAvatar.FacePresetCode
+			);
+			_characterFaceValueLabel.Text = $"{Tr("CHARACTER_FACE_VALUE")} {position}/20";
+		}
+		if (_characterSkinValueLabel != null)
+		{
+			int position = DashboardAvatarSelection.PositionOf(
+				DashboardAvatarSelection.SkinToneCodes,
+				_selectedAvatar.SkinToneCode
+			);
+			_characterSkinValueLabel.Text = $"{Tr("CHARACTER_SKIN_VALUE")} {position}/6";
+		}
+		if (_characterHairValueLabel != null)
+		{
+			_characterHairValueLabel.Text = Tr(HairStyleTranslationKey(_selectedAvatar.HairStyleCode));
+		}
+		if (_characterHairColorValueLabel != null)
+		{
+			_characterHairColorValueLabel.Text = Tr(HairColorTranslationKey(_selectedAvatar.HairColorCode));
+		}
+
+		foreach (var button in CharacterAvatarButtons())
+		{
+			if (button != null)
+			{
+				button.Disabled = _pendingRegistration;
+			}
+		}
+		_characterAvatarPreview?.SetSelection(_selectedAvatar);
+	}
+
+	private IEnumerable<Button> CharacterAvatarButtons()
+	{
+		yield return _characterBodyPreviousButton;
+		yield return _characterBodyNextButton;
+		yield return _characterFacePreviousButton;
+		yield return _characterFaceNextButton;
+		yield return _characterSkinPreviousButton;
+		yield return _characterSkinNextButton;
+		yield return _characterHairPreviousButton;
+		yield return _characterHairNextButton;
+		yield return _characterHairColorPreviousButton;
+		yield return _characterHairColorNextButton;
+	}
+
+	private static string HairStyleTranslationKey(string code)
+	{
+		return code switch
+		{
+			"hair_short_02" => "CHARACTER_HAIR_SHORT_02",
+			"hair_medium_01" => "CHARACTER_HAIR_MEDIUM_01",
+			"hair_medium_02" => "CHARACTER_HAIR_MEDIUM_02",
+			"hair_long_01" => "CHARACTER_HAIR_LONG_01",
+			"hair_long_02" => "CHARACTER_HAIR_LONG_02",
+			"hair_buzz_01" => "CHARACTER_HAIR_BUZZ",
+			"hair_bald" => "CHARACTER_HAIR_BALD",
+			_ => "CHARACTER_HAIR_SHORT_01",
+		};
+	}
+
+	private static string HairColorTranslationKey(string code)
+	{
+		return code switch
+		{
+			"hair_black" => "CHARACTER_HAIR_COLOR_BLACK",
+			"hair_blond" => "CHARACTER_HAIR_COLOR_BLOND",
+			"hair_auburn" => "CHARACTER_HAIR_COLOR_AUBURN",
+			"hair_gray" => "CHARACTER_HAIR_COLOR_GRAY",
+			"hair_white" => "CHARACTER_HAIR_COLOR_WHITE",
+			_ => "CHARACTER_HAIR_COLOR_BROWN",
+		};
 	}
 
 	public void OnCharacterTeenButtonPressed()
@@ -810,6 +988,7 @@ public partial class CityDashboardController : Control
 		{
 			username,
 			tutorial_age_group = _selectedCharacterAgeGroup,
+			avatar = _selectedAvatar.ToApiPayload(),
 		});
 		_apiClient?.Post("/api/player/register", payload);
 	}

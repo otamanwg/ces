@@ -322,6 +322,26 @@ AssertEqual(
 );
 AssertEqual("adult", DashboardCharacterCreation.NormalizeAgeGroup("unknown"), "Unknown guidance group falls back to adult");
 AssertEqual("mature", DashboardCharacterCreation.NormalizeAgeGroup("MATURE"), "Guidance group normalization ignores case");
+var avatarSelection = DashboardAvatarSelection.Default;
+AssertEqual("body_standard", avatarSelection.BodyPresetCode, "Avatar selection default body");
+AssertEqual("face_01", avatarSelection.FacePresetCode, "Avatar selection default face");
+AssertEqual("body_sturdy", avatarSelection.CycleBody(1).BodyPresetCode, "Avatar body advances");
+AssertEqual("body_sturdy", avatarSelection.CycleBody(-1).BodyPresetCode, "Avatar body wraps backwards");
+AssertEqual("face_20", avatarSelection.CycleFace(-1).FacePresetCode, "Avatar face wraps backwards");
+AssertEqual("skin_04", avatarSelection.CycleSkin(1).SkinToneCode, "Avatar skin advances");
+AssertEqual("hair_bald", avatarSelection.CycleHairStyle(-1).HairStyleCode, "Avatar hair wraps backwards");
+AssertEqual("hair_black", avatarSelection.CycleHairColor(-1).HairColorCode, "Avatar hair color wraps backwards");
+AssertEqual(20, DashboardAvatarSelection.FacePresetCodes.Count, "Avatar selection exposes twenty faces");
+AssertEqual(3, DashboardAvatarSelection.PositionOf(
+	DashboardAvatarSelection.SkinToneCodes,
+	avatarSelection.SkinToneCode
+), "Avatar selection resolves one-based position");
+AssertEqual(
+	"hair_short_01",
+	avatarSelection.ToApiPayload()["hair_style_code"],
+	"Avatar selection builds API payload"
+);
+AssertEqual("face_01", avatarSelection.ToProfile().FacePresetCode, "Avatar selection builds renderer profile");
 AssertEqual("uk", DashboardLocaleProfile.Normalize(""), "Missing locale defaults to Ukrainian");
 AssertEqual("en", DashboardLocaleProfile.Normalize(" EN "), "Supported locale normalization trims and ignores case");
 AssertEqual("uk", DashboardLocaleProfile.Normalize("de"), "Unsupported locale falls back to Ukrainian");

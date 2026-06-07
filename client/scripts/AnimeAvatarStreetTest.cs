@@ -496,7 +496,7 @@ public partial class AnimeAvatarStreetTest : Node3D
 			return;
 		}
 
-		ApplyAppearanceToCanonical();
+		CanonicalAvatarAppearanceApplier.Apply(_canonicalAvatar, _appearance, _stylizedShader);
 		AttachCanonicalPhone(skeleton!);
 		string animations = "(none)";
 		if (_canonicalAnimationPlayer != null)
@@ -514,97 +514,6 @@ public partial class AnimeAvatarStreetTest : Node3D
 		GD.Print(
 			$"Canonical avatar loaded: bones={skeleton!.GetBoneCount()}, animations=[{animations}]"
 		);
-	}
-
-	private void ApplyAppearanceToCanonical()
-	{
-		if (_canonicalAvatar == null)
-		{
-			return;
-		}
-
-		var skinMaterial = CreateMaterial(ToColor(_appearance.SkinColor));
-		var hairMaterial = CreateMaterial(ToColor(_appearance.HairColor));
-		var upperMaterial = CreateMaterial(ToColor(_appearance.UpperColor));
-		var lowerMaterial = CreateMaterial(ToColor(_appearance.LowerColor));
-		var footwearMaterial = CreateMaterial(ToColor(_appearance.FootwearColor));
-
-		VisitMeshes(_canonicalAvatar, mesh =>
-		{
-			string name = mesh.Name.ToString();
-			if (name.StartsWith("Hair", StringComparison.Ordinal))
-			{
-				mesh.Visible = IsVisibleHairGroup(name);
-				mesh.MaterialOverride = hairMaterial;
-				return;
-			}
-			if (name is "FaceMesh" or "LowerArmLeft" or "LowerArmRight"
-				or "HandLeft" or "HandRight" or "LowerLegLeft" or "LowerLegRight")
-			{
-				mesh.MaterialOverride = skinMaterial;
-			}
-			else if (name is "TorsoMesh" or "UpperArmLeft" or "UpperArmRight")
-			{
-				mesh.MaterialOverride = upperMaterial;
-			}
-			else if (name is "HipsMesh" or "UpperLegLeft" or "UpperLegRight")
-			{
-				mesh.MaterialOverride = lowerMaterial;
-			}
-			else if (name is "FootLeft" or "FootRight")
-			{
-				mesh.MaterialOverride = footwearMaterial;
-			}
-		});
-
-		ScaleMesh("TorsoMesh", new Vector3(_appearance.TorsoWidthScale, 1.0f, _appearance.TorsoWidthScale));
-		ScaleMesh("HipsMesh", new Vector3(_appearance.TorsoWidthScale, 1.0f, _appearance.TorsoWidthScale));
-		ScaleMesh("UpperArmLeft", new Vector3(_appearance.LimbWidthScale, _appearance.LimbWidthScale, 1.0f));
-		ScaleMesh("UpperArmRight", new Vector3(_appearance.LimbWidthScale, _appearance.LimbWidthScale, 1.0f));
-		ScaleMesh(
-			"FaceMesh",
-			new Vector3(_appearance.Face.HeadWidthScale, _appearance.Face.HeadHeightScale, 1.0f)
-		);
-		ScaleMesh("EyeLeft", Vector3.One * _appearance.Face.EyeScale);
-		ScaleMesh("EyeRight", Vector3.One * _appearance.Face.EyeScale);
-		ScaleMesh("Mouth", new Vector3(_appearance.Face.MouthWidthScale, 1.0f, 1.0f));
-		OffsetEye("EyeLeft");
-		OffsetEye("EyeRight");
-	}
-
-	private void OffsetEye(string name)
-	{
-		var eye = FindDescendantByName<MeshInstance3D>(_canonicalAvatar!, name);
-		if (eye == null)
-		{
-			return;
-		}
-		eye.Position = new Vector3(
-			eye.Position.X * _appearance.Face.EyeSpacingScale,
-			eye.Position.Y + _appearance.Face.EyeHeightOffset,
-			eye.Position.Z
-		);
-	}
-
-	private void ScaleMesh(string name, Vector3 scale)
-	{
-		var mesh = FindDescendantByName<MeshInstance3D>(_canonicalAvatar!, name);
-		if (mesh != null)
-		{
-			mesh.Scale *= scale;
-		}
-	}
-
-	private bool IsVisibleHairGroup(string meshName)
-	{
-		foreach (string group in _appearance.VisibleHairGroups)
-		{
-			if (meshName.StartsWith(group, StringComparison.Ordinal))
-			{
-				return true;
-			}
-		}
-		return false;
 	}
 
 	private void AttachCanonicalPhone(Skeleton3D skeleton)
@@ -685,35 +594,6 @@ public partial class AnimeAvatarStreetTest : Node3D
 			}
 		}
 		return null;
-	}
-
-	private static T? FindDescendantByName<T>(Node root, string name) where T : Node
-	{
-		if (root is T match && root.Name.ToString() == name)
-		{
-			return match;
-		}
-		foreach (Node child in root.GetChildren())
-		{
-			var descendant = FindDescendantByName<T>(child, name);
-			if (descendant != null)
-			{
-				return descendant;
-			}
-		}
-		return null;
-	}
-
-	private static void VisitMeshes(Node root, Action<MeshInstance3D> visit)
-	{
-		if (root is MeshInstance3D mesh)
-		{
-			visit(mesh);
-		}
-		foreach (Node child in root.GetChildren())
-		{
-			VisitMeshes(child, visit);
-		}
 	}
 
 	private static DashboardAvatarProfile BuildCommandLineProfile()

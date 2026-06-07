@@ -42,6 +42,9 @@ func _capture_dashboard() -> void:
 	if _has_argument("--character-creation"):
 		_apply_character_creation_preview(dashboard)
 		await get_tree().create_timer(0.25).timeout
+	if _has_argument("--character-avatar-variant"):
+		_apply_character_avatar_variant(dashboard)
+		await get_tree().create_timer(0.5).timeout
 	RenderingServer.force_draw(false)
 	await RenderingServer.frame_post_draw
 
@@ -263,6 +266,24 @@ func _apply_character_creation_preview(dashboard: Node) -> void:
 	error_label.visible = false
 	create_button.text = tr("CHARACTER_CREATE_BUTTON")
 	print("DASHBOARD_CHARACTER_CREATION_PREVIEW_APPLIED=1")
+
+
+func _apply_character_avatar_variant(dashboard: Node) -> void:
+	var steps := {
+		"CharacterBodyNextButton": 1,
+		"CharacterFaceNextButton": 19,
+		"CharacterSkinNextButton": 3,
+		"CharacterHairNextButton": 5,
+		"CharacterHairColorNextButton": 2,
+	}
+	for button_name in steps:
+		var button := dashboard.find_child(button_name, true, false) as Button
+		if button == null:
+			push_error("Dashboard capture: avatar selector not found: %s" % button_name)
+			return
+		for _step in range(steps[button_name]):
+			button.emit_signal("pressed")
+	print("DASHBOARD_CHARACTER_AVATAR_VARIANT_APPLIED=1")
 
 
 func _set_onboarding_texture(dashboard: Node, resource_path: String) -> void:

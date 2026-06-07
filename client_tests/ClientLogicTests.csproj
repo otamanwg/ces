@@ -20,6 +20,7 @@
     <Compile Include="..\client\scripts\DashboardTutorialProfile.cs" Link="DashboardTutorialProfile.cs" />
     <Compile Include="..\client\scripts\DashboardCharacterCreation.cs" Link="DashboardCharacterCreation.cs" />
     <Compile Include="..\client\scripts\DashboardAvatarProfile.cs" Link="DashboardAvatarProfile.cs" />
+    <Compile Include="..\client\scripts\DashboardAvatarSelection.cs" Link="DashboardAvatarSelection.cs" />
     <Compile Include="..\client\scripts\DashboardLocaleProfile.cs" Link="DashboardLocaleProfile.cs" />
     <Compile Include="..\client\scripts\DashboardEventHistory.cs" Link="DashboardEventHistory.cs" />
     <Compile Include="..\client\scripts\DashboardArrivalStory.cs" Link="DashboardArrivalStory.cs" />

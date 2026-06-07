@@ -882,6 +882,20 @@ DoD:
 
 ---
 
+## Sprint 53 — Character Creation Avatar Selection
+
+Ціль: semantic avatar profile обирається на реальному character-creation screen і зберігається під час реєстрації.
+
+Порядок:
+
+1. ✅ Backend contract: register endpoint, PostgreSQL persistence, validation і catalog вже покриті тестами.
+2. ✅ Client state/tests: циклічний вибір body/face/skin/hair/color та API payload.
+3. ✅ Reusable Godot preview: canonical rig, idle animation і live appearance update.
+4. ✅ Godot MCP scene: компактні controls та animated preview у landscape layout.
+5. ✅ Повний checkpoint, visual QA, MCP smoke і commit.
+
+---
+
 ## Checkpoints Де Потрібен Користувач
 
 | Checkpoint | Коли | Що потрібно |

@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://c0gtwynhiqsc8"]
+[gd_scene load_steps=7 format=3 uid="uid://c0gtwynhiqsc8"]
 
 [ext_resource type="Script" path="res://scripts/CityDashboardController.cs" id="1"]
 [ext_resource type="Script" path="res://scripts/ExamPanelController.cs" id="2"]
 [ext_resource type="Texture2D" uid="uid://c5or4w24e3qvh" path="res://assets/visual/core/city_backdrop_core.png" id="3"]
 [ext_resource type="Script" path="res://scripts/CityVisualOverlay.cs" id="3_juvko"]
 [ext_resource type="Texture2D" uid="uid://03ukqeywx1l5" path="res://assets/visual/core/arrival_bus_station_core_v2.png" id="5_7m5xk"]
+[ext_resource type="Script" path="res://scripts/CharacterAvatarPreview.cs" id="6_afu1s"]
 
 [node name="CityDashboard" type="Control"]
 layout_mode = 3
@@ -809,7 +810,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="CharacterCreationPanel" type="PanelContainer" parent="CharacterCreationOverlay/CharacterCreationCenter"]
-custom_minimum_size = Vector2(780, 620)
+custom_minimum_size = Vector2(1120, 690)
 layout_mode = 2
 
 [node name="CharacterCreationMargin" type="MarginContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel"]
@@ -838,7 +839,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="CharacterSubtitleLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
-custom_minimum_size = Vector2(0, 66)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
 text = "CHARACTER_SUBTITLE"
@@ -848,58 +849,96 @@ autowrap_mode = 3
 text_overrun_behavior = 3
 max_lines_visible = 3
 
-[node name="CharacterNameLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+[node name="CharacterContentRow" type="HBoxContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="CharacterPreviewColumn" type="VBoxContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CharacterPreviewFrame" type="PanelContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterPreviewColumn"]
+custom_minimum_size = Vector2(400, 488)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CharacterPreviewViewportContainer" type="SubViewportContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterPreviewColumn/CharacterPreviewFrame"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+stretch = true
+
+[node name="CharacterPreviewViewport" type="SubViewport" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterPreviewColumn/CharacterPreviewFrame/CharacterPreviewViewportContainer"]
+handle_input_locally = false
+msaa_3d = 2
+size = Vector2i(2, 2)
+render_target_update_mode = 0
+
+[node name="CharacterAvatarPreview" type="Node3D" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterPreviewColumn/CharacterPreviewFrame/CharacterPreviewViewportContainer/CharacterPreviewViewport"]
+unique_name_in_owner = true
+script = ExtResource("6_afu1s")
+
+[node name="CharacterFormBox" type="VBoxContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow"]
+custom_minimum_size = Vector2(610, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="CharacterNameLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "CHARACTER_NAME_LABEL"
 
-[node name="CharacterNameInput" type="LineEdit" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+[node name="CharacterNameInput" type="LineEdit" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 placeholder_text = "CHARACTER_NAME_PLACEHOLDER"
 max_length = 24
 clear_button_enabled = true
 
-[node name="CharacterAgeLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+[node name="CharacterAgeLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "CHARACTER_AGE_LABEL"
 
-[node name="CharacterAgeSegments" type="HBoxContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+[node name="CharacterAgeSegments" type="HBoxContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox"]
 layout_mode = 2
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="CharacterTeenButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterAgeSegments"]
+[node name="CharacterTeenButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterAgeSegments"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(210, 56)
+custom_minimum_size = Vector2(150, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
 text = "CHARACTER_AGE_TEEN"
 
-[node name="CharacterAdultButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterAgeSegments"]
+[node name="CharacterAdultButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterAgeSegments"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(210, 56)
+custom_minimum_size = Vector2(150, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
 button_pressed = true
 text = "CHARACTER_AGE_ADULT"
 
-[node name="CharacterMatureButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterAgeSegments"]
+[node name="CharacterMatureButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterAgeSegments"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(210, 56)
+custom_minimum_size = Vector2(150, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
 text = "CHARACTER_AGE_MATURE"
 
-[node name="CharacterAgeDescriptionLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+[node name="CharacterAgeDescriptionLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 62)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "CHARACTER_AGE_ADULT_DESCRIPTION"
 horizontal_alignment = 1
@@ -908,10 +947,170 @@ autowrap_mode = 3
 text_overrun_behavior = 3
 max_lines_visible = 3
 
-[node name="CharacterErrorLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+[node name="CharacterAppearanceLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "CHARACTER_APPEARANCE_LABEL"
+
+[node name="CharacterBodyRow" type="HBoxContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CharacterBodyCaption" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterBodyRow"]
+custom_minimum_size = Vector2(132, 0)
+layout_mode = 2
+text = "CHARACTER_BODY_LABEL"
+vertical_alignment = 1
+
+[node name="CharacterBodyPreviousButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterBodyRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 36)
+layout_mode = 2
+text = "<"
+
+[node name="CharacterBodyValueLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterBodyRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CharacterBodyNextButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterBodyRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 36)
+layout_mode = 2
+text = ">"
+
+[node name="CharacterFaceRow" type="HBoxContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CharacterFaceCaption" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterFaceRow"]
+custom_minimum_size = Vector2(132, 0)
+layout_mode = 2
+text = "CHARACTER_FACE_LABEL"
+vertical_alignment = 1
+
+[node name="CharacterFacePreviousButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterFaceRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 36)
+layout_mode = 2
+text = "<"
+
+[node name="CharacterFaceValueLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterFaceRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CharacterFaceNextButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterFaceRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 36)
+layout_mode = 2
+text = ">"
+
+[node name="CharacterSkinRow" type="HBoxContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CharacterSkinCaption" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterSkinRow"]
+custom_minimum_size = Vector2(132, 0)
+layout_mode = 2
+text = "CHARACTER_SKIN_LABEL"
+vertical_alignment = 1
+
+[node name="CharacterSkinPreviousButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterSkinRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 36)
+layout_mode = 2
+text = "<"
+
+[node name="CharacterSkinValueLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterSkinRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CharacterSkinNextButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterSkinRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 36)
+layout_mode = 2
+text = ">"
+
+[node name="CharacterHairRow" type="HBoxContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CharacterHairCaption" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterHairRow"]
+custom_minimum_size = Vector2(132, 0)
+layout_mode = 2
+text = "CHARACTER_HAIR_LABEL"
+vertical_alignment = 1
+
+[node name="CharacterHairPreviousButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterHairRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 36)
+layout_mode = 2
+text = "<"
+
+[node name="CharacterHairValueLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterHairRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CharacterHairNextButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterHairRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 36)
+layout_mode = 2
+text = ">"
+
+[node name="CharacterHairColorRow" type="HBoxContainer" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CharacterHairColorCaption" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterHairColorRow"]
+custom_minimum_size = Vector2(132, 0)
+layout_mode = 2
+text = "CHARACTER_HAIR_COLOR_LABEL"
+vertical_alignment = 1
+
+[node name="CharacterHairColorPreviousButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterHairColorRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 36)
+layout_mode = 2
+text = "<"
+
+[node name="CharacterHairColorValueLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterHairColorRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CharacterHairColorNextButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox/CharacterHairColorRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(42, 36)
+layout_mode = 2
+text = ">"
+
+[node name="CharacterErrorLabel" type="Label" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox"]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.45, 0.42, 1)
 horizontal_alignment = 1
@@ -920,9 +1119,9 @@ autowrap_mode = 3
 text_overrun_behavior = 3
 max_lines_visible = 2
 
-[node name="CharacterCreateButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox"]
+[node name="CharacterCreateButton" type="Button" parent="CharacterCreationOverlay/CharacterCreationCenter/CharacterCreationPanel/CharacterCreationMargin/CharacterCreationBox/CharacterContentRow/CharacterFormBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(320, 58)
+custom_minimum_size = Vector2(320, 50)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "CHARACTER_CREATE_BUTTON"
