@@ -35,7 +35,7 @@ Write-Host "== Backend tests =="
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 if (-not $SkipClient) {
-    $dotnet = "C:\Tools\dotnet\dotnet.exe"
+    $dotnet = "C:\tools\dotnet-sdk\dotnet.exe"
     if (-not (Test-Path $dotnet)) {
         $dotnet = "dotnet"
     }
