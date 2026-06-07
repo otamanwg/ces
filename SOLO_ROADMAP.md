@@ -11,7 +11,7 @@
 ### Готово
 
 - PostgreSQL-only backend з Alembic.
-- FastAPI MVP routes: city, player, jobs, work, sleep, exam.
+- FastAPI MVP routes: city, player, jobs, work, sleep, exam, land, business, sports.
 - Єдиний API envelope: `success`, `message`, `data`, `effects`.
 - Player auth token для state-changing player routes.
 - Idempotency для `work`, `sleep`, `exam`.
@@ -19,6 +19,11 @@
 - Godot MCP addon + локальний Python bridge для Codex/Cursor.
 - Dashboard scroll-wrapper для мобільного viewport.
 - `scripts/check.ps1` як головний checkpoint.
+- Repository layer: `BaseRepository`, `PlayerRepository`, `CityRepository`, `BusinessRepository`, `JobRepository`, `HostelRepository`, `LandParcelRepository`.
+- Dev tools: `just` (task runner), `ruff` (lint+format), `pyright` (type check), `pre-commit`, `uv` (package manager).
+- OpenAPI → C# DTO generation через NSwag (`client/scripts/generated/CityApiModels.cs`).
+- `TOOLS.md` — інвентар стеку для AI-асистентів.
+- Backend tests: 90 passed.
 
 ### Поточний Фокус
 
