@@ -109,6 +109,7 @@ public partial class CityDashboardController : Control
     private bool _pendingExamInfo;
     private bool _pendingRefresh;
     private bool _pendingBuildingPortfolio;
+    private bool _pendingBusinessStatus;
     private bool _pendingBuildLandCatalog;
     private bool _pendingBuildBlueprintCatalog;
     private bool _pendingOnboarding;
@@ -498,6 +499,12 @@ public partial class CityDashboardController : Control
             return;
         }
 
+        if (IsBusinessStatusEndpoint(endpoint))
+        {
+            HandleBusinessStatus(root);
+            return;
+        }
+
         bool apiSuccess = root["success"]?.GetValue<bool>() ?? false;
         string message = root["message"]?.ToString() ?? "";
         var data = root["data"];
@@ -607,6 +614,7 @@ public partial class CityDashboardController : Control
         _pendingExamInfo = false;
         _pendingRefresh = false;
         _pendingBuildingPortfolio = false;
+        _pendingBusinessStatus = false;
         _pendingBuildLandCatalog = false;
         _pendingBuildBlueprintCatalog = false;
         _pendingOnboarding = false;
@@ -1361,6 +1369,7 @@ public partial class CityDashboardController : Control
             {
                 RefreshBuildingPortfolio();
                 RefreshBuildCatalog();
+                RefreshBusinessStatus();
             }
         }
 
@@ -1377,6 +1386,21 @@ public partial class CityDashboardController : Control
         _pendingBuildingPortfolio = true;
         UpdateBuildingPortfolioButtons();
         _apiClient?.GetAuthorized($"/api/player/{_session.PlayerId}/buildings", _session.AuthToken);
+    }
+
+    private void RefreshBusinessStatus()
+    {
+        if (_session == null || !_session.HasAuthenticatedPlayer
+            || string.IsNullOrEmpty(_ownedBusinessId) || _pendingBusinessStatus)
+        {
+            return;
+        }
+
+        _pendingBusinessStatus = true;
+        _apiClient?.GetAuthorized(
+            $"/api/business/{_ownedBusinessId}/status?player_id={_session.PlayerId}",
+            _session.AuthToken
+        );
     }
 
     private void RefreshBuildCatalog(bool forceLandRefresh = false)
@@ -2180,6 +2204,36 @@ public partial class CityDashboardController : Control
     private static bool IsBuildingActivationEndpoint(string endpoint)
     {
         return endpoint.StartsWith("/api/building/applications/") && endpoint.EndsWith("/activate");
+    }
+
+    private static bool IsBusinessStatusEndpoint(string endpoint)
+    {
+        return endpoint.StartsWith("/api/business/") && endpoint.Contains("/status");
+    }
+
+    private void HandleBusinessStatus(JsonNode root)
+    {
+        _pendingBusinessStatus = false;
+        if (root["success"]?.GetValue<bool>() != true || OwnedBusinessLabel == null)
+        {
+            return;
+        }
+
+        var data = root["data"];
+        if (data == null) return;
+
+        string name = data["name"]?.ToString() ?? "";
+        string mode = data["management_mode"]?.ToString() ?? "";
+        double daily = data["daily_revenue"]?.GetValue<double>() ?? 0.0;
+        string modeLabel = mode switch
+        {
+            "ai" => "AI",
+            "manual" => "Ручний",
+            "shadow" => "Тіньовий",
+            _ => mode,
+        };
+        string revenueText = daily > 0 ? $" | {daily:N0} ₴/день" : "";
+        OwnedBusinessLabel.Text = $"Бізнес: {name} [{modeLabel}{revenueText}]";
     }
 
     public void OnApplyJobButtonPressed()
