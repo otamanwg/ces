@@ -6,6 +6,7 @@ public sealed class DashboardPlayerSnapshot
 	public string Username { get; init; } = "Гість";
 	public string AuthToken { get; init; } = "";
 	public DashboardTutorialAgeGroup TutorialAgeGroup { get; init; } = DashboardTutorialAgeGroup.Adult;
+	public DashboardAvatarProfile Avatar { get; init; } = new();
 	public double Balance { get; init; }
 	public string EducationLevel { get; init; } = "High School";
 	public string Job { get; init; } = "Безробітний";
@@ -45,6 +46,7 @@ public sealed class DashboardPlayerSnapshot
 			Username = data["username"]?.ToString() ?? "Гість",
 			AuthToken = data["auth_token"]?.ToString() ?? "",
 			TutorialAgeGroup = DashboardTutorialProfile.ParseAgeGroup(data["tutorial_age_group"]?.ToString() ?? ""),
+			Avatar = DashboardAvatarProfile.FromJson(data),
 			Balance = data["balance"]?.GetValue<double>() ?? 0.0,
 			EducationLevel = data["education_level"]?.ToString() ?? "High School",
 			Job = data["job"]?.ToString() ?? "Безробітний",

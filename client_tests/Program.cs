@@ -162,6 +162,20 @@ var richSnapshotJson = JsonNode.Parse(
 		"energy": 80,
 		"mood": 70,
 		"hunger": 25,
+		"avatar": {
+			"body_preset_code": "body_sturdy",
+			"face_preset_code": "face_20",
+			"skin_tone_code": "skin_06",
+			"hair_style_code": "hair_long_02",
+			"hair_color_code": "hair_auburn",
+			"equipped_outfit": {
+				"upper": "upper_designer_coat",
+				"lower": "lower_stock_jeans",
+				"footwear": "footwear_stock_sneakers"
+			},
+			"animation_profile_code": "humanoid_context_v1",
+			"fashion_score": 42
+		},
 		"onboarding": {
 			"stage": "housing_search",
 			"completed": false,
@@ -190,6 +204,12 @@ AssertEqual("Спорт: FC Test STR 12 / STA 15", richSnapshot.SportsText, "Sna
 AssertEqual(80, richSnapshot.Energy, "Snapshot energy parsed");
 AssertEqual(70, richSnapshot.Mood, "Snapshot mood parsed");
 AssertEqual(25, richSnapshot.Hunger, "Snapshot hunger parsed");
+AssertEqual("body_sturdy", richSnapshot.Avatar.BodyPresetCode, "Snapshot avatar body parsed");
+AssertEqual("face_20", richSnapshot.Avatar.FacePresetCode, "Snapshot avatar face parsed");
+AssertEqual("hair_long_02", richSnapshot.Avatar.HairStyleCode, "Snapshot avatar hair parsed");
+AssertEqual("upper_designer_coat", richSnapshot.Avatar.EquippedOutfit["upper"], "Snapshot equipped upper parsed");
+AssertEqual("humanoid_context_v1", richSnapshot.Avatar.AnimationProfileCode, "Snapshot animation profile parsed");
+AssertEqual(42, richSnapshot.Avatar.FashionScore, "Snapshot fashion score parsed");
 AssertEqual(false, richSnapshot.Onboarding.Completed, "Snapshot onboarding completion parsed");
 AssertEqual("housing_search", richSnapshot.Onboarding.Stage, "Snapshot onboarding stage parsed");
 AssertEqual(false, richSnapshot.Onboarding.CanReportToPolice, "Police choice removed after report");
@@ -230,6 +250,9 @@ AssertEqual("", defaultSnapshot.OwnedBusinessId, "Snapshot default owned busines
 AssertEqual("Бізнес: немає", defaultSnapshot.OwnedBusinessText, "Snapshot default owned business text");
 AssertEqual("Спорт: немає", defaultSnapshot.SportsText, "Snapshot default sports text");
 AssertEqual(true, defaultSnapshot.Onboarding.Completed, "Legacy snapshot defaults to completed onboarding");
+AssertEqual("body_standard", defaultSnapshot.Avatar.BodyPresetCode, "Legacy snapshot uses default avatar body");
+AssertEqual("face_01", defaultSnapshot.Avatar.FacePresetCode, "Legacy snapshot uses default avatar face");
+AssertEqual("upper_stock_jacket", defaultSnapshot.Avatar.EquippedOutfit["upper"], "Legacy snapshot uses default outfit");
 
 var arrivalSnapshot = DashboardPlayerSnapshot.FromJson(JsonNode.Parse(
 	"""

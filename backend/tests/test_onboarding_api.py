@@ -6,8 +6,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.app.database import get_db
-from backend.app.models import City, Player, PlayerOnboarding, PoliceRecord, TransactionModelLog
-from backend.app.schemas.mvp import PlayerSnapshotData
+from backend.app.models import City, Player, PlayerAvatar, PlayerOnboarding, PoliceRecord, TransactionModelLog
+from backend.app.schemas.mvp import AvatarCatalogData, PlayerSnapshotData
 from backend.app.seed import seed_initial_data
 from backend.app.services.onboarding import (
     ARRIVAL_CHOICE,
@@ -81,6 +81,11 @@ def test_registration_starts_arrival_and_blocks_ordinary_actions(client):
     assert data["onboarding"]["stage"] == ARRIVAL_CHOICE
     assert data["onboarding"]["completed"] is False
     assert data["tutorial_age_group"] == "adult"
+    assert data["avatar"]["body_preset_code"] == "body_standard"
+    assert data["avatar"]["face_preset_code"] == "face_01"
+    assert data["avatar"]["animation_profile_code"] == "humanoid_context_v1"
+    assert data["avatar"]["equipped_outfit"]["upper"] == "upper_stock_jacket"
+    assert data["avatar"]["fashion_score"] == 8
     assert data["onboarding"]["police_recovery_claimable"] is False
     assert data["onboarding"]["available_choices"] == [REPORT_TO_POLICE, FIND_HOUSING]
     assert all(available is False for available in data["actions"].values())
@@ -111,6 +116,62 @@ def test_registration_accepts_supported_tutorial_age_group(client):
     player = db.query(Player).filter(Player.id == body["data"]["id"]).one()
     assert player.tutorial_age_group == "teen"
     PlayerSnapshotData.model_validate(body["data"])
+
+
+def test_registration_accepts_avatar_identity(client):
+    test_client, db = client
+    response = test_client.post(
+        "/api/player/register",
+        json={
+            "username": "avatar-owner",
+            "avatar": {
+                "body_preset_code": "body_sturdy",
+                "face_preset_code": "face_20",
+                "skin_tone_code": "skin_06",
+                "hair_style_code": "hair_long_02",
+                "hair_color_code": "hair_auburn",
+            },
+        },
+    )
+    body = response.json()
+
+    assert body["success"] is True
+    assert body["data"]["avatar"]["body_preset_code"] == "body_sturdy"
+    assert body["data"]["avatar"]["face_preset_code"] == "face_20"
+    assert body["data"]["avatar"]["hair_style_code"] == "hair_long_02"
+    avatar = db.query(PlayerAvatar).filter(PlayerAvatar.player_id == body["data"]["id"]).one()
+    assert avatar.skin_tone_code == "skin_06"
+    assert avatar.hair_color_code == "hair_auburn"
+    PlayerSnapshotData.model_validate(body["data"])
+
+
+def test_registration_rejects_unknown_avatar_identity(client):
+    test_client, _db = client
+    body = test_client.post(
+        "/api/player/register",
+        json={
+            "username": "invalid-avatar",
+            "avatar": {
+                "body_preset_code": "giant_body",
+            },
+        },
+    ).json()
+
+    assert body["success"] is False
+    assert body["message"] == "Невідомий варіант статури."
+
+
+def test_avatar_catalog_exposes_small_body_set_and_twenty_faces(client):
+    test_client, _db = client
+    body = test_client.get("/api/avatar/catalog").json()
+
+    assert body["success"] is True
+    catalog = AvatarCatalogData.model_validate(body["data"])
+    assert catalog.body_presets == ["body_standard", "body_sturdy"]
+    assert len(catalog.face_presets) == 20
+    assert catalog.face_presets[0] == "face_01"
+    assert catalog.face_presets[-1] == "face_20"
+    assert catalog.animation_profile_code == "humanoid_context_v1"
 
 
 def test_registration_rejects_unknown_tutorial_age_group(client):

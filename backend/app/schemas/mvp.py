@@ -124,6 +124,27 @@ class PlayerOnboardingData(BaseModel):
     police_recovery_claimable: bool
 
 
+class PlayerAvatarData(BaseModel):
+    body_preset_code: str
+    face_preset_code: str
+    skin_tone_code: str
+    hair_style_code: str
+    hair_color_code: str
+    equipped_outfit: dict[str, str]
+    animation_profile_code: str
+    fashion_score: int
+
+
+class AvatarCatalogData(BaseModel):
+    body_presets: list[str]
+    face_presets: list[str]
+    skin_tones: list[str]
+    hair_styles: list[str]
+    hair_colors: list[str]
+    outfit_slots: dict[str, list[str]]
+    animation_profile_code: str
+
+
 class PlayerSnapshotData(BaseModel):
     id: str
     username: str
@@ -132,6 +153,7 @@ class PlayerSnapshotData(BaseModel):
     mood: int
     hunger: int
     tutorial_age_group: str
+    avatar: PlayerAvatarData
     education_level: str
     diploma_verified: bool
     job: str

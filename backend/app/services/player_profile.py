@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.models import Hostel, Job, Player
 from backend.app.schemas.mvp import PlayerActionsData, PlayerSnapshotData
+from backend.app.services.avatar_profile import build_avatar_snapshot
 from backend.app.services.business_market import cheapest_business_price, get_owned_businesses
 from backend.app.services.education import load_manager_exam
 from backend.app.services.ids import to_uuid
@@ -60,6 +61,7 @@ def build_player_snapshot(db: Session, player: Player) -> dict:
         mood=player.mood,
         hunger=player.hunger,
         tutorial_age_group=player.tutorial_age_group,
+        avatar=build_avatar_snapshot(db, player),
         education_level=player.education_level,
         diploma_verified=player.diploma_verified,
         job=job.title if job else "Безробітний",

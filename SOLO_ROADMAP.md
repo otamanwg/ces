@@ -801,6 +801,25 @@ DoD:
 
 ---
 
+## Sprint 48 — Animated Avatar Foundation
+
+Ціль: персонаж є модульною 3D-ідентичністю у світі SimCity-подібної міської симуляції, а не керованим героєм або набором незалежних картинок.
+
+Порядок:
+
+1. ✅ Architecture: canonical humanoid rig, environment-driven animation, street-zoom LOD і cinematic intro.
+2. ✅ PostgreSQL: one-to-one avatar profile з semantic body/face/hair/outfit codes.
+3. ✅ Backend API/tests: 2 body presets, 20 face presets, stock outfit і avatar snapshot/catalog.
+4. ✅ Client model/tests: semantic avatar contract без залежності від конкретного style pack.
+5. ✅ Повний checkpoint і commit.
+
+Наступний 3D-крок:
+
+1. Виготовити один canonical `.glb` rig із одним outfit та core animation set.
+2. Перевірити street-zoom LOD і environment-driven `idle/walk/sit/phone/talk`.
+
+---
+
 ## Checkpoints Де Потрібен Користувач
 
 | Checkpoint | Коли | Що потрібно |

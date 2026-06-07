@@ -1,7 +1,7 @@
 from typing import Dict, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.app.core.config import settings
@@ -16,6 +16,7 @@ from backend.app.schemas.mvp import (
     BuildingPortfolioData,
     BuildingPortfolioItem,
     BuildingRepairActionData,
+    AvatarCatalogData,
     BusinessBlueprintItem,
     BusinessBlueprintsData,
     BusinessMarketData,
@@ -41,6 +42,11 @@ from backend.app.schemas.mvp import (
 )
 from backend.app.schemas.response import api_error, api_success
 from backend.app.services.auth import get_authorized_player, new_player_token
+from backend.app.services.avatar_profile import (
+    build_avatar_catalog,
+    create_player_avatar,
+    validate_avatar_selection,
+)
 from backend.app.services.business_blueprints import get_active_business_blueprints
 from backend.app.services.business_market import (
     get_business_price,
@@ -85,9 +91,18 @@ from backend.app.services.sports import sign_athlete_contract, train_at_gym
 router = APIRouter(prefix="/api", tags=["mvp"])
 
 
+class AvatarCreateSelection(BaseModel):
+    body_preset_code: str = "body_standard"
+    face_preset_code: str = "face_01"
+    skin_tone_code: str = "skin_03"
+    hair_style_code: str = "hair_short_01"
+    hair_color_code: str = "hair_brown"
+
+
 class PlayerRegister(BaseModel):
     username: str
     tutorial_age_group: Literal["teen", "adult", "mature"] = "adult"
+    avatar: AvatarCreateSelection = Field(default_factory=AvatarCreateSelection)
 
 
 class OnboardingChoice(BaseModel):
@@ -352,6 +367,12 @@ def get_business_blueprints(db: Session = Depends(get_db)):
     return api_success("Доступні бізнес-шаблони.", data.model_dump())
 
 
+@router.get("/avatar/catalog")
+def get_avatar_catalog():
+    data = AvatarCatalogData.model_validate(build_avatar_catalog())
+    return api_success("Доступні складові персонажа.", data.model_dump())
+
+
 @router.post("/land/buy")
 def buy_land_parcel(
     data: LandBuy,
@@ -590,6 +611,11 @@ def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
     if existing:
         return api_error("Громадянин з таким ім'ям вже зареєстрований.")
 
+    avatar_selection = data.avatar.model_dump()
+    avatar_error = validate_avatar_selection(avatar_selection)
+    if avatar_error:
+        return api_error(avatar_error)
+
     city = db.query(City).first()
     if not city:
         return api_error("Місто ще не ініціалізоване.")
@@ -607,6 +633,7 @@ def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
     )
     db.add(player)
     db.flush()
+    create_player_avatar(db, player, avatar_selection)
     create_player_onboarding(db, player)
     db.commit()
     db.refresh(player)

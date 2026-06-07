@@ -267,6 +267,43 @@ class Player(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    avatar: Mapped[Optional["PlayerAvatar"]] = relationship(
+        "PlayerAvatar",
+        back_populates="player",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+
+class PlayerAvatar(Base):
+    __tablename__ = "player_avatars"
+
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    body_preset_code: Mapped[str] = mapped_column(String(40), default="body_standard")
+    face_preset_code: Mapped[str] = mapped_column(String(40), default="face_01")
+    skin_tone_code: Mapped[str] = mapped_column(String(40), default="skin_03")
+    hair_style_code: Mapped[str] = mapped_column(String(40), default="hair_short_01")
+    hair_color_code: Mapped[str] = mapped_column(String(40), default="hair_brown")
+    equipped_outfit: Mapped[dict] = mapped_column(
+        JSON,
+        default=lambda: {
+            "upper": "upper_stock_jacket",
+            "lower": "lower_stock_jeans",
+            "footwear": "footwear_stock_sneakers",
+        },
+    )
+    animation_profile_code: Mapped[str] = mapped_column(String(50), default="humanoid_context_v1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    player: Mapped["Player"] = relationship("Player", back_populates="avatar")
 
 
 class PlayerOnboarding(Base):
