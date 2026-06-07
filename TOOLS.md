@@ -1,22 +1,52 @@
 # Інструменти розробника — City Economic Simulator
 
-Документ для AI-асистентів та розробників. Описує весь стек, шляхи до інструментів і як ними користуватися.
+> **⚠️ ПРАВИЛО ДЛЯ AI-АСИСТЕНТА (Cascade/Windsurf):**
+> Перед кожним завданням перевір цей файл. Використовуй наявні інструменти активно:
+> - Godot MCP Bridge → перевіряй помилки сцен після змін C#
+> - Playwright MCP → smoke test API та UI локально
+> - Context7 MCP → актуальні доки FastAPI/SQLAlchemy/APScheduler
+> - `scripts/smoke_mvp.py` → перевірка backend після змін
+> - `scripts/capture_dashboard.ps1` → скриншот для visual QA
+> Не покладайся тільки на `check.ps1` — він не замінює smoke тестів.
+
+---
 
 ## Операційна система
 
-- **OS:** Windows (x64)
-- **Shell:** PowerShell 7.6.2 (`C:\tools\PowerShell\7.6.2\pwsh.exe`)
-- **Git:** MinGit (`C:\Tools\MinGit\cmd\git.exe`)
+- **OS:** Windows x64
+- **Shell:** PowerShell 7.6.2 → `C:\Tools\PowerShell\7.6.2\pwsh.exe`
+- **Git:** MinGit → `C:\Tools\MinGit\cmd\git.exe`
+
+## Інвентар C:\Tools (всі встановлені інструменти)
+
+| Інструмент | Версія | Шлях | Використання |
+|------------|--------|------|--------------|
+| PowerShell | 7.6.2 | `C:\Tools\PowerShell\7.6.2\pwsh.exe` | Shell для всіх скриптів |
+| .NET SDK | 8.0.421 | `C:\Tools\dotnet-sdk\dotnet.exe` | Godot C# build |
+| .NET runtime | legacy | `C:\Tools\dotnet\` | Не використовувати — тільки dotnet-sdk |
+| Godot | 4.3-stable mono | `C:\Tools\Godot\Godot_v4.3-stable_mono_win64\` | Ігровий рушій |
+| Godot | 4.2.2-stable mono | `C:\Tools\Godot\Godot_v4.2.2-stable_mono_win64\` | Запасна версія |
+| MinGit | latest | `C:\Tools\MinGit\cmd\git.exe` | Git операції |
+| just | latest | `C:\Tools\just\just.exe` | Task runner |
+| Node.js | 22.16.0 | `C:\Tools\nodejs\node.exe` | MCP servers, npx |
+| npm | 10.9.2 | `C:\Tools\nodejs\npm.cmd` | Node пакети |
+| npx | 10.9.2 | `C:\Tools\nodejs\npx.cmd` | Запуск MCP servers |
+| Blender | latest | `C:\Tools\Blender\` | 3D аватари (anime pipeline) |
+| Rufus | latest | `C:\Tools\Rufus\` | USB інструмент, не для dev |
+| NSwag | 14.7 | `C:\Users\agga\.dotnet\tools\nswag.exe` | OpenAPI → C# DTO gen |
+| uv | latest | `C:\Users\agga\.local\bin\uv.exe` | Python package manager |
+
+---
 
 ## Python backend
 
 - **Python:** 3.13 (venv у `.venv/`)
-- **Package manager:** `uv` (`C:\Users\agga\.local\bin\uv.exe`)
-- **Task runner:** `just` (`C:\tools\just\just.exe`)
-- **Framework:** FastAPI 0.100+ + SQLAlchemy 2.0+ + Pydantic 2.0+
+- **Package manager:** `uv` → `C:\Users\agga\.local\bin\uv.exe`
+- **Task runner:** `just` → `C:\Tools\just\just.exe`
+- **Framework:** FastAPI 0.100+ + SQLAlchemy 2.0+ + Pydantic 2.0+ + APScheduler 3.11
 - **DB:** PostgreSQL 16 (Docker container `city-economic-simulator-postgres`)
 - **Migrations:** Alembic
-- **Tests:** pytest (90 тестів, всі проходять)
+- **Tests:** pytest (124 тести, всі проходять)
 - **Type checker:** pyright (налаштований у `pyproject.toml`)
 
 ### Залежності керуються через `pyproject.toml`
@@ -83,31 +113,53 @@ just generate-api-client
 
 Це створює type-safe C# DTO класи з усіх FastAPI Pydantic models.
 
-## Godot MCP Bridge
+## MCP Servers (AI розширення)
 
-- **Bridge script:** `scripts/godot_mcp_bridge.py`
+### 1. Godot MCP Bridge (локальний, завжди доступний)
+
+- **Скрипт:** `scripts/godot_mcp_bridge.py`
 - **WebSocket:** `ws://127.0.0.1:6505` (Godot ↔ Bridge)
-- **HTTP Control:** `http://127.0.0.1:6507` (AI ↔ Bridge)
-- **Status endpoint:** `http://127.0.0.1:6507/status`
-- **Invoke endpoint:** `POST http://127.0.0.1:6507/invoke`
-
-### Запуск
+- **HTTP Control:** `http://127.0.0.1:6507`
+- **Status:** `GET http://127.0.0.1:6507/status`
+- **Invoke:** `POST http://127.0.0.1:6507/invoke`
 
 ```bash
-just mcp-bridge   # python scripts/godot_mcp_bridge.py
-just mcp-status   # перевірка статусу
+just mcp-bridge          # запустити bridge
+just mcp-status          # перевірити статус
+.\ scripts\invoke_godot_mcp.ps1  # виклик інструменту
 ```
 
-### Доступні MCP tools
+Доступні tools: `get_errors`, `get_console_log`, `scene_tree_dump`, `get_project_settings`, `file_tools`, `script_tools`
 
-- `get_project_settings` — налаштування проєкту
-- `get_console_log` — логи Godot
-- `get_errors` — помилки компіляції
-- `scene_tree_dump` — дерево сцен
-- `file_tools` — робота з файлами
-- `script_tools` — робота зі скриптами
-- `project_tools` — конфігурація проєкту
-- `visualizer_tools` — візуальні інструменти
+**Коли використовувати:** після будь-яких змін у C# скриптах або `.tscn` сценах — викликати `get_errors` перед комітом.
+
+---
+
+### 2. Playwright MCP (Microsoft, локальний через npx)
+
+- **Пакет встановлено:** `C:\Tools\nodejs\node_modules\@playwright\mcp\cli.js`
+- **Версія:** 0.0.75
+- **Config:** `C:\Users\agga\.codeium\windsurf\mcp_config.json` ✅ налаштовано
+
+**Що робить:** керує реальним браузером — navigate, click, screenshot, E2E тести.
+
+**Коли використовувати:**
+- Smoke test `localhost:8000/docs` після запуску backend
+- Перевірка що API endpoint відповідає
+- Screenshot dashboard для visual QA
+
+---
+
+### 3. Context7 MCP (Upstash, локальний через npx, без API key)
+
+- **Пакет встановлено:** `C:\Tools\nodejs\node_modules\@upstash\context7-mcp\dist\index.js`
+- **Config:** `C:\Users\agga\.codeium\windsurf\mcp_config.json` ✅ налаштовано
+
+**Що робить:** підтягує актуальну документацію бібліотек прямо в контекст.
+
+**Коли використовувати:**
+- При роботі з FastAPI, SQLAlchemy, APScheduler, Pydantic, Alembic
+- Додавай `use context7` до запиту щоб отримати актуальні доки
 
 ## Pre-commit hooks
 
@@ -187,9 +239,24 @@ CITY_CORS_ORIGINS=*
 CITY_DEBUG=true
 ```
 
-## Що ще можна додати
+## Scripts у `scripts/` — що є і коли використовувати
 
-- `pyright` — статичний аналіз типів Python
-- OpenAPI → C# code generator — type-safe API клієнт
-- `structlog` — структуроване логування
-- GitHub Actions: Godot build + test CI
+| Скрипт | Коли використовувати |
+|--------|---------------------|
+| `check.ps1` | Перед кожним комітом — pytest + C# build |
+| `play.ps1 -ResetDb` | Playtest з нуля — скидає БД і запускає все |
+| `smoke_godot_dashboard.ps1` | Після змін у dashboard C# — smoke через MCP |
+| `capture_dashboard.ps1` | Visual QA — скриншот поточного стану UI |
+| `smoke_mvp.py` | Після змін backend API — HTTP smoke test |
+| `start_backend.ps1` | Запустити тільки backend без Godot |
+| `reset_dev_db.ps1` | Скинути БД до чистого стану |
+| `godot_mcp_bridge.py` | MCP bridge для Godot — запустити перед роботою зі сценами |
+| `invoke_godot_mcp.ps1` | Виклик конкретного MCP tool у Godot |
+| `build_anime_avatar.ps1` | Генерація anime GLB аватара через Blender |
+| `capture_anime_avatar.ps1` | Screenshot аватара для QA |
+
+## Що можна додати в майбутньому
+
+- `structlog` — структуроване логування замість basicConfig
+- Sentry MCP — error monitoring після першого деплою
+- GitHub MCP — читати CI статус і issues прямо з чату
