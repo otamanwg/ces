@@ -78,10 +78,7 @@ def get_sports_clubs(db: Session = Depends(get_db)):
                 "name": c.name,
                 "sport_type": c.sport_type,
                 "owner": (
-                    db.query(Player)
-                    .filter(Player.id == c.owner_player_id)
-                    .first()
-                    .username
+                    db.query(Player).filter(Player.id == c.owner_player_id).first().username
                     if c.owner_player_id
                     else "ШІ-Управління"
                 ),
@@ -150,9 +147,7 @@ def lobby_cartel(data: CartelLobby, db: Session = Depends(get_db)):
     city = db.query(City).first()
     if not city:
         raise HTTPException(status_code=404, detail="Місто не знайдене")
-    res = donate_to_lobby_fund(
-        db, data.cartel_name, city.id, data.industry, data.player_id, data.amount
-    )
+    res = donate_to_lobby_fund(db, data.cartel_name, city.id, data.industry, data.player_id, data.amount)
     if not res["success"]:
         raise HTTPException(status_code=400, detail=res["message"])
     return res

@@ -1,4 +1,5 @@
 import logging
+
 from sqlalchemy.orm import Session
 
 from backend.app.models import Business, City, Hostel, Job, SportsClub
@@ -19,9 +20,7 @@ def seed_initial_data(db: Session) -> None:
         db.commit()
         return
 
-    logger.info(
-        "Створення початкового нейтрального міста та комунальних підприємств..."
-    )
+    logger.info("Створення початкового нейтрального міста та комунальних підприємств...")
 
     city = City(
         name="Київ-Нейтральний",

@@ -5,15 +5,15 @@ Revises: df6a4bd0f1c2
 Create Date: 2026-06-03 00:00:00.000000
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision: str = "a4fd9c2b1e77"
-down_revision: Union[str, None] = "df6a4bd0f1c2"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "df6a4bd0f1c2"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -26,9 +26,7 @@ def upgrade() -> None:
         sa.Column("zone_type", sa.String(length=50), nullable=False),
         sa.Column("description", sa.String(length=300), nullable=False),
         sa.Column("display_order", sa.Integer(), nullable=False),
-        sa.Column(
-            "land_available_hectares", sa.Numeric(precision=10, scale=2), nullable=False
-        ),
+        sa.Column("land_available_hectares", sa.Numeric(precision=10, scale=2), nullable=False),
         sa.Column("rent_level", sa.Integer(), nullable=False),
         sa.Column("job_supply", sa.Integer(), nullable=False),
         sa.Column("crime_risk", sa.Integer(), nullable=False),

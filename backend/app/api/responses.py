@@ -30,7 +30,5 @@ def save_player_action_response(
     response_model=PlayerSnapshotData,
     **extras,
 ) -> dict:
-    response = build_player_action_response(
-        db, player, message, response_model, **extras
-    )
+    response = build_player_action_response(db, player, message, response_model, **extras)
     return save_idempotent_response(db, action, idempotency_key, player_id, response)

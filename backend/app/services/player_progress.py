@@ -93,11 +93,7 @@ def build_next_action_hint(db: Session, player: Player) -> dict:
     if player.education_level == "College":
         owned_businesses = get_owned_businesses(db, player.id)
         dividend_business = next(
-            (
-                business
-                for business in owned_businesses
-                if money(business.cash_balance) >= MIN_DIVIDEND_AMOUNT
-            ),
+            (business for business in owned_businesses if money(business.cash_balance) >= MIN_DIVIDEND_AMOUNT),
             None,
         )
         if dividend_business:

@@ -39,7 +39,7 @@ select = [
     "C4",  # flake8-comprehensions
     "SIM", # flake8-simplify
 ]
-ignore = ["E501"]
+ignore = ["E501", "B008", "N818", "N806", "UP046"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

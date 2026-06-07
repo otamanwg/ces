@@ -6,8 +6,10 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from backend.app.api.routes.business_management import router as business_router
 from backend.app.api.routes.frozen import router as frozen_router
 from backend.app.api.routes.mvp import router as mvp_router
+from backend.app.api.routes.startup_system import router as startup_router
 from backend.app.core.config import settings
 from backend.app.core.exceptions import GameException
 from backend.app.database import get_db, init_db
@@ -63,6 +65,8 @@ app.add_middleware(
 
 app.include_router(mvp_router)
 app.include_router(frozen_router)
+app.include_router(business_router, prefix="/api")
+app.include_router(startup_router, prefix="/api")
 
 
 @app.get("/")

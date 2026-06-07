@@ -7,13 +7,13 @@ from fastapi.testclient import TestClient
 from backend.app.database import get_db
 from backend.app.models import IdempotencyRecord, Player, TransactionModelLog
 from backend.app.schemas.mvp import (
-    BusinessMarketData,
     BusinessBuyActionData,
     BusinessDividendActionData,
+    BusinessMarketData,
     CityStatusData,
     DayTickData,
-    ExamSubmitActionData,
     ExamInfoData,
+    ExamSubmitActionData,
     PlayerSnapshotData,
     SportsClubsData,
     SportsTrainActionData,
@@ -25,8 +25,8 @@ from backend.app.services.messages import (
     INVALID_PLAYER_SESSION_MESSAGE,
     JOB_NOT_FOUND_MESSAGE,
 )
-from backend.tests.db import make_test_session
 from backend.main import app
+from backend.tests.db import make_test_session
 
 TEST_DATABASE_URL = os.getenv("CITY_TEST_DATABASE_URL")
 os.environ["CITY_SKIP_DB_INIT"] = "true"
@@ -90,9 +90,7 @@ def test_full_mvp_api_loop(client):
     assert city_body["data"]["districts"][-1]["zone_type"] == "expansion"
     CityStatusData.model_validate(city_body["data"])
 
-    register_res = test_client.post(
-        "/api/player/register", json={"username": "solo-dev"}
-    )
+    register_res = test_client.post("/api/player/register", json={"username": "solo-dev"})
     assert register_res.status_code == 200
     register_body = register_res.json()
     assert register_body["success"] is True
@@ -187,9 +185,7 @@ def test_full_mvp_api_loop(client):
         "X-Player-Token": player_token,
         "Idempotency-Key": "api-loop-sleep-1",
     }
-    sleep_res = test_client.post(
-        f"/api/hostels/sleep/{player_id}", headers=sleep_headers
-    )
+    sleep_res = test_client.post(f"/api/hostels/sleep/{player_id}", headers=sleep_headers)
     assert sleep_res.status_code == 200
     sleep_body = sleep_res.json()
     assert sleep_body["success"] is True
@@ -198,16 +194,12 @@ def test_full_mvp_api_loop(client):
     assert sleep_body["data"]["hunger"] == 30
     transactions_after_sleep = db.query(TransactionModelLog).count()
 
-    repeat_sleep = test_client.post(
-        f"/api/hostels/sleep/{player_id}", headers=sleep_headers
-    )
+    repeat_sleep = test_client.post(f"/api/hostels/sleep/{player_id}", headers=sleep_headers)
     assert repeat_sleep.status_code == 200
     assert repeat_sleep.json() == sleep_body
     assert db.query(TransactionModelLog).count() == transactions_after_sleep
 
-    malformed_sleep = test_client.post(
-        "/api/hostels/sleep/not-a-uuid", headers=auth_headers
-    )
+    malformed_sleep = test_client.post("/api/hostels/sleep/not-a-uuid", headers=auth_headers)
     assert malformed_sleep.status_code == 200
     malformed_sleep_body = malformed_sleep.json()
     assert malformed_sleep_body["success"] is False
@@ -226,9 +218,7 @@ def test_full_mvp_api_loop(client):
     assert tick_body["data"]["news"][0]["priority"] == 20
     DayTickData.model_validate(tick_body["data"])
 
-    player_after_tick = test_client.get(
-        f"/api/player/{player_id}", headers=auth_headers
-    ).json()["data"]
+    player_after_tick = test_client.get(f"/api/player/{player_id}", headers=auth_headers).json()["data"]
     assert player_after_tick["balance"] == balance_after_sleep
 
     exam_info = test_client.get("/api/education/exam/info")
@@ -243,9 +233,7 @@ def test_full_mvp_api_loop(client):
         test_client.post(f"/api/hostels/sleep/{player_id}", headers=auth_headers)
         db.refresh(player)
 
-    exam = ExamInfoData.model_validate(
-        test_client.get("/api/education/exam/info").json()["data"]
-    )
+    exam = ExamInfoData.model_validate(test_client.get("/api/education/exam/info").json()["data"])
     # All correct answers are index 0 in seed exam file
     answers = {str(q.id): 0 for q in exam.questions}
 
@@ -302,9 +290,7 @@ def test_full_mvp_api_loop(client):
 
     vacancies_after = [
         v.model_dump()
-        for v in VacanciesData.model_validate(
-            test_client.get("/api/jobs/vacancies").json()["data"]
-        ).vacancies
+        for v in VacanciesData.model_validate(test_client.get("/api/jobs/vacancies").json()["data"]).vacancies
     ]
     college_job = next(j for j in vacancies_after if j["min_education"] == "College")
     apply_college = test_client.post(
@@ -321,9 +307,7 @@ def test_full_mvp_api_loop(client):
 def test_business_market_and_buy_endpoint_are_idempotent(client):
     test_client, db = client
 
-    register = test_client.post(
-        "/api/player/register", json={"username": "api-owner"}
-    ).json()
+    register = test_client.post("/api/player/register", json={"username": "api-owner"}).json()
     complete_onboarding(test_client, register)
     player_id = register["data"]["id"]
     headers = {"X-Player-Token": register["data"]["auth_token"]}
@@ -344,9 +328,7 @@ def test_business_market_and_buy_endpoint_are_idempotent(client):
 
     buy_payload = {"player_id": player_id, "business_id": business["id"]}
     buy_headers = {**headers, "Idempotency-Key": "api-business-buy-1"}
-    buy_res = test_client.post(
-        "/api/businesses/buy", json=buy_payload, headers=buy_headers
-    )
+    buy_res = test_client.post("/api/businesses/buy", json=buy_payload, headers=buy_headers)
     assert buy_res.status_code == 200
     buy_body = buy_res.json()
     assert buy_body["success"] is True
@@ -355,9 +337,7 @@ def test_business_market_and_buy_endpoint_are_idempotent(client):
     assert buy_body["data"]["owned_businesses"][0]["name"] == business["name"]
     transactions_after_buy = db.query(TransactionModelLog).count()
 
-    repeat_buy = test_client.post(
-        "/api/businesses/buy", json=buy_payload, headers=buy_headers
-    )
+    repeat_buy = test_client.post("/api/businesses/buy", json=buy_payload, headers=buy_headers)
     assert repeat_buy.status_code == 200
     assert repeat_buy.json() == buy_body
     assert db.query(TransactionModelLog).count() == transactions_after_buy
@@ -375,9 +355,7 @@ def test_business_market_and_buy_endpoint_are_idempotent(client):
 def test_business_dividend_endpoint_is_idempotent(client):
     test_client, db = client
 
-    register = test_client.post(
-        "/api/player/register", json={"username": "api-dividend-owner"}
-    ).json()
+    register = test_client.post("/api/player/register", json={"username": "api-dividend-owner"}).json()
     complete_onboarding(test_client, register)
     player_id = register["data"]["id"]
     headers = {"X-Player-Token": register["data"]["auth_token"]}
@@ -395,9 +373,7 @@ def test_business_dividend_endpoint_is_idempotent(client):
     assert buy_res["success"] is True
 
     dividend_headers = {**headers, "Idempotency-Key": "api-dividend-1"}
-    dividend_res = test_client.post(
-        "/api/businesses/dividend", json=buy_payload, headers=dividend_headers
-    )
+    dividend_res = test_client.post("/api/businesses/dividend", json=buy_payload, headers=dividend_headers)
     assert dividend_res.status_code == 200
     dividend_body = dividend_res.json()
     assert dividend_body["success"] is True
@@ -407,9 +383,7 @@ def test_business_dividend_endpoint_is_idempotent(client):
     assert dividend_body["data"]["business"]["cash_balance"] == 900.0
     transactions_after_dividend = db.query(TransactionModelLog).count()
 
-    repeat_dividend = test_client.post(
-        "/api/businesses/dividend", json=buy_payload, headers=dividend_headers
-    )
+    repeat_dividend = test_client.post("/api/businesses/dividend", json=buy_payload, headers=dividend_headers)
     assert repeat_dividend.status_code == 200
     assert repeat_dividend.json() == dividend_body
     assert db.query(TransactionModelLog).count() == transactions_after_dividend
@@ -427,9 +401,7 @@ def test_business_dividend_endpoint_is_idempotent(client):
 def test_sports_join_and_train_are_idempotent(client):
     test_client, db = client
 
-    register = test_client.post(
-        "/api/player/register", json={"username": "api-athlete"}
-    ).json()
+    register = test_client.post("/api/player/register", json={"username": "api-athlete"}).json()
     complete_onboarding(test_client, register)
     player_id = register["data"]["id"]
     headers = {"X-Player-Token": register["data"]["auth_token"]}
@@ -445,26 +417,20 @@ def test_sports_join_and_train_are_idempotent(client):
 
     join_payload = {"player_id": player_id, "club_id": club["id"]}
     join_headers = {**headers, "Idempotency-Key": "api-sports-join-1"}
-    join_res = test_client.post(
-        "/api/sports/join", json=join_payload, headers=join_headers
-    )
+    join_res = test_client.post("/api/sports/join", json=join_payload, headers=join_headers)
     assert join_res.status_code == 200
     join_body = join_res.json()
     assert join_body["success"] is True
     PlayerSnapshotData.model_validate(join_body["data"])
     assert join_body["data"]["sports_contract"]["strength"] == 10
 
-    repeat_join = test_client.post(
-        "/api/sports/join", json=join_payload, headers=join_headers
-    )
+    repeat_join = test_client.post("/api/sports/join", json=join_payload, headers=join_headers)
     assert repeat_join.status_code == 200
     assert repeat_join.json() == join_body
 
     train_payload = {"player_id": player_id, "stat_type": "strength"}
     train_headers = {**headers, "Idempotency-Key": "api-sports-train-1"}
-    train_res = test_client.post(
-        "/api/sports/train", json=train_payload, headers=train_headers
-    )
+    train_res = test_client.post("/api/sports/train", json=train_payload, headers=train_headers)
     assert train_res.status_code == 200
     train_body = train_res.json()
     assert train_body["success"] is True
@@ -474,9 +440,7 @@ def test_sports_join_and_train_are_idempotent(client):
     assert train_body["data"]["sports_contract"]["strength"] >= 12
     transactions_after_train = db.query(TransactionModelLog).count()
 
-    repeat_train = test_client.post(
-        "/api/sports/train", json=train_payload, headers=train_headers
-    )
+    repeat_train = test_client.post("/api/sports/train", json=train_payload, headers=train_headers)
     assert repeat_train.status_code == 200
     assert repeat_train.json() == train_body
     assert db.query(TransactionModelLog).count() == transactions_after_train
@@ -494,9 +458,7 @@ def test_sports_join_and_train_are_idempotent(client):
 def test_eat_endpoint_is_idempotent_and_logs_food(client):
     test_client, db = client
 
-    register = test_client.post(
-        "/api/player/register", json={"username": "api-hungry"}
-    ).json()
+    register = test_client.post("/api/player/register", json={"username": "api-hungry"}).json()
     complete_onboarding(test_client, register)
     player_id = register["data"]["id"]
     headers = {"X-Player-Token": register["data"]["auth_token"]}
@@ -530,12 +492,8 @@ def test_eat_endpoint_is_idempotent_and_logs_food(client):
 def test_idempotency_key_is_scoped_by_action_and_player(client):
     test_client, db = client
 
-    first_register = test_client.post(
-        "/api/player/register", json={"username": "idempotent-one"}
-    ).json()
-    second_register = test_client.post(
-        "/api/player/register", json={"username": "idempotent-two"}
-    ).json()
+    first_register = test_client.post("/api/player/register", json={"username": "idempotent-one"}).json()
+    second_register = test_client.post("/api/player/register", json={"username": "idempotent-two"}).json()
     complete_onboarding(test_client, first_register)
     complete_onboarding(test_client, second_register)
     first_player_id = first_register["data"]["id"]

@@ -57,9 +57,7 @@ PROJECT_ZONE_RULES: dict[str, set[str]] = {
 }
 
 
-def evaluate_building_proposal(
-    district: CityDistrict, proposal: BuildingProposal
-) -> MayorPolicyDecision:
+def evaluate_building_proposal(district: CityDistrict, proposal: BuildingProposal) -> MayorPolicyDecision:
     issues: list[MayorPolicyIssue] = []
     questions: list[str] = []
 
@@ -147,10 +145,7 @@ def evaluate_building_proposal(
             "Додайте компенсацію: комунальні роботи, сервісний внесок або нижче навантаження.",
         )
 
-    if (
-        project_type in {"residential", "commercial"}
-        and district.medical_coverage - proposal.medical_load < 30
-    ):
+    if project_type in {"residential", "commercial"} and district.medical_coverage - proposal.medical_load < 30:
         _add_issue(
             issues,
             questions,

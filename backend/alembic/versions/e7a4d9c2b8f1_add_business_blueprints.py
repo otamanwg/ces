@@ -5,15 +5,15 @@ Revises: d35f7b6aa103
 Create Date: 2026-06-05 00:00:00.000000
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision: str = "e7a4d9c2b8f1"
-down_revision: Union[str, None] = "d35f7b6aa103"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "d35f7b6aa103"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -29,24 +29,16 @@ def upgrade() -> None:
         sa.Column("difficulty", sa.String(length=30), nullable=False),
         sa.Column("allowed_land_types", sa.JSON(), nullable=False),
         sa.Column("allowed_zoning_types", sa.JSON(), nullable=False),
-        sa.Column(
-            "min_area_hectares", sa.Numeric(precision=10, scale=2), nullable=False
-        ),
-        sa.Column(
-            "construction_cost", sa.Numeric(precision=15, scale=2), nullable=False
-        ),
+        sa.Column("min_area_hectares", sa.Numeric(precision=10, scale=2), nullable=False),
+        sa.Column("construction_cost", sa.Numeric(precision=15, scale=2), nullable=False),
         sa.Column("opening_fee", sa.Numeric(precision=15, scale=2), nullable=False),
         sa.Column(
             "recommended_cash_reserve",
             sa.Numeric(precision=15, scale=2),
             nullable=False,
         ),
-        sa.Column(
-            "daily_profit_min", sa.Numeric(precision=15, scale=2), nullable=False
-        ),
-        sa.Column(
-            "daily_profit_max", sa.Numeric(precision=15, scale=2), nullable=False
-        ),
+        sa.Column("daily_profit_min", sa.Numeric(precision=15, scale=2), nullable=False),
+        sa.Column("daily_profit_max", sa.Numeric(precision=15, scale=2), nullable=False),
         sa.Column("upkeep_daily", sa.Numeric(precision=15, scale=2), nullable=False),
         sa.Column("risk_level", sa.Integer(), nullable=False),
         sa.Column("risks", sa.JSON(), nullable=False),
@@ -76,9 +68,7 @@ def upgrade() -> None:
         ["id"],
         ondelete="SET NULL",
     )
-    op.add_column(
-        "buildings", sa.Column("business_blueprint_id", sa.Uuid(), nullable=True)
-    )
+    op.add_column("buildings", sa.Column("business_blueprint_id", sa.Uuid(), nullable=True))
     op.create_foreign_key(
         "fk_buildings_business_blueprint_id",
         "buildings",
@@ -90,9 +80,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_constraint(
-        "fk_buildings_business_blueprint_id", "buildings", type_="foreignkey"
-    )
+    op.drop_constraint("fk_buildings_business_blueprint_id", "buildings", type_="foreignkey")
     op.drop_column("buildings", "business_blueprint_id")
     op.drop_constraint(
         "fk_building_applications_business_blueprint_id",

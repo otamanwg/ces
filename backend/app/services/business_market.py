@@ -109,9 +109,7 @@ def process_business_purchase(db: Session, player_id: str, business_id: str) -> 
     ).model_dump()
 
 
-def process_business_dividend_collection(
-    db: Session, player_id: str, business_id: str
-) -> dict:
+def process_business_dividend_collection(db: Session, player_id: str, business_id: str) -> dict:
     player_uuid = to_uuid(player_id)
     business_uuid = to_uuid(business_id)
     player = db.query(Player).filter(Player.id == player_uuid).with_for_update().first()

@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -145,11 +145,7 @@ def test_registration_accepts_avatar_identity(client):
     assert body["data"]["avatar"]["body_preset_code"] == "body_sturdy"
     assert body["data"]["avatar"]["face_preset_code"] == "face_20"
     assert body["data"]["avatar"]["hair_style_code"] == "hair_long_02"
-    avatar = (
-        db.query(PlayerAvatar)
-        .filter(PlayerAvatar.player_id == body["data"]["id"])
-        .one()
-    )
+    avatar = db.query(PlayerAvatar).filter(PlayerAvatar.player_id == body["data"]["id"]).one()
     assert avatar.skin_tone_code == "skin_06"
     assert avatar.hair_color_code == "hair_auburn"
     PlayerSnapshotData.model_validate(body["data"])
@@ -222,9 +218,7 @@ def test_player_can_find_housing_and_complete_arrival_idempotently(client):
     register, headers = register_player(test_client, "direct-housing")
     player_id = register["data"]["id"]
 
-    completed = choose_path(
-        test_client, player_id, headers, FIND_HOUSING, "arrival-housing"
-    )
+    completed = choose_path(test_client, player_id, headers, FIND_HOUSING, "arrival-housing")
     assert completed["success"] is True
     assert completed["data"]["onboarding"]["stage"] == COMPLETED
     assert completed["data"]["onboarding"]["completed"] is True
@@ -232,9 +226,7 @@ def test_player_can_find_housing_and_complete_arrival_idempotently(client):
     assert completed["data"]["actions"]["can_apply_job"] is True
     PlayerSnapshotData.model_validate(completed["data"])
 
-    repeated = choose_path(
-        test_client, player_id, headers, FIND_HOUSING, "arrival-housing"
-    )
+    repeated = choose_path(test_client, player_id, headers, FIND_HOUSING, "arrival-housing")
     assert repeated == completed
 
 
@@ -243,19 +235,13 @@ def test_police_report_then_housing_records_the_crime(client):
     register, headers = register_player(test_client, "police-route")
     player_id = register["data"]["id"]
 
-    reported = choose_path(
-        test_client, player_id, headers, REPORT_TO_POLICE, "arrival-police"
-    )
+    reported = choose_path(test_client, player_id, headers, REPORT_TO_POLICE, "arrival-police")
     assert reported["success"] is True
     assert reported["data"]["onboarding"]["stage"] == HOUSING_SEARCH
     assert reported["data"]["onboarding"]["available_choices"] == [FIND_HOUSING]
-    assert (
-        db.query(PoliceRecord).filter(PoliceRecord.player_id == player_id).count() == 1
-    )
+    assert db.query(PoliceRecord).filter(PoliceRecord.player_id == player_id).count() == 1
 
-    completed = choose_path(
-        test_client, player_id, headers, FIND_HOUSING, "arrival-after-police"
-    )
+    completed = choose_path(test_client, player_id, headers, FIND_HOUSING, "arrival-after-police")
     assert completed["success"] is True
     assert completed["data"]["onboarding"]["stage"] == COMPLETED
     assert completed["data"]["hostel"] != "Немає"
@@ -266,16 +252,12 @@ def test_due_police_recovery_credits_player_once(client):
     register, headers = register_player(test_client, "police-recovery")
     player_id = register["data"]["id"]
     player = db.query(Player).filter(Player.id == player_id).first()
-    onboarding = (
-        db.query(PlayerOnboarding).filter(PlayerOnboarding.player_id == player.id).one()
-    )
+    onboarding = db.query(PlayerOnboarding).filter(PlayerOnboarding.player_id == player.id).one()
     onboarding.stage = COMPLETED
-    onboarding.completed_at = datetime.now(timezone.utc)
+    onboarding.completed_at = datetime.now(UTC)
     onboarding.police_report_status = POLICE_PENDING
     onboarding.police_recovery_amount = Decimal("75.00")
-    onboarding.police_recovery_available_at = datetime.now(timezone.utc) - timedelta(
-        minutes=1
-    )
+    onboarding.police_recovery_available_at = datetime.now(UTC) - timedelta(minutes=1)
     starting_balance = Decimal(str(player.balance))
     db.commit()
 
@@ -296,12 +278,7 @@ def test_due_police_recovery_credits_player_once(client):
     assert Decimal(str(first["data"]["balance"])) == starting_balance + Decimal("75.00")
     assert first["data"]["onboarding"]["police_report_status"] == POLICE_RECOVERED
     assert first["data"]["onboarding"]["police_recovery_claimable"] is False
-    assert (
-        db.query(TransactionModelLog)
-        .filter(TransactionModelLog.purpose == "police_recovery")
-        .count()
-        == 1
-    )
+    assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "police_recovery").count() == 1
 
     repeated = test_client.post(
         "/api/player/onboarding/police-recovery",

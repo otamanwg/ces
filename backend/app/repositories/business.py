@@ -13,12 +13,7 @@ class BusinessRepository(BaseRepository[Business]):
         super().__init__(db, Business)
 
     def get_by_owner(self, owner_player_id: UUID) -> list[Business]:
-        return (
-            self.db.query(Business)
-            .filter(Business.owner_player_id == owner_player_id)
-            .order_by(Business.name)
-            .all()
-        )
+        return self.db.query(Business).filter(Business.owner_player_id == owner_player_id).order_by(Business.name).all()
 
     def count_available_in_city(self, city_id: UUID) -> int:
         return (

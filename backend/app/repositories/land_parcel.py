@@ -17,15 +17,11 @@ class LandParcelRepository(BaseRepository[LandParcel]):
             self.db.query(LandParcel)
             .join(CityDistrict, CityDistrict.id == LandParcel.district_id)
             .filter(LandParcel.city_id == city_id)
-            .order_by(
-                CityDistrict.display_order, LandParcel.current_price, LandParcel.label
-            )
+            .order_by(CityDistrict.display_order, LandParcel.current_price, LandParcel.label)
             .all()
         )
 
-    def list_by_city_and_owner(
-        self, city_id: UUID, owner_player_id: UUID
-    ) -> list[LandParcel]:
+    def list_by_city_and_owner(self, city_id: UUID, owner_player_id: UUID) -> list[LandParcel]:
         return (
             self.db.query(LandParcel)
             .filter(
@@ -38,9 +34,5 @@ class LandParcelRepository(BaseRepository[LandParcel]):
     def get_city_total_area(self, city_id: UUID) -> float:
         from sqlalchemy import func
 
-        result = (
-            self.db.query(func.sum(LandParcel.area_hectares))
-            .filter(LandParcel.city_id == city_id)
-            .scalar()
-        )
+        result = self.db.query(func.sum(LandParcel.area_hectares)).filter(LandParcel.city_id == city_id).scalar()
         return float(result) if result else 0.0

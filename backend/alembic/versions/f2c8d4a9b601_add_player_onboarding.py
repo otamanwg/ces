@@ -5,15 +5,15 @@ Revises: e7a4d9c2b8f1
 Create Date: 2026-06-06 00:00:00.000000
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision: str = "f2c8d4a9b601"
-down_revision: Union[str, None] = "e7a4d9c2b8f1"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "e7a4d9c2b8f1"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -22,12 +22,8 @@ def upgrade() -> None:
         sa.Column("player_id", sa.Uuid(), nullable=False),
         sa.Column("stage", sa.String(length=30), nullable=False),
         sa.Column("police_report_status", sa.String(length=30), nullable=False),
-        sa.Column(
-            "police_recovery_amount", sa.Numeric(precision=15, scale=2), nullable=True
-        ),
-        sa.Column(
-            "police_recovery_available_at", sa.DateTime(timezone=True), nullable=True
-        ),
+        sa.Column("police_recovery_amount", sa.Numeric(precision=15, scale=2), nullable=True),
+        sa.Column("police_recovery_available_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column(
             "created_at",

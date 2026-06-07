@@ -1,26 +1,189 @@
 # Моделі бази даних SQLAlchemy для MVP Економічного Симулятора
 # Файл: backend/app/models.py
 
-from datetime import datetime
 import secrets
 import uuid
-from typing import List, Optional
+from datetime import datetime
+from typing import Optional
+
 from sqlalchemy import (
-    String,
-    Numeric as Decimal,
-    Integer,
-    Boolean,
-    ForeignKey,
-    DateTime,
     JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
     UniqueConstraint,
     func,
+)
+from sqlalchemy import (
+    Numeric as Decimal,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
     pass
+
+
+# === МОДЕЛІ МІСЬКИХ МЕТРИК ТА ПРЕСТИЖУ ===
+class CityMetrics(Base):
+    """Динамічні показники міста"""
+
+    __tablename__ = "city_metrics"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False, unique=True)
+
+    gdp_per_capita: Mapped[float] = mapped_column(Decimal(15, 2), default=1000.00)
+    unemployment_rate: Mapped[float] = mapped_column(Decimal(5, 2), default=10.00)
+    business_density: Mapped[float] = mapped_column(Decimal(5, 2), default=5.00)
+    startup_success_rate: Mapped[float] = mapped_column(Decimal(5, 2), default=60.00)
+    average_business_profit: Mapped[float] = mapped_column(Decimal(15, 2), default=500.00)
+
+    crime_rate: Mapped[float] = mapped_column(Decimal(5, 2), default=5.00)
+    happiness_index: Mapped[float] = mapped_column(Decimal(5, 2), default=70.00)
+    education_level: Mapped[float] = mapped_column(Decimal(5, 2), default=60.00)
+    social_mobility: Mapped[float] = mapped_column(Decimal(5, 2), default=50.00)
+
+    infrastructure_quality: Mapped[float] = mapped_column(Decimal(5, 2), default=70.00)
+    traffic_index: Mapped[float] = mapped_column(Decimal(5, 2), default=50.00)
+    environmental_score: Mapped[float] = mapped_column(Decimal(5, 2), default=75.00)
+
+    inflation_rate: Mapped[float] = mapped_column(Decimal(5, 2), default=2.00)
+    property_price_index: Mapped[float] = mapped_column(Decimal(5, 2), default=100.00)
+    consumer_spending: Mapped[float] = mapped_column(Decimal(15, 2), default=50000.00)
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    city: Mapped["City"] = relationship("City", back_populates="metrics")
+
+
+class DistrictPrestige(Base):
+    """Престиж та характеристики районів міста"""
+
+    __tablename__ = "district_prestige"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    district_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+
+    business_friendly_rating: Mapped[float] = mapped_column(Decimal(5, 2), default=5.0)
+    tax_incentives: Mapped[float] = mapped_column(Decimal(5, 2), default=0.00)
+    development_level: Mapped[float] = mapped_column(Decimal(5, 2), default=5.0)
+
+    prestige_level: Mapped[int] = mapped_column(Integer, default=3)
+    safety_rating: Mapped[float] = mapped_column(Decimal(5, 2), default=7.0)
+    cultural_significance: Mapped[float] = mapped_column(Decimal(5, 2), default=5.0)
+
+    transport_access: Mapped[float] = mapped_column(Decimal(5, 2), default=6.0)
+    utility_quality: Mapped[float] = mapped_column(Decimal(5, 2), default=7.0)
+    green_spaces: Mapped[float] = mapped_column(Decimal(5, 2), default=5.0)
+
+    average_property_value: Mapped[float] = mapped_column(Decimal(15, 2), default=50000.00)
+    commercial_rent_rate: Mapped[float] = mapped_column(Decimal(5, 2), default=10.00)
+    foot_traffic_index: Mapped[float] = mapped_column(Decimal(5, 2), default=5.0)
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    district: Mapped["CityDistrict"] = relationship("CityDistrict", back_populates="prestige")
+
+
+class PlayerInteraction(Base):
+    """Логи взаємодій між гравцями"""
+
+    __tablename__ = "player_interactions"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    player1_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
+    player2_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
+
+    interaction_type: Mapped[str] = mapped_column(String(20))
+    business_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("businesses.id"))
+
+    impact_score: Mapped[float] = mapped_column(Decimal(5, 2))
+    relationship_change: Mapped[float] = mapped_column(Decimal(5, 2))
+    amount_involved: Mapped[float | None] = mapped_column(Decimal(15, 2))
+
+    description: Mapped[str] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    player1: Mapped["Player"] = relationship("Player", foreign_keys=[player1_id])
+    player2: Mapped["Player"] = relationship("Player", foreign_keys=[player2_id])
+    business: Mapped[Optional["Business"]] = relationship("Business")
+
+
+class PlayerBusinessRating(Base):
+    """Рейтинг гравця в бізнес-спільноті"""
+
+    __tablename__ = "player_business_ratings"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+
+    total_businesses: Mapped[int] = mapped_column(Integer, default=0)
+    successful_startups: Mapped[int] = mapped_column(Integer, default=0)
+    failed_businesses: Mapped[int] = mapped_column(Integer, default=0)
+    total_employees: Mapped[int] = mapped_column(Integer, default=0)
+
+    business_reputation: Mapped[float] = mapped_column(Decimal(5, 2), default=5.0)
+    influence_level: Mapped[int] = mapped_column(Integer, default=1)
+    trust_score: Mapped[float] = mapped_column(Decimal(5, 2), default=5.0)
+
+    city_contribution: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+    employment_created: Mapped[int] = mapped_column(Integer, default=0)
+    taxes_paid: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+
+    total_investments: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+    investment_returns: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+    portfolio_value: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    player: Mapped["Player"] = relationship("Player", back_populates="business_rating")
+
+
+class CityEvent(Base):
+    """Динамічні події в місті"""
+
+    __tablename__ = "city_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+
+    title: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[str] = mapped_column(String(1000))
+    event_type: Mapped[str] = mapped_column(String(30))
+
+    business_revenue_modifier: Mapped[float] = mapped_column(Decimal(5, 2), default=1.00)
+    employment_modifier: Mapped[float] = mapped_column(Decimal(5, 2), default=1.00)
+    crime_rate_modifier: Mapped[float] = mapped_column(Decimal(5, 2), default=1.00)
+
+    start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    duration_days: Mapped[int] = mapped_column(Integer, default=1)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    affected_districts: Mapped[dict] = mapped_column(JSON, default=list)
+    affected_business_types: Mapped[dict] = mapped_column(JSON, default=list)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    city: Mapped["City"] = relationship("City", back_populates="events")
 
 
 # 1. МОДЕЛЬ МІСТА (СЕРВЕРА)
@@ -33,7 +196,7 @@ class City(Base):
     tax_rate_income: Mapped[float] = mapped_column(Decimal(5, 2), default=10.00)
     tax_rate_property: Mapped[float] = mapped_column(Decimal(5, 2), default=2.00)
     inflation_rate: Mapped[float] = mapped_column(Decimal(5, 2), default=0.00)
-    mayor_player_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    mayor_player_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(
             "players.id",
             ondelete="SET NULL",
@@ -43,50 +206,40 @@ class City(Base):
     )
 
     # Зв'язки ORM
-    players: Mapped[List["Player"]] = relationship(
-        "Player", back_populates="city", foreign_keys="Player.city_id"
-    )
-    businesses: Mapped[List["Business"]] = relationship(
-        "Business", back_populates="city"
-    )
-    mayor: Mapped[Optional["Player"]] = relationship(
-        "Player", foreign_keys=[mayor_player_id], post_update=True
-    )
-    transactions: Mapped[List["TransactionModelLog"]] = relationship(
-        "TransactionModelLog", back_populates="city"
-    )
-    districts: Mapped[List["CityDistrict"]] = relationship(
+    players: Mapped[list["Player"]] = relationship("Player", back_populates="city", foreign_keys="Player.city_id")
+    businesses: Mapped[list["Business"]] = relationship("Business", back_populates="city")
+    mayor: Mapped[Optional["Player"]] = relationship("Player", foreign_keys=[mayor_player_id], post_update=True)
+    transactions: Mapped[list["TransactionModelLog"]] = relationship("TransactionModelLog", back_populates="city")
+    districts: Mapped[list["CityDistrict"]] = relationship(
         "CityDistrict",
         back_populates="city",
         cascade="all, delete-orphan",
     )
-    land_parcels: Mapped[List["LandParcel"]] = relationship(
+    land_parcels: Mapped[list["LandParcel"]] = relationship(
         "LandParcel",
         back_populates="city",
         cascade="all, delete-orphan",
     )
-    building_applications: Mapped[List["BuildingApplication"]] = relationship(
+    building_applications: Mapped[list["BuildingApplication"]] = relationship(
         "BuildingApplication",
         back_populates="city",
         cascade="all, delete-orphan",
     )
-    buildings: Mapped[List["Building"]] = relationship(
+    buildings: Mapped[list["Building"]] = relationship(
         "Building",
         back_populates="city",
         cascade="all, delete-orphan",
     )
+    metrics: Mapped[Optional["CityMetrics"]] = relationship("CityMetrics", back_populates="city", uselist=False)
+    events: Mapped[list["CityEvent"]] = relationship("CityEvent", back_populates="city", cascade="all, delete-orphan")
 
 
 class CityDistrict(Base):
     __tablename__ = "city_districts"
-    __table_args__ = (
-        UniqueConstraint("city_id", "code", name="uq_city_districts_city_code"),
-    )
+    __table_args__ = (UniqueConstraint("city_id", "code", name="uq_city_districts_city_code"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
     code: Mapped[str] = mapped_column(String(50), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     zone_type: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -101,94 +254,69 @@ class CityDistrict(Base):
     medical_coverage: Mapped[int] = mapped_column(Integer, default=0)
     land_value: Mapped[int] = mapped_column(Integer, default=0)
     desirability: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     city: Mapped["City"] = relationship("City", back_populates="districts")
-    land_parcels: Mapped[List["LandParcel"]] = relationship(
+    land_parcels: Mapped[list["LandParcel"]] = relationship(
         "LandParcel",
         back_populates="district",
         cascade="all, delete-orphan",
     )
-    building_applications: Mapped[List["BuildingApplication"]] = relationship(
+    building_applications: Mapped[list["BuildingApplication"]] = relationship(
         "BuildingApplication",
         back_populates="district",
         cascade="all, delete-orphan",
     )
-    buildings: Mapped[List["Building"]] = relationship(
+    buildings: Mapped[list["Building"]] = relationship(
         "Building",
         back_populates="district",
         cascade="all, delete-orphan",
+    )
+    prestige: Mapped[Optional["DistrictPrestige"]] = relationship(
+        "DistrictPrestige", back_populates="district", uselist=False
     )
 
 
 class LandParcel(Base):
     __tablename__ = "land_parcels"
-    __table_args__ = (
-        UniqueConstraint("city_id", "code", name="uq_land_parcels_city_code"),
-    )
+    __table_args__ = (UniqueConstraint("city_id", "code", name="uq_land_parcels_city_code"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
-    district_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False
-    )
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    district_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False)
     code: Mapped[str] = mapped_column(String(70), nullable=False)
     label: Mapped[str] = mapped_column(String(120), nullable=False)
     land_type: Mapped[str] = mapped_column(String(50), nullable=False)
     zoning_type: Mapped[str] = mapped_column(String(50), nullable=False)
     area_hectares: Mapped[float] = mapped_column(Decimal(10, 2), nullable=False)
-    base_price_per_hectare: Mapped[float] = mapped_column(
-        Decimal(15, 2), nullable=False
-    )
+    base_price_per_hectare: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     current_price: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     status: Mapped[str] = mapped_column(String(30), default="city_owned")
-    owner_player_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        ForeignKey("players.id", ondelete="SET NULL")
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    owner_player_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     city: Mapped["City"] = relationship("City", back_populates="land_parcels")
-    district: Mapped["CityDistrict"] = relationship(
-        "CityDistrict", back_populates="land_parcels"
-    )
-    owner: Mapped[Optional["Player"]] = relationship(
-        "Player", back_populates="land_parcels"
-    )
-    building_applications: Mapped[List["BuildingApplication"]] = relationship(
+    district: Mapped["CityDistrict"] = relationship("CityDistrict", back_populates="land_parcels")
+    owner: Mapped[Optional["Player"]] = relationship("Player", back_populates="land_parcels")
+    building_applications: Mapped[list["BuildingApplication"]] = relationship(
         "BuildingApplication",
         back_populates="land_parcel",
         cascade="all, delete-orphan",
     )
-    building: Mapped[Optional["Building"]] = relationship(
-        "Building", back_populates="land_parcel", uselist=False
-    )
+    building: Mapped[Optional["Building"]] = relationship("Building", back_populates="land_parcel", uselist=False)
 
 
 class BuildingApplication(Base):
     __tablename__ = "building_applications"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
-    district_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False
-    )
-    land_parcel_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("land_parcels.id", ondelete="CASCADE"), nullable=False
-    )
-    business_blueprint_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    district_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False)
+    land_parcel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("land_parcels.id", ondelete="CASCADE"), nullable=False)
+    business_blueprint_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("business_blueprints.id", ondelete="SET NULL")
     )
-    applicant_player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    applicant_player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     proposed_name: Mapped[str] = mapped_column(String(120), nullable=False)
     project_type: Mapped[str] = mapped_column(String(50), nullable=False)
     land_area_hectares: Mapped[float] = mapped_column(Decimal(10, 2), nullable=False)
@@ -202,23 +330,15 @@ class BuildingApplication(Base):
     mayor_summary: Mapped[str] = mapped_column(String(300), nullable=False)
     mayor_issues: Mapped[list] = mapped_column(JSON, default=list)
     mayor_questions: Mapped[list] = mapped_column(JSON, default=list)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     city: Mapped["City"] = relationship("City", back_populates="building_applications")
-    district: Mapped["CityDistrict"] = relationship(
-        "CityDistrict", back_populates="building_applications"
-    )
-    land_parcel: Mapped["LandParcel"] = relationship(
-        "LandParcel", back_populates="building_applications"
-    )
+    district: Mapped["CityDistrict"] = relationship("CityDistrict", back_populates="building_applications")
+    land_parcel: Mapped["LandParcel"] = relationship("LandParcel", back_populates="building_applications")
     business_blueprint: Mapped[Optional["BusinessBlueprint"]] = relationship(
         "BusinessBlueprint", back_populates="applications"
     )
-    applicant: Mapped["Player"] = relationship(
-        "Player", back_populates="building_applications"
-    )
+    applicant: Mapped["Player"] = relationship("Player", back_populates="building_applications")
     building: Mapped[Optional["Building"]] = relationship(
         "Building", back_populates="source_application", uselist=False
     )
@@ -228,59 +348,37 @@ class Building(Base):
     __tablename__ = "buildings"
     __table_args__ = (
         UniqueConstraint("land_parcel_id", name="uq_buildings_land_parcel_id"),
-        UniqueConstraint(
-            "source_application_id", name="uq_buildings_source_application_id"
-        ),
+        UniqueConstraint("source_application_id", name="uq_buildings_source_application_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
-    district_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False
-    )
-    land_parcel_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("land_parcels.id", ondelete="CASCADE"), nullable=False
-    )
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    district_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False)
+    land_parcel_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("land_parcels.id", ondelete="CASCADE"), nullable=False)
     source_application_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("building_applications.id", ondelete="CASCADE"),
         nullable=False,
     )
-    business_blueprint_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    business_blueprint_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("business_blueprints.id", ondelete="SET NULL")
     )
-    business_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        ForeignKey("businesses.id", ondelete="SET NULL"), unique=True
-    )
-    owner_player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    business_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("businesses.id", ondelete="SET NULL"), unique=True)
+    owner_player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     project_type: Mapped[str] = mapped_column(String(50), nullable=False)
     status: Mapped[str] = mapped_column(String(30), default="built")
     operating_status: Mapped[str] = mapped_column(String(30), default="inactive")
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     city: Mapped["City"] = relationship("City", back_populates="buildings")
-    district: Mapped["CityDistrict"] = relationship(
-        "CityDistrict", back_populates="buildings"
-    )
-    land_parcel: Mapped["LandParcel"] = relationship(
-        "LandParcel", back_populates="building"
-    )
-    source_application: Mapped["BuildingApplication"] = relationship(
-        "BuildingApplication", back_populates="building"
-    )
+    district: Mapped["CityDistrict"] = relationship("CityDistrict", back_populates="buildings")
+    land_parcel: Mapped["LandParcel"] = relationship("LandParcel", back_populates="building")
+    source_application: Mapped["BuildingApplication"] = relationship("BuildingApplication", back_populates="building")
     business_blueprint: Mapped[Optional["BusinessBlueprint"]] = relationship(
         "BusinessBlueprint", back_populates="buildings"
     )
     owner: Mapped["Player"] = relationship("Player", back_populates="buildings")
-    business: Mapped[Optional["Business"]] = relationship(
-        "Business", back_populates="building"
-    )
+    business: Mapped[Optional["Business"]] = relationship("Business", back_populates="building")
 
 
 class BusinessBlueprint(Base):
@@ -299,9 +397,7 @@ class BusinessBlueprint(Base):
     min_area_hectares: Mapped[float] = mapped_column(Decimal(10, 2), default=0.00)
     construction_cost: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
     opening_fee: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
-    recommended_cash_reserve: Mapped[float] = mapped_column(
-        Decimal(15, 2), default=0.00
-    )
+    recommended_cash_reserve: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
     daily_profit_min: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
     daily_profit_max: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
     upkeep_daily: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
@@ -312,15 +408,13 @@ class BusinessBlueprint(Base):
     style_tags: Mapped[list] = mapped_column(JSON, default=list)
     player_hints: Mapped[list] = mapped_column(JSON, default=list)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    applications: Mapped[List["BuildingApplication"]] = relationship(
+    applications: Mapped[list["BuildingApplication"]] = relationship(
         "BuildingApplication",
         back_populates="business_blueprint",
     )
-    buildings: Mapped[List["Building"]] = relationship(
+    buildings: Mapped[list["Building"]] = relationship(
         "Building",
         back_populates="business_blueprint",
     )
@@ -331,9 +425,7 @@ class Player(Base):
     __tablename__ = "players"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="RESTRICT"), nullable=False
-    )
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="RESTRICT"), nullable=False)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     auth_token: Mapped[str] = mapped_column(
         String(120),
@@ -348,44 +440,26 @@ class Player(Base):
     tutorial_age_group: Mapped[str] = mapped_column(String(20), default="adult")
     education_level: Mapped[str] = mapped_column(String(50), default="High School")
     diploma_verified: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Зв'язки ORM
-    city: Mapped["City"] = relationship(
-        "City", back_populates="players", foreign_keys=[city_id]
-    )
-    businesses: Mapped[List["Business"]] = relationship(
-        "Business", back_populates="owner"
-    )
-    job: Mapped[Optional["Job"]] = relationship(
-        "Job", back_populates="worker", uselist=False
-    )
-    hostel_rented: Mapped[Optional["Hostel"]] = relationship(
-        "Hostel", back_populates="tenant", uselist=False
-    )
-    police_records: Mapped[List["PoliceRecord"]] = relationship(
-        "PoliceRecord", back_populates="player"
-    )
-    pets: Mapped[List["Pet"]] = relationship("Pet", back_populates="owner")
+    city: Mapped["City"] = relationship("City", back_populates="players", foreign_keys=[city_id])
+    businesses: Mapped[list["Business"]] = relationship("Business", back_populates="owner")
+    job: Mapped[Optional["Job"]] = relationship("Job", back_populates="worker", uselist=False)
+    hostel_rented: Mapped[Optional["Hostel"]] = relationship("Hostel", back_populates="tenant", uselist=False)
+    police_records: Mapped[list["PoliceRecord"]] = relationship("PoliceRecord", back_populates="player")
+    pets: Mapped[list["Pet"]] = relationship("Pet", back_populates="owner")
     athlete_contract: Mapped[Optional["PlayerAthleteContract"]] = relationship(
         "PlayerAthleteContract", back_populates="player", uselist=False
     )
-    loans: Mapped[List["BankLoan"]] = relationship("BankLoan", back_populates="player")
-    insurance_policies: Mapped[List["InsurancePolicy"]] = relationship(
-        "InsurancePolicy", back_populates="player"
-    )
-    land_parcels: Mapped[List["LandParcel"]] = relationship(
-        "LandParcel", back_populates="owner"
-    )
-    building_applications: Mapped[List["BuildingApplication"]] = relationship(
+    loans: Mapped[list["BankLoan"]] = relationship("BankLoan", back_populates="player")
+    insurance_policies: Mapped[list["InsurancePolicy"]] = relationship("InsurancePolicy", back_populates="player")
+    land_parcels: Mapped[list["LandParcel"]] = relationship("LandParcel", back_populates="owner")
+    building_applications: Mapped[list["BuildingApplication"]] = relationship(
         "BuildingApplication",
         back_populates="applicant",
     )
-    buildings: Mapped[List["Building"]] = relationship(
-        "Building", back_populates="owner"
-    )
+    buildings: Mapped[list["Building"]] = relationship("Building", back_populates="owner")
     onboarding: Mapped[Optional["PlayerOnboarding"]] = relationship(
         "PlayerOnboarding",
         back_populates="player",
@@ -397,6 +471,9 @@ class Player(Base):
         back_populates="player",
         uselist=False,
         cascade="all, delete-orphan",
+    )
+    business_rating: Mapped[Optional["PlayerBusinessRating"]] = relationship(
+        "PlayerBusinessRating", back_populates="player", uselist=False
     )
 
 
@@ -420,12 +497,8 @@ class PlayerAvatar(Base):
             "footwear": "footwear_stock_sneakers",
         },
     )
-    animation_profile_code: Mapped[str] = mapped_column(
-        String(50), default="humanoid_context_v1"
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    animation_profile_code: Mapped[str] = mapped_column(String(50), default="humanoid_context_v1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -444,14 +517,10 @@ class PlayerOnboarding(Base):
     )
     stage: Mapped[str] = mapped_column(String(30), default="arrival_choice")
     police_report_status: Mapped[str] = mapped_column(String(30), default="not_filed")
-    police_recovery_amount: Mapped[Optional[float]] = mapped_column(Decimal(15, 2))
-    police_recovery_available_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True)
-    )
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    police_recovery_amount: Mapped[float | None] = mapped_column(Decimal(15, 2))
+    police_recovery_available_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     player: Mapped["Player"] = relationship("Player", back_populates="onboarding")
 
@@ -461,35 +530,40 @@ class Business(Base):
     __tablename__ = "businesses"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     type: Mapped[str] = mapped_column(
         String(50), nullable=False
     )  # 'utility_water', 'utility_housing', 'shop', 'factory', 'private_hostel'
-    owner_player_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        ForeignKey("players.id", ondelete="SET NULL")
-    )
+    owner_player_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
     owner_share_pct: Mapped[float] = mapped_column(Decimal(5, 2), default=100.00)
     cash_balance: Mapped[float] = mapped_column(Decimal(15, 2), default=10000.00)
-    status: Mapped[str] = mapped_column(
-        String(20), default="active"
-    )  # 'active', 'bankrupt', 'damaged'
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    status: Mapped[str] = mapped_column(String(20), default="active")  # 'active', 'bankrupt', 'damaged'
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    # Нові поля для управління бізнесом
+    management_mode: Mapped[str] = mapped_column(String(20), default="manual")  # ai/manual/shadow
+    business_size: Mapped[int] = mapped_column(Integer, default=1)  # кількість працівників
+    ai_profit_rate: Mapped[float] = mapped_column(Decimal(5, 2), default=0.10)  # динамічний % для AI
+    daily_revenue: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)  # щоденний дохід
+
+    # Поля для стартапів
+    is_startup: Mapped[bool] = mapped_column(Boolean, default=False)
+    startup_stage: Mapped[str] = mapped_column(String(20), default="idea")  # idea/prototype/mvp/growth
+    startup_funding: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+    startup_investors: Mapped[dict] = mapped_column(JSON, default=dict)
+    startup_success_chance: Mapped[float] = mapped_column(Decimal(5, 2), default=60.00)
+
+    # Економічні показники
+    profit_margin: Mapped[float] = mapped_column(Decimal(5, 2), default=15.00)  # рентабельність %
+    market_share: Mapped[float] = mapped_column(Decimal(5, 2), default=1.00)  # частка ринку %
 
     # Зв'язки ORM
     city: Mapped["City"] = relationship("City", back_populates="businesses")
-    owner: Mapped[Optional["Player"]] = relationship(
-        "Player", back_populates="businesses"
-    )
-    building: Mapped[Optional["Building"]] = relationship(
-        "Building", back_populates="business", uselist=False
-    )
-    jobs: Mapped[List["Job"]] = relationship("Job", back_populates="business")
-    hostels: Mapped[List["Hostel"]] = relationship("Hostel", back_populates="business")
+    owner: Mapped[Optional["Player"]] = relationship("Player", back_populates="businesses")
+    building: Mapped[Optional["Building"]] = relationship("Building", back_populates="business", uselist=False)
+    jobs: Mapped[list["Job"]] = relationship("Job", back_populates="business")
+    hostels: Mapped[list["Hostel"]] = relationship("Hostel", back_populates="business")
 
 
 # 4. МОДЕЛЬ РОБОТИ ТА ВАКАНСІЇ
@@ -497,19 +571,15 @@ class Job(Base):
     __tablename__ = "jobs"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    business_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False
-    )
+    business_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     salary_per_hour: Mapped[float] = mapped_column(Decimal(10, 2), nullable=False)
     min_education: Mapped[str] = mapped_column(String(50), default="High School")
     energy_cost_per_shift: Mapped[int] = mapped_column(Integer, default=30)
-    filled_by_player_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    filled_by_player_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("players.id", ondelete="SET NULL"), unique=True
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Зв'язки ORM
     business: Mapped["Business"] = relationship("Business", back_populates="jobs")
@@ -521,21 +591,17 @@ class Hostel(Base):
     __tablename__ = "hostels"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    business_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False
-    )
+    business_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False)
     room_number: Mapped[int] = mapped_column(Integer, nullable=False)
     rent_price_per_day: Mapped[float] = mapped_column(Decimal(10, 2), default=15.00)
     energy_regen_per_hour: Mapped[int] = mapped_column(Integer, default=10)
-    tenant_player_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    tenant_player_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("players.id", ondelete="SET NULL"), unique=True
     )
 
     # Зв'язки ORM
     business: Mapped["Business"] = relationship("Business", back_populates="hostels")
-    tenant: Mapped[Optional["Player"]] = relationship(
-        "Player", back_populates="hostel_rented"
-    )
+    tenant: Mapped[Optional["Player"]] = relationship("Player", back_populates="hostel_rented")
 
 
 # 6. МОДЕЛЬ ЛОГУВАННЯ ТРАНЗАКЦІЙ
@@ -543,25 +609,15 @@ class TransactionModelLog(Base):
     __tablename__ = "transactions_log"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
     sender_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
-    sender_type: Mapped[str] = mapped_column(
-        String(20), nullable=False
-    )  # 'player', 'business', 'treasury', 'system'
+    sender_type: Mapped[str] = mapped_column(String(20), nullable=False)  # 'player', 'business', 'treasury', 'system'
     receiver_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
-    receiver_type: Mapped[str] = mapped_column(
-        String(20), nullable=False
-    )  # 'player', 'business', 'treasury', 'system'
+    receiver_type: Mapped[str] = mapped_column(String(20), nullable=False)  # 'player', 'business', 'treasury', 'system'
     amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     tax_deducted: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
-    purpose: Mapped[str] = mapped_column(
-        String(100), nullable=False
-    )  # 'salary', 'rent', 'tax_payment'
-    timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    purpose: Mapped[str] = mapped_column(String(100), nullable=False)  # 'salary', 'rent', 'tax_payment'
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Зв'язки ORM
     city: Mapped["City"] = relationship("City", back_populates="transactions")
@@ -569,22 +625,14 @@ class TransactionModelLog(Base):
 
 class IdempotencyRecord(Base):
     __tablename__ = "idempotency_records"
-    __table_args__ = (
-        UniqueConstraint(
-            "action", "key", "player_id", name="uq_idempotency_action_key_player"
-        ),
-    )
+    __table_args__ = (UniqueConstraint("action", "key", "player_id", name="uq_idempotency_action_key_player"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     action: Mapped[str] = mapped_column(String(50), nullable=False)
     key: Mapped[str] = mapped_column(String(120), nullable=False)
-    player_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE")
-    )
+    player_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"))
     response_json: Mapped[dict] = mapped_column(JSON, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 # 7. МОДЕЛЬ ПОЛІЦЕЙСЬКИХ ЗАПИСІВ
@@ -592,19 +640,13 @@ class PoliceRecord(Base):
     __tablename__ = "police_records"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
-    offense_type: Mapped[str] = mapped_column(
-        String(100), nullable=False
-    )  # 'fake_diploma', 'tax_evasion'
-    fine_amount: Mapped[Optional[float]] = mapped_column(Decimal(10, 2))
+    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
+    offense_type: Mapped[str] = mapped_column(String(100), nullable=False)  # 'fake_diploma', 'tax_evasion'
+    fine_amount: Mapped[float | None] = mapped_column(Decimal(10, 2))
     status: Mapped[str] = mapped_column(
         String(20), default="under_investigation"
     )  # 'fined', 'imprisoned', 'case_closed'
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Зв'язки ORM
     player: Mapped["Player"] = relationship("Player", back_populates="police_records")
@@ -615,23 +657,15 @@ class Pet(Base):
     __tablename__ = "pets"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    owner_player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    owner_player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
-    type: Mapped[str] = mapped_column(
-        String(30), nullable=False
-    )  # 'dog', 'cat', 'raccoon', 'robotic'
+    type: Mapped[str] = mapped_column(String(30), nullable=False)  # 'dog', 'cat', 'raccoon', 'robotic'
     breed: Mapped[str] = mapped_column(String(50), nullable=False)
     hunger: Mapped[int] = mapped_column(Integer, default=0)
     health: Mapped[int] = mapped_column(Integer, default=100)
     loyalty: Mapped[int] = mapped_column(Integer, default=50)
-    status: Mapped[str] = mapped_column(
-        String(20), default="active"
-    )  # 'active', 'sick', 'shelter_lost'
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    status: Mapped[str] = mapped_column(String(20), default="active")  # 'active', 'sick', 'shelter_lost'
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Зв'язки ORM
     owner: Mapped["Player"] = relationship("Player", back_populates="pets")
@@ -642,29 +676,21 @@ class SportsClub(Base):
     __tablename__ = "sports_clubs"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     sport_type: Mapped[str] = mapped_column(
         String(30), nullable=False
     )  # 'football', 'baseball', 'basketball', 'cybersport'
-    owner_player_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        ForeignKey("players.id", ondelete="SET NULL")
-    )
+    owner_player_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
     cash_balance: Mapped[float] = mapped_column(Decimal(15, 2), default=50000.00)
     stadium_capacity: Mapped[int] = mapped_column(Integer, default=5000)
     ticket_price: Mapped[float] = mapped_column(Decimal(10, 2), default=10.00)
     training_efficiency: Mapped[float] = mapped_column(Decimal(5, 2), default=1.00)
     league_points: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Зв'язки ORM
-    contracts: Mapped[List["PlayerAthleteContract"]] = relationship(
-        "PlayerAthleteContract", back_populates="club"
-    )
+    contracts: Mapped[list["PlayerAthleteContract"]] = relationship("PlayerAthleteContract", back_populates="club")
 
 
 # 10. МОДЕЛЬ СПОРТИВНОГО КОНТРАКТУ
@@ -675,21 +701,13 @@ class PlayerAthleteContract(Base):
     player_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("players.id", ondelete="CASCADE"), unique=True, nullable=False
     )
-    club_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("sports_clubs.id", ondelete="CASCADE"), nullable=False
-    )
+    club_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sports_clubs.id", ondelete="CASCADE"), nullable=False)
     salary_per_match: Mapped[float] = mapped_column(Decimal(10, 2), default=200.00)
-    role: Mapped[str] = mapped_column(
-        String(30), default="player"
-    )  # 'player', 'star_player', 'coach'
-    contract_status: Mapped[str] = mapped_column(
-        String(20), default="active"
-    )  # 'active', 'bench', 'expired'
+    role: Mapped[str] = mapped_column(String(30), default="player")  # 'player', 'star_player', 'coach'
+    contract_status: Mapped[str] = mapped_column(String(20), default="active")  # 'active', 'bench', 'expired'
     strength_stat: Mapped[int] = mapped_column(Integer, default=10)
     stamina_stat: Mapped[int] = mapped_column(Integer, default=10)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Зв'язки ORM
     player: Mapped["Player"] = relationship("Player", back_populates="athlete_contract")
@@ -701,18 +719,12 @@ class BankLoan(Base):
     __tablename__ = "bank_loans"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     principal_amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     remaining_debt: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     daily_payment: Mapped[float] = mapped_column(Decimal(10, 2), nullable=False)
-    status: Mapped[str] = mapped_column(
-        String(20), default="active"
-    )  # 'active', 'delinquent', 'paid', 'defaulted'
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    status: Mapped[str] = mapped_column(String(20), default="active")  # 'active', 'delinquent', 'paid', 'defaulted'
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Зв'язки ORM
     player: Mapped["Player"] = relationship("Player", back_populates="loans")
@@ -723,28 +735,18 @@ class InsurancePolicy(Base):
     __tablename__ = "insurance_policies"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
-    business_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        ForeignKey("businesses.id", ondelete="CASCADE")
-    )
+    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
+    business_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"))
     provider_business_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("businesses.id", ondelete="RESTRICT"), nullable=False
     )
     coverage_amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     daily_premium: Mapped[float] = mapped_column(Decimal(10, 2), nullable=False)
-    status: Mapped[str] = mapped_column(
-        String(20), default="active"
-    )  # 'active', 'claimed', 'expired'
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    status: Mapped[str] = mapped_column(String(20), default="active")  # 'active', 'claimed', 'expired'
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Зв'язки ORM
-    player: Mapped["Player"] = relationship(
-        "Player", back_populates="insurance_policies"
-    )
+    player: Mapped["Player"] = relationship("Player", back_populates="insurance_policies")
 
 
 # 13. МОДЕЛЬ ПРОФСПІЛКИ
@@ -757,10 +759,8 @@ class LaborUnion(Base):
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     strike_active: Mapped[bool] = mapped_column(Boolean, default=False)
-    strike_ends_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    strike_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 # 14. МОДЕЛЬ КАРТЕЛЮ
@@ -768,17 +768,11 @@ class Cartel(Base):
     __tablename__ = "cartels"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    industry_type: Mapped[str] = mapped_column(
-        String(50), nullable=False
-    )  # 'transport', 'factory', 'retail'
+    industry_type: Mapped[str] = mapped_column(String(50), nullable=False)  # 'transport', 'factory', 'retail'
     lobby_fund: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 # 15. МОДЕЛЬ МІСЬКОГО ТРАНСПОРТУ
@@ -786,22 +780,12 @@ class Transport(Base):
     __tablename__ = "transports"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
-    type: Mapped[str] = mapped_column(
-        String(30), nullable=False
-    )  # 'bus', 'tram', 'subway', 'taxi_fleet'
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    type: Mapped[str] = mapped_column(String(30), nullable=False)  # 'bus', 'tram', 'subway', 'taxi_fleet'
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    owner_player_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        ForeignKey("players.id", ondelete="SET NULL")
-    )
+    owner_player_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
     ticket_price: Mapped[float] = mapped_column(Decimal(10, 2), default=2.00)
     passenger_capacity: Mapped[int] = mapped_column(Integer, default=100)
     maintenance_cost: Mapped[float] = mapped_column(Decimal(10, 2), default=50.00)
-    operational_status: Mapped[str] = mapped_column(
-        String(20), default="active"
-    )  # 'active', 'inactive', 'overloaded'
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    operational_status: Mapped[str] = mapped_column(String(20), default="active")  # 'active', 'inactive', 'overloaded'
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -55,38 +55,24 @@ def create_building_application(
     if not clean_name:
         return {"success": False, "message": "Назва проєкту не може бути порожньою."}
 
-    proposal_project_type = (
-        blueprint.project_type if blueprint else project_type.strip().lower()
-    )
+    proposal_project_type = blueprint.project_type if blueprint else project_type.strip().lower()
     proposal_expected_jobs = (
-        blueprint_metric(blueprint, "expected_jobs", expected_jobs)
-        if blueprint
-        else max(0, expected_jobs)
+        blueprint_metric(blueprint, "expected_jobs", expected_jobs) if blueprint else max(0, expected_jobs)
     )
     proposal_traffic_load = (
-        blueprint_metric(blueprint, "traffic_load", traffic_load)
-        if blueprint
-        else max(0, traffic_load)
+        blueprint_metric(blueprint, "traffic_load", traffic_load) if blueprint else max(0, traffic_load)
     )
     proposal_service_load = (
-        blueprint_metric(blueprint, "service_load", service_load)
-        if blueprint
-        else max(0, service_load)
+        blueprint_metric(blueprint, "service_load", service_load) if blueprint else max(0, service_load)
     )
     proposal_medical_load = (
-        blueprint_metric(blueprint, "medical_load", medical_load)
-        if blueprint
-        else max(0, medical_load)
+        blueprint_metric(blueprint, "medical_load", medical_load) if blueprint else max(0, medical_load)
     )
     proposal_public_benefit = (
-        blueprint_metric(blueprint, "public_benefit", public_benefit)
-        if blueprint
-        else max(0, public_benefit)
+        blueprint_metric(blueprint, "public_benefit", public_benefit) if blueprint else max(0, public_benefit)
     )
 
-    owner_share_pct = calculate_player_city_land_share_pct(
-        db, player.city_id, player.id
-    )
+    owner_share_pct = calculate_player_city_land_share_pct(db, player.city_id, player.id)
     proposal = BuildingProposal(
         project_type=proposal_project_type,
         land_area_hectares=Decimal(str(parcel.area_hectares)),
@@ -116,9 +102,7 @@ def create_building_application(
         status=decision.status,
         mayor_score=decision.score,
         mayor_summary=decision.summary,
-        mayor_issues=[
-            {"code": issue.code, "message": issue.message} for issue in decision.issues
-        ],
+        mayor_issues=[{"code": issue.code, "message": issue.message} for issue in decision.issues],
         mayor_questions=list(decision.questions),
     )
     db.add(application)

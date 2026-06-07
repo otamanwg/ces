@@ -5,15 +5,15 @@ Revises: 5edc016cd71c
 Create Date: 2026-05-31 14:59:04.852614
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision: str = "129500974fc0"
-down_revision: Union[str, None] = "5edc016cd71c"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "5edc016cd71c"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -33,9 +33,7 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(["player_id"], ["players.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "action", "key", "player_id", name="uq_idempotency_action_key_player"
-        ),
+        sa.UniqueConstraint("action", "key", "player_id", name="uq_idempotency_action_key_player"),
     )
     # ### end Alembic commands ###
 

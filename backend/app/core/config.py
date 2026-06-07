@@ -2,9 +2,7 @@ import os
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_DATABASE_URL = (
-    "postgresql+psycopg2://city:city_dev_password@127.0.0.1:5432/city_game"
-)
+DEFAULT_DATABASE_URL = "postgresql+psycopg2://city:city_dev_password@127.0.0.1:5432/city_game"
 
 try:
     from dotenv import load_dotenv
@@ -31,12 +29,8 @@ class Settings:
         return origins or ["*"]
 
     def validate(self) -> None:
-        if not self.database_url.startswith(
-            ("postgresql://", "postgresql+psycopg2://")
-        ):
-            raise ValueError(
-                "CITY_DATABASE_URL must point to PostgreSQL. SQLite is not supported."
-            )
+        if not self.database_url.startswith(("postgresql://", "postgresql+psycopg2://")):
+            raise ValueError("CITY_DATABASE_URL must point to PostgreSQL. SQLite is not supported.")
 
 
 settings = Settings()

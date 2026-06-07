@@ -16,6 +16,7 @@ from backend.app.schemas.service_results import (
     WorkShiftServiceResult,
 )
 from backend.app.services.buildings import process_daily_building_upkeep
+from backend.app.services.daily_business_revenue import process_all_businesses_daily_revenue
 from backend.app.services.ids import to_uuid
 from backend.app.services.job_queries import get_active_job
 from backend.app.services.ledger import credit, debit, log_transaction
@@ -259,6 +260,9 @@ def game_day_tick(db: Session, city_id: str) -> dict:
             homeless_players += 1
             player.mood = max(10, player.mood - 8)
 
+    # Обробка щоденних доходів бізнесу
+    business_revenue_stats = process_all_businesses_daily_revenue(db, city_uuid)
+
     building_upkeep_stats = process_daily_building_upkeep(db, city)
     db.flush()
 
@@ -289,6 +293,13 @@ def game_day_tick(db: Session, city_id: str) -> dict:
             "building_upkeep_charged": building_upkeep_stats["building_upkeep_charged"],
             "buildings_upkeep_charged": building_upkeep_stats["buildings_upkeep_charged"],
             "buildings_upkeep_failed": building_upkeep_stats["buildings_upkeep_failed"],
+            "businesses_processed": business_revenue_stats.get("data", {}).get("total_businesses", 0),
+            "businesses_successful": business_revenue_stats.get("data", {}).get("successful", 0),
+            "businesses_failed": business_revenue_stats.get("data", {}).get("failed", 0),
+            "businesses_bankrupted": business_revenue_stats.get("data", {}).get("bankrupted", 0),
+            "total_business_revenue": business_revenue_stats.get("data", {}).get("total_revenue", 0.0),
+            "total_business_expenses": business_revenue_stats.get("data", {}).get("total_expenses", 0.0),
+            "total_business_taxes": business_revenue_stats.get("data", {}).get("total_taxes", 0.0),
             "active_money_before": float(active_before),
             "active_money_after": float(active_after),
         },

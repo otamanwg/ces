@@ -238,10 +238,7 @@ def test_player_snapshot_matches_contract_with_business_and_sports_data():
         club = db.query(SportsClub).first()
         db.commit()
 
-        assert (
-            sign_athlete_contract(db, str(player.id), str(club.id), 120.0)["success"]
-            is True
-        )
+        assert sign_athlete_contract(db, str(player.id), str(club.id), 120.0)["success"] is True
         db.refresh(player)
 
         snapshot = build_player_snapshot(db, player)
@@ -316,12 +313,7 @@ def test_next_action_guides_complete_starter_loop():
         hint = _next_action(build_goal_effects(db, player))
         assert hint["value"] == "Влаштуйтесь на роботу"
 
-        job = (
-            db.query(Job)
-            .filter(Job.min_education == "High School")
-            .order_by(Job.salary_per_hour)
-            .first()
-        )
+        job = db.query(Job).filter(Job.min_education == "High School").order_by(Job.salary_per_hour).first()
         job.filled_by_player_id = player.id
         db.commit()
 
@@ -439,10 +431,7 @@ def test_next_action_suggests_sports_then_training_after_core_loop():
         assert hint is not None
         assert hint["value"] == "Підпишіть спортивний контракт"
 
-        assert (
-            sign_athlete_contract(db, str(player.id), str(club.id), 120.0)["success"]
-            is True
-        )
+        assert sign_athlete_contract(db, str(player.id), str(club.id), 120.0)["success"] is True
         player.balance = GYM_COST
         player.energy = GYM_ENERGY_COST
         db.commit()

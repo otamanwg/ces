@@ -5,15 +5,15 @@ Revises:
 Create Date: 2026-05-31 14:32:04.756936
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision: str = "5edc016cd71c"
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -22,13 +22,9 @@ def upgrade() -> None:
         "cities",
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("name", sa.String(length=100), nullable=False),
-        sa.Column(
-            "treasury_balance", sa.Numeric(precision=15, scale=2), nullable=False
-        ),
+        sa.Column("treasury_balance", sa.Numeric(precision=15, scale=2), nullable=False),
         sa.Column("tax_rate_income", sa.Numeric(precision=5, scale=2), nullable=False),
-        sa.Column(
-            "tax_rate_property", sa.Numeric(precision=5, scale=2), nullable=False
-        ),
+        sa.Column("tax_rate_property", sa.Numeric(precision=5, scale=2), nullable=False),
         sa.Column("inflation_rate", sa.Numeric(precision=5, scale=2), nullable=False),
         sa.Column("mayor_player_id", sa.Uuid(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
@@ -102,9 +98,7 @@ def upgrade() -> None:
         "bank_loans",
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("player_id", sa.Uuid(), nullable=False),
-        sa.Column(
-            "principal_amount", sa.Numeric(precision=15, scale=2), nullable=False
-        ),
+        sa.Column("principal_amount", sa.Numeric(precision=15, scale=2), nullable=False),
         sa.Column("remaining_debt", sa.Numeric(precision=15, scale=2), nullable=False),
         sa.Column("daily_payment", sa.Numeric(precision=10, scale=2), nullable=False),
         sa.Column("status", sa.String(length=20), nullable=False),
@@ -134,9 +128,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.ForeignKeyConstraint(["city_id"], ["cities.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(
-            ["owner_player_id"], ["players.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["owner_player_id"], ["players.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
@@ -156,9 +148,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(
-            ["owner_player_id"], ["players.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["owner_player_id"], ["players.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
@@ -187,9 +177,7 @@ def upgrade() -> None:
         sa.Column("cash_balance", sa.Numeric(precision=15, scale=2), nullable=False),
         sa.Column("stadium_capacity", sa.Integer(), nullable=False),
         sa.Column("ticket_price", sa.Numeric(precision=10, scale=2), nullable=False),
-        sa.Column(
-            "training_efficiency", sa.Numeric(precision=5, scale=2), nullable=False
-        ),
+        sa.Column("training_efficiency", sa.Numeric(precision=5, scale=2), nullable=False),
         sa.Column("league_points", sa.Integer(), nullable=False),
         sa.Column(
             "created_at",
@@ -198,9 +186,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.ForeignKeyConstraint(["city_id"], ["cities.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(
-            ["owner_player_id"], ["players.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["owner_player_id"], ["players.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name"),
     )
@@ -213,9 +199,7 @@ def upgrade() -> None:
         sa.Column("owner_player_id", sa.Uuid(), nullable=True),
         sa.Column("ticket_price", sa.Numeric(precision=10, scale=2), nullable=False),
         sa.Column("passenger_capacity", sa.Integer(), nullable=False),
-        sa.Column(
-            "maintenance_cost", sa.Numeric(precision=10, scale=2), nullable=False
-        ),
+        sa.Column("maintenance_cost", sa.Numeric(precision=10, scale=2), nullable=False),
         sa.Column("operational_status", sa.String(length=20), nullable=False),
         sa.Column(
             "created_at",
@@ -224,9 +208,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.ForeignKeyConstraint(["city_id"], ["cities.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(
-            ["owner_player_id"], ["players.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["owner_player_id"], ["players.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
@@ -234,15 +216,11 @@ def upgrade() -> None:
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("business_id", sa.Uuid(), nullable=False),
         sa.Column("room_number", sa.Integer(), nullable=False),
-        sa.Column(
-            "rent_price_per_day", sa.Numeric(precision=10, scale=2), nullable=False
-        ),
+        sa.Column("rent_price_per_day", sa.Numeric(precision=10, scale=2), nullable=False),
         sa.Column("energy_regen_per_hour", sa.Integer(), nullable=False),
         sa.Column("tenant_player_id", sa.Uuid(), nullable=True),
         sa.ForeignKeyConstraint(["business_id"], ["businesses.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(
-            ["tenant_player_id"], ["players.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["tenant_player_id"], ["players.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("tenant_player_id"),
     )
@@ -263,9 +241,7 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(["business_id"], ["businesses.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["player_id"], ["players.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(
-            ["provider_business_id"], ["businesses.id"], ondelete="RESTRICT"
-        ),
+        sa.ForeignKeyConstraint(["provider_business_id"], ["businesses.id"], ondelete="RESTRICT"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
@@ -284,9 +260,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.ForeignKeyConstraint(["business_id"], ["businesses.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(
-            ["filled_by_player_id"], ["players.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["filled_by_player_id"], ["players.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("filled_by_player_id"),
     )
@@ -312,9 +286,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("player_id", sa.Uuid(), nullable=False),
         sa.Column("club_id", sa.Uuid(), nullable=False),
-        sa.Column(
-            "salary_per_match", sa.Numeric(precision=10, scale=2), nullable=False
-        ),
+        sa.Column("salary_per_match", sa.Numeric(precision=10, scale=2), nullable=False),
         sa.Column("role", sa.String(length=30), nullable=False),
         sa.Column("contract_status", sa.String(length=20), nullable=False),
         sa.Column("strength_stat", sa.Integer(), nullable=False),

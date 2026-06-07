@@ -1,8 +1,8 @@
 # Скрипт симуляції економічного циклу міста для тестування MVP
 # Файл: backend/simulate_economy.py
 
-import time
 import random
+import time
 
 
 class EconomySimulator:
@@ -45,9 +45,7 @@ class EconomySimulator:
         ]
 
         # Комунальні та інші витрати міста
-        self.utility_maintenance_cost = (
-            80.00  # Витрати скарбниці на підтримку ЖКГ за хід
-        )
+        self.utility_maintenance_cost = 80.00  # Витрати скарбниці на підтримку ЖКГ за хід
 
     def get_total_circulation(self) -> float:
         """Повертає загальну грошову масу в руках гравців"""
@@ -115,13 +113,9 @@ class EconomySimulator:
 
                 p["balance"] += gross_earned
                 p["energy"] -= energy_spent
-                print(
-                    f"🔨 {p['name']} відпрацював зміну: +{gross_earned} грн (Брутто), -{energy_spent} Енергії"
-                )
+                print(f"🔨 {p['name']} відпрацював зміну: +{gross_earned} грн (Брутто), -{energy_spent} Енергії")
             else:
-                print(
-                    f"❌ {p['name']} занадто втомлений для роботи! (Енергія: {p['energy']})"
-                )
+                print(f"❌ {p['name']} занадто втомлений для роботи! (Енергія: {p['energy']})")
 
         # 2. Оподаткування та оренда (Оплата житла та стягнення податку)
         for p in self.players:
@@ -136,9 +130,7 @@ class EconomySimulator:
             p["balance"] = max(0.0, p["balance"] - tax)
             self.treasury_balance += tax
 
-            print(
-                f"💸 {p['name']} сплатив: {p['rent']} грн за житло, {round(tax, 2)} грн прибуткового податку"
-            )
+            print(f"💸 {p['name']} сплатив: {p['rent']} грн за житло, {round(tax, 2)} грн прибуткового податку")
 
         # 3. Відпочинок у хостелі (відновлення енергії за гроші)
         for p in self.players:
@@ -148,15 +140,11 @@ class EconomySimulator:
                 p["energy"] = min(100, p["energy"] + 40)
                 p["mood"] = min(100, p["mood"] + 10)
                 self.treasury_balance += rest_cost  # кошти за обслуговування хостелу
-                print(
-                    f"🛌 {p['name']} відпочив у хостелі: -{rest_cost} грн, +40 Енергії, +10 Настрою"
-                )
+                print(f"🛌 {p['name']} відпочив у хостелі: -{rest_cost} грн, +40 Енергії, +10 Настрою")
             else:
                 p["energy"] = min(100, p["energy"] + 10)  # безкоштовний поганий сон
                 p["mood"] = max(10, p["mood"] - 15)
-                print(
-                    f"⚠️ {p['name']} не мав грошей на нормальний відпочинок! Енергія відновлена погано, настрій впав."
-                )
+                print(f"⚠️ {p['name']} не мав грошей на нормальний відпочинок! Енергія відновлена погано, настрій впав.")
 
         # 4. Витрати міста на ЖКГ
         self.treasury_balance -= self.utility_maintenance_cost
@@ -168,9 +156,7 @@ class EconomySimulator:
         # Вивід статусів
         print("\n📊 СТАТИСТИКА МІСТА:")
         print(f"   Казна: {round(self.treasury_balance, 2)} грн")
-        print(
-            f"   Загалом грошей у гравців: {round(self.get_total_circulation(), 2)} грн"
-        )
+        print(f"   Загалом грошей у гравців: {round(self.get_total_circulation(), 2)} грн")
         print(f"   Рівень інфляції: {self.inflation_rate}%")
 
         for p in self.players:
