@@ -7,6 +7,7 @@ import random
 from decimal import Decimal
 from typing import Any
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.app.models import Business, City
@@ -103,31 +104,39 @@ def calculate_business_expenses(business: Business) -> Decimal:
     return expenses
 
 
-def calculate_market_competition_modifier(db: Session, business: Business) -> float:
+def _competition_modifier_from_count(count: int) -> float:
+    if count == 0:
+        return 1.2
+    elif count <= 2:
+        return 1.0
+    elif count <= 5:
+        return 0.8
+    else:
+        return 0.6
+
+
+def calculate_market_competition_modifier(
+    db: Session, business: Business, competition_cache: dict[str, int] | None = None
+) -> float:
     """
     Розрахунок модифікатора через конкуренцію в місті.
+    Якщо переданий competition_cache — використовує його замість DB запиту.
     """
-    # Кількість схожих бізнесів у місті
-    similar_businesses = (
-        db.query(Business)
-        .filter(
-            Business.city_id == business.city_id,
-            Business.type == business.type,
-            Business.status == "active",
-            Business.id != business.id,
-        )
-        .count()
-    )
-
-    # Чим більше конкурентів - тим нижчий дохід
-    if similar_businesses == 0:
-        return 1.2  # монопольний бонус
-    elif similar_businesses <= 2:
-        return 1.0  # нормальна конкуренція
-    elif similar_businesses <= 5:
-        return 0.8  # висока конкуренція
+    if competition_cache is not None:
+        total = competition_cache.get(business.type, 0)
+        similar_businesses = max(0, total - 1)  # виключаємо сам бізнес
     else:
-        return 0.6  # перенасичення ринку
+        similar_businesses = (
+            db.query(Business)
+            .filter(
+                Business.city_id == business.city_id,
+                Business.type == business.type,
+                Business.status == "active",
+                Business.id != business.id,
+            )
+            .count()
+        )
+    return _competition_modifier_from_count(similar_businesses)
 
 
 def calculate_location_modifier(business: Business, city_metrics: dict = None) -> float:
@@ -141,7 +150,9 @@ def calculate_location_modifier(business: Business, city_metrics: dict = None) -
     return 1.0
 
 
-def process_daily_business_revenue(db: Session, business: Business) -> dict[str, Any]:
+def process_daily_business_revenue(
+    db: Session, business: Business, competition_cache: dict[str, int] | None = None
+) -> dict[str, Any]:
     """
     Основна функція - обробляє щоденний дохід бізнесу залежно від режиму управління.
     Бізнеси без явного management_mode або з business_size == 0 пропускаються.
@@ -160,10 +171,12 @@ def process_daily_business_revenue(db: Session, business: Business) -> dict[str,
     elif business.management_mode == "shadow":
         return process_shadow_operations(db, business, "standard")
     else:
-        return generate_base_revenue(db, business)
+        return generate_base_revenue(db, business, competition_cache=competition_cache)
 
 
-def generate_base_revenue(db: Session, business: Business) -> dict[str, Any]:
+def generate_base_revenue(
+    db: Session, business: Business, competition_cache: dict[str, int] | None = None
+) -> dict[str, Any]:
     """
     Генерація базового доходу для бізнесу без спеціального управління.
     """
@@ -176,7 +189,7 @@ def generate_base_revenue(db: Session, business: Business) -> dict[str, Any]:
     size_modifier = 1.0 + (business.business_size - 1) * 0.1  # +10% за кожного працівника
 
     # Ринкові модифікатори
-    competition_modifier = calculate_market_competition_modifier(db, business)
+    competition_modifier = calculate_market_competition_modifier(db, business, competition_cache)
     location_modifier = calculate_location_modifier(business)
 
     # Випадковий фактор (80-120% від базового)
@@ -244,6 +257,18 @@ def process_all_businesses_daily_revenue(db: Session, city_id: str = None) -> di
 
     businesses = query.all()
 
+    # Одним запитом обчислюємо кількість активних бізнесів по типах у місті
+    competition_filter = [Business.status == "active"]
+    if city_id:
+        competition_filter.append(Business.city_id == city_id)
+    competition_cache: dict[str, int] = {
+        row[0]: row[1]
+        for row in db.query(Business.type, func.count(Business.id))
+        .filter(*competition_filter)
+        .group_by(Business.type)
+        .all()
+    }
+
     results = {
         "total_businesses": len(businesses),
         "successful": 0,
@@ -257,7 +282,7 @@ def process_all_businesses_daily_revenue(db: Session, city_id: str = None) -> di
 
     for business in businesses:
         try:
-            result = process_daily_business_revenue(db, business)
+            result = process_daily_business_revenue(db, business, competition_cache=competition_cache)
 
             if result["success"]:
                 results["successful"] += 1

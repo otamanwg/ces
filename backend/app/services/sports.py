@@ -146,6 +146,25 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
             ).model_dump()
         ]
 
+    club_ids = [c.id for c in clubs]
+
+    # Один запит для всіх контрактів міста замість N+1 у циклі
+    all_contracts = (
+        db.query(PlayerAthleteContract)
+        .options(joinedload(PlayerAthleteContract.player))
+        .filter(
+            PlayerAthleteContract.club_id.in_(club_ids),
+            PlayerAthleteContract.contract_status == "active",
+        )
+        .all()
+    )
+
+    from collections import defaultdict
+
+    contracts_by_club: dict = defaultdict(list)
+    for contract in all_contracts:
+        contracts_by_club[contract.club_id].append(contract)
+
     results = []
 
     # Проста кругова система: кожен грає з кожним (парами)
@@ -154,27 +173,10 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
             club_a = clubs[i]
             club_b = clubs[j]
 
-            # Розрахунок сили команди А
-            # Сила = Базова ефективність клубу + сума статсів усіх залучених реальних гравців
-            contracts_a = (
-                db.query(PlayerAthleteContract)
-                .filter(
-                    PlayerAthleteContract.club_id == club_a.id,
-                    PlayerAthleteContract.contract_status == "active",
-                )
-                .all()
-            )
+            contracts_a = contracts_by_club[club_a.id]
             strength_a = 50 + sum(c.strength_stat + c.stamina_stat for c in contracts_a)
 
-            # Розрахунок сили команди Б
-            contracts_b = (
-                db.query(PlayerAthleteContract)
-                .filter(
-                    PlayerAthleteContract.club_id == club_b.id,
-                    PlayerAthleteContract.contract_status == "active",
-                )
-                .all()
-            )
+            contracts_b = contracts_by_club[club_b.id]
             strength_b = 50 + sum(c.strength_stat + c.stamina_stat for c in contracts_b)
 
             # Симуляція матчу на основі шансів
@@ -223,14 +225,8 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
             )
 
             # ВИПЛАТА ЗАРПЛАТ АТЛЕТАМ:
-            # Зарплати виплачуються з бюджету клубу
-            winner_contracts = (
-                db.query(PlayerAthleteContract)
-                .options(joinedload(PlayerAthleteContract.player))
-                .filter(PlayerAthleteContract.club_id == winner.id)
-                .all()
-            )
-            for c in winner_contracts:
+            # Зарплати виплачуються з бюджету клубу (використовуємо вже завантажені контракти)
+            for c in contracts_by_club[winner.id]:
                 p = c.player
                 salary = money(c.salary_per_match)
                 credit(db, p, "balance", salary)
