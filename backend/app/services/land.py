@@ -4,7 +4,10 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from backend.app.models import City, CityDistrict, LandParcel, Player
+from backend.app.models import City, CityDistrict, LandParcel
+from backend.app.repositories.city import CityRepository
+from backend.app.repositories.land_parcel import LandParcelRepository
+from backend.app.repositories.player import PlayerRepository
 from backend.app.services.city_districts import ensure_starter_districts
 from backend.app.services.ids import to_uuid
 from backend.app.services.ledger import credit, debit, log_transaction
@@ -87,18 +90,10 @@ def ensure_starter_land_parcels(db: Session, city: City) -> None:
     ensure_starter_districts(db, city)
     db.flush()
     district_by_code = {
-        district.code: district
-        for district in db.query(CityDistrict)
-        .filter(CityDistrict.city_id == city.id)
-        .all()
+        district.code: district for district in db.query(CityDistrict).filter(CityDistrict.city_id == city.id).all()
     }
-    existing_codes = {
-        row[0]
-        for row in db.query(LandParcel.code).filter(LandParcel.city_id == city.id).all()
-    }
-    missing_parcels = [
-        parcel for parcel in STARTER_LAND_PARCELS if parcel.code not in existing_codes
-    ]
+    existing_codes = {row[0] for row in db.query(LandParcel.code).filter(LandParcel.city_id == city.id).all()}
+    missing_parcels = [parcel for parcel in STARTER_LAND_PARCELS if parcel.code not in existing_codes]
     if not missing_parcels:
         return
 
@@ -124,30 +119,17 @@ def ensure_starter_land_parcels(db: Session, city: City) -> None:
 
 
 def get_land_parcels(db: Session, city_id: UUID) -> list[LandParcel]:
-    return (
-        db.query(LandParcel)
-        .join(CityDistrict, CityDistrict.id == LandParcel.district_id)
-        .filter(LandParcel.city_id == city_id)
-        .order_by(
-            CityDistrict.display_order, LandParcel.current_price, LandParcel.label
-        )
-        .all()
-    )
+    return LandParcelRepository(db).list_by_city(city_id)
 
 
 def process_land_purchase(db: Session, player_id: str, land_parcel_id: str) -> dict:
     player_uuid = to_uuid(player_id)
     parcel_uuid = to_uuid(land_parcel_id)
-    player = db.query(Player).filter(Player.id == player_uuid).with_for_update().first()
+    player = PlayerRepository(db).get_by_id_for_update(player_uuid)
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
 
-    parcel = (
-        db.query(LandParcel)
-        .filter(LandParcel.id == parcel_uuid)
-        .with_for_update()
-        .first()
-    )
+    parcel = LandParcelRepository(db).get_by_id_for_update(parcel_uuid)
     if not parcel or parcel.city_id != player.city_id:
         return {"success": False, "message": "Ділянку не знайдено."}
 
@@ -161,7 +143,7 @@ def process_land_purchase(db: Session, player_id: str, land_parcel_id: str) -> d
             "message": f"Недостатньо коштів для купівлі землі! Потрібно: {price:.2f} ₴.",
         }
 
-    city = db.query(City).filter(City.id == player.city_id).first()
+    city = CityRepository(db).get_by_id(player.city_id)
     if not city:
         return {"success": False, "message": "Місто не знайдено"}
 
@@ -195,22 +177,14 @@ def process_land_purchase(db: Session, player_id: str, land_parcel_id: str) -> d
     }
 
 
-def calculate_player_city_land_share_pct(
-    db: Session, city_id: UUID, player_id: UUID
-) -> Decimal:
-    all_parcels = db.query(LandParcel).filter(LandParcel.city_id == city_id).all()
-    total_area = sum(
-        (Decimal(str(parcel.area_hectares)) for parcel in all_parcels), Decimal("0.00")
-    )
+def calculate_player_city_land_share_pct(db: Session, city_id: UUID, player_id: UUID) -> Decimal:
+    all_parcels = LandParcelRepository(db).list_by_city(city_id)
+    total_area = sum((Decimal(str(parcel.area_hectares)) for parcel in all_parcels), Decimal("0.00"))
     if total_area <= Decimal("0.00"):
         return Decimal("0.00")
 
     owned_area = sum(
-        (
-            Decimal(str(parcel.area_hectares))
-            for parcel in all_parcels
-            if parcel.owner_player_id == player_id
-        ),
+        (Decimal(str(parcel.area_hectares)) for parcel in all_parcels if parcel.owner_player_id == player_id),
         Decimal("0.00"),
     )
     return (owned_area / total_area * Decimal("100.00")).quantize(Decimal("0.01"))

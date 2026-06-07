@@ -3,11 +3,12 @@
 
 import json
 import os
-from typing import Dict
 
 from sqlalchemy.orm import Session
 
-from backend.app.models import Player, PoliceRecord, City
+from backend.app.models import PoliceRecord
+from backend.app.repositories.city import CityRepository
+from backend.app.repositories.player import PlayerRepository
 from backend.app.schemas.service_results import (
     ExamSubmissionServiceResult,
     FakeDiplomaPurchaseServiceResult,
@@ -34,16 +35,14 @@ def load_manager_exam() -> dict:
     """Завантаження квізу фінансової грамотності з JSON файлу"""
     if not os.path.exists(COLLEGE_EXAM_FILE):
         return {}
-    with open(COLLEGE_EXAM_FILE, "r", encoding="utf-8") as f:
+    with open(COLLEGE_EXAM_FILE, encoding="utf-8") as f:
         return json.load(f)
 
 
-def process_exam_submission(
-    db: Session, player_id: str, submitted_answers: Dict[str, int]
-) -> dict:
+def process_exam_submission(db: Session, player_id: str, submitted_answers: dict[str, int]) -> dict:
     """Оцінювання відповідей гравця та надання диплома"""
     player_uuid = to_uuid(player_id)
-    player = db.query(Player).filter(Player.id == player_uuid).with_for_update().first()
+    player = PlayerRepository(db).get_by_id_for_update(player_uuid)
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
     if player.education_level != "High School":
@@ -66,7 +65,7 @@ def process_exam_submission(
 
     # Списання оплати в Скарбницю
     debit(db, player, "balance", cost)
-    city = db.query(City).filter(City.id == player.city_id).first()
+    city = CityRepository(db).get_by_id(player.city_id)
     credit(db, city, "treasury_balance", cost)
     log_transaction(
         db,
@@ -130,7 +129,7 @@ def process_exam_submission(
 def purchase_fake_diploma(db: Session, player_id: str) -> dict:
     """Тіньова купівля підробленого диплома Коледжу (Швидко, але небезпечно)"""
     player_uuid = to_uuid(player_id)
-    player = db.query(Player).filter(Player.id == player_uuid).with_for_update().first()
+    player = PlayerRepository(db).get_by_id_for_update(player_uuid)
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
 
@@ -144,7 +143,7 @@ def purchase_fake_diploma(db: Session, player_id: str) -> dict:
             "message": f"Кримінальний дилер вимагає {black_market_cost} ₴. У вас немає такої суми.",
         }
 
-    city = db.query(City).filter(City.id == player.city_id).first()
+    city = CityRepository(db).get_by_id(player.city_id)
 
     # Списання грошей у тіньовий сектор: це money sink, але він має бути видимим в аудиті.
     debit(db, player, "balance", black_market_cost)
@@ -186,7 +185,7 @@ def purchase_fake_diploma(db: Session, player_id: str) -> dict:
 def run_police_audit(db: Session, player_id: str) -> dict:
     """ШІ-Поліція проводить випадковий аудит резюме гравця (наприклад, при спробі підвищення)"""
     player_uuid = to_uuid(player_id)
-    player = db.query(Player).filter(Player.id == player_uuid).first()
+    player = PlayerRepository(db).get_by_id(player_uuid)
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
 
@@ -209,7 +208,7 @@ def run_police_audit(db: Session, player_id: str) -> dict:
         player.diploma_verified = True
 
         # Гроші від штрафу йдуть у Скарбницю міста
-        city = db.query(City).filter(City.id == player.city_id).first()
+        city = CityRepository(db).get_by_id(player.city_id)
         credit(db, city, "treasury_balance", collected_fine)
         if collected_fine > money("0.00"):
             log_transaction(
