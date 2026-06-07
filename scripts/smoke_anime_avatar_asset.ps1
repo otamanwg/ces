@@ -9,11 +9,11 @@ chcp 65001 | Out-Null
 $Root = Split-Path $PSScriptRoot -Parent
 Set-Location $Root
 
-$env:PATH = "C:\Tools\dotnet;C:\Tools\MinGit\cmd;" + $env:PATH
-$env:DOTNET_ROOT = "C:\Tools\dotnet"
+$env:PATH = "C:\Tools\PowerShell\7.6.2;C:\tools\dotnet-sdk;C:\Tools\MinGit\cmd;" + $env:PATH
+$env:DOTNET_ROOT = "C:\tools\dotnet-sdk"
 
 $godot = "C:\Tools\Godot\Godot_v4.3-stable_mono_win64\Godot_v4.3-stable_mono_win64_console.exe"
-$dotnet = "C:\Tools\dotnet\dotnet.exe"
+$dotnet = "C:\tools\dotnet-sdk\dotnet.exe"
 $importSettings = Join-Path $Root "client\assets\visual\anime\avatar\canonical_anime_avatar.glb.import"
 if (-not (Test-Path $godot)) {
     throw "Godot not found at $godot"

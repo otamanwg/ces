@@ -12,8 +12,8 @@ chcp 65001 | Out-Null
 $Root = Split-Path $PSScriptRoot -Parent
 Set-Location $Root
 
-$env:PATH = "C:\tools\dotnet;C:\tools\MinGit\cmd;" + $env:PATH
-$env:DOTNET_ROOT = "C:\tools\dotnet"
+$env:PATH = "C:\Tools\PowerShell\7.6.2;C:\tools\dotnet-sdk;C:\tools\MinGit\cmd;" + $env:PATH
+$env:DOTNET_ROOT = "C:\tools\dotnet-sdk"
 
 $python = if (Test-Path ".\.venv\Scripts\python.exe") { ".\.venv\Scripts\python.exe" } else { "python" }
 $godot = "C:\Tools\Godot\Godot_v4.3-stable_mono_win64\Godot_v4.3-stable_mono_win64.exe"
@@ -41,7 +41,7 @@ if ($RunCheck) {
 
 Write-Host "Building Godot C# project..."
 Push-Location client
-dotnet build city_economic_simulator.csproj -c Debug -v q
+& "C:\tools\dotnet-sdk\dotnet.exe" build city_economic_simulator.csproj -c Debug -v q
 Pop-Location
 
 & "$Root\scripts\start_backend.ps1"

@@ -218,7 +218,7 @@ def update_inflation_rate(db: Session, city_id: str) -> float:
 
     if active_money > target_circulation:
         growth = (active_money - target_circulation) / target_circulation
-        city.inflation_rate = money(round(growth * 100, 2))
+        city.inflation_rate = money(min(round(growth * 100, 2), 999.99))
     else:
         city.inflation_rate = money("0.00")
 
@@ -271,7 +271,7 @@ def game_day_tick(db: Session, city_id: str) -> dict:
     target_circulation = money(player_count * 600)
     if active_after > target_circulation:
         growth = (active_after - target_circulation) / target_circulation
-        city.inflation_rate = money(round(growth * 100, 2))
+        city.inflation_rate = money(min(round(growth * 100, 2), 999.99))
     else:
         city.inflation_rate = money("0.00")
 

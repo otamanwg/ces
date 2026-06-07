@@ -16,6 +16,7 @@ from backend.app.database import get_db, init_db
 from backend.app.realtime.manager import ws_manager
 from backend.app.schemas.response import api_error
 from backend.app.seed import seed_initial_data
+from backend.app.services.scheduler import start_scheduler, stop_scheduler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("CityServer")
@@ -38,7 +39,9 @@ async def lifespan(app: FastAPI):
         db.rollback()
     finally:
         db.close()
+    start_scheduler()
     yield
+    stop_scheduler()
 
 
 app = FastAPI(

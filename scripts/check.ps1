@@ -50,3 +50,4 @@ if (-not $SkipClient) {
 }
 
 Write-Host "All checks passed."
+exit 0
