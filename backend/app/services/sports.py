@@ -6,15 +6,15 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session, joinedload
 
-from backend.app.models import Player, SportsClub, PlayerAthleteContract, City
+from backend.app.models import City, Player, PlayerAthleteContract, SportsClub
 from backend.app.schemas.service_results import (
     SportsContractServiceResult,
     SportsLeagueMatchServiceResult,
     SportsLeagueMessageServiceResult,
     SportsTrainServiceResult,
 )
-from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.ids import to_uuid
+from backend.app.services.ledger import credit, debit, log_transaction
 
 
 def money(value) -> Decimal:
@@ -47,11 +47,7 @@ def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
         }
 
     # Знаходження контракту гравця або створення стартового
-    contract = (
-        db.query(PlayerAthleteContract)
-        .filter(PlayerAthleteContract.player_id == player_uuid)
-        .first()
-    )
+    contract = db.query(PlayerAthleteContract).filter(PlayerAthleteContract.player_id == player_uuid).first()
     if not contract:
         # Якщо контракту немає, створюємо аматорський статус (без клубу)
         # Для простоти MVP, гравець повинен спершу підписати контракт або мати запис характеристик
@@ -66,6 +62,8 @@ def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
 
     # Гроші за спортзал йдуть у міську скарбницю (або власнику спортзалу)
     city = db.query(City).filter(City.id == player.city_id).first()
+    if city is None:
+        return {"success": False, "message": "Місто не знайдено."}
     credit(db, city, "treasury_balance", GYM_COST)
 
     # Прокачування статів
@@ -98,9 +96,7 @@ def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
     ).model_dump()
 
 
-def sign_athlete_contract(
-    db: Session, player_id: str, club_id: str, salary: float
-) -> dict:
+def sign_athlete_contract(db: Session, player_id: str, club_id: str, salary: float) -> dict:
     """Підписання контракту спортсмена з клубом"""
     player_uuid = to_uuid(player_id)
     club_uuid = to_uuid(club_id)
@@ -111,11 +107,7 @@ def sign_athlete_contract(
         return {"success": False, "message": "Гравця чи клуб не знайдено"}
 
     # Перевірка наявності чинного контракту
-    existing = (
-        db.query(PlayerAthleteContract)
-        .filter(PlayerAthleteContract.player_id == player_uuid)
-        .first()
-    )
+    existing = db.query(PlayerAthleteContract).filter(PlayerAthleteContract.player_id == player_uuid).first()
     if existing:
         return {
             "success": False,
@@ -218,10 +210,10 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
             credit(db, winner, "cash_balance", revenue)
             log_transaction(
                 db,
-                city_id,
-                sender_id=city_uuid,
+                str(city_id),
+                sender_id=str(city_uuid),
                 sender_type="system",
-                receiver_id=winner.id,
+                receiver_id=str(winner.id),
                 receiver_type="business",
                 amount=float(revenue),
                 tax=0.0,
@@ -244,10 +236,10 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
 
                 log_transaction(
                     db,
-                    city_id,
-                    sender_id=winner.id,
+                    str(city_id),
+                    sender_id=str(winner.id),
                     sender_type="business",
-                    receiver_id=p.id,
+                    receiver_id=str(p.id),
                     receiver_type="player",
                     amount=float(salary),
                     tax=0.0,

@@ -60,6 +60,10 @@ lint-python:
 lint-fix-python:
     .venv/Scripts/python.exe -m ruff check --fix backend/app backend/main.py
 
+# Статичний аналіз типів Python (pyright)
+typecheck-python:
+    .venv/Scripts/python.exe -m pyright backend/app backend/main.py
+
 # Очистка кешів Python
 clean:
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue backend/app/__pycache__, backend/tests/__pycache__
