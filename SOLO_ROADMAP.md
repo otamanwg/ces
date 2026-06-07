@@ -22,9 +22,9 @@
 
 ### Поточний Фокус
 
-**Sprint 50: Anime Avatar Street Prototype.**
+**Sprint 51: Canonical Anime Humanoid GLB.**
 
-Мета: перевірити environment-driven avatar, SimCity-подібну камеру та LOD у реальній Godot 3D-сцені до виробництва фінального `.glb`.
+Мета: перейти від процедурного proxy до відтворюваного rigged GLB із семантичним humanoid skeleton та environment-driven actions.
 
 Core gameplay direction зафіксований у `GAMEPLAY_CORE_MODEL.md`: місто-сервер живе 24/7, старт через автобусний вокзал, земля/будівництво через мерію і біржу, переїзд між містами доступний одразу з логістичними обмеженнями.
 
@@ -851,6 +851,20 @@ DoD:
 3. ✅ Stylized-PBR shader, SimCity-подібна orthographic camera і LOD camera presets.
 4. ✅ Automated PNG capture для visual QA.
 5. ✅ Повний checkpoint, MCP smoke і commit.
+
+---
+
+## Sprint 51 — Canonical Anime Humanoid GLB
+
+Ціль: замінити процедурний proxy відтворюваним skeleton/mesh/animation asset pipeline.
+
+Порядок:
+
+1. ✅ Tooling: portable Blender 4.5 LTS із перевіреним SHA-256.
+2. ✅ Generator-as-code: 23 humanoid bones, original anime mesh і materials.
+3. ✅ Animation actions: `idle/walk/sit/phone/talk`.
+4. ✅ Godot import: `Skeleton3D`, animation library і generated mesh LOD.
+5. ✅ Повний checkpoint, asset smoke і commit.
 
 ---
 

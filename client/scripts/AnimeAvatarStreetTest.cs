@@ -8,6 +8,7 @@ public partial class AnimeAvatarStreetTest : Node3D
 {
 	private const float StateDurationSeconds = 4.0f;
 	private const string StylizedShaderPath = "res://shaders/anime_stylized.gdshader";
+	private const string CanonicalAvatarPath = "res://assets/visual/anime/avatar/canonical_anime_avatar.glb";
 
 	private readonly Dictionary<AvatarActivity, Button> _activityButtons = new();
 	private readonly Dictionary<AvatarLodLevel, Button> _lodButtons = new();
@@ -28,6 +29,10 @@ public partial class AnimeAvatarStreetTest : Node3D
 	private Camera3D _camera = null!;
 	private Label _statusLabel = null!;
 	private Shader? _stylizedShader;
+	private Node3D? _canonicalAvatar;
+	private Node3D? _canonicalPhone;
+	private AnimationPlayer? _canonicalAnimationPlayer;
+	private bool _usingCanonicalAsset;
 
 	private AvatarActivity _activity = AvatarActivity.Idle;
 	private AvatarLodLevel _lod = AvatarLodLevel.Street;
@@ -41,6 +46,7 @@ public partial class AnimeAvatarStreetTest : Node3D
 		BuildEnvironment();
 		BuildStreet();
 		BuildAvatar();
+		LoadCanonicalAvatar();
 		BuildInterface();
 		ApplyCommandLinePreview();
 		SetActivity(_activity);
@@ -327,6 +333,11 @@ public partial class AnimeAvatarStreetTest : Node3D
 	{
 		_activity = activity;
 		_stateElapsed = 0.0f;
+		if (_canonicalPhone != null)
+		{
+			_canonicalPhone.Visible = activity == AvatarActivity.Phone;
+		}
+		PlayCanonicalAnimation(activity);
 		foreach (var pair in _activityButtons)
 		{
 			pair.Value.ButtonPressed = pair.Key == activity;
@@ -337,7 +348,12 @@ public partial class AnimeAvatarStreetTest : Node3D
 	private void SetLod(AvatarLodLevel lod)
 	{
 		_lod = lod;
-		_bodyRig.Visible = AvatarPresentationRules.UsesSkinnedAvatar(lod);
+		bool usesFullAvatar = AvatarPresentationRules.UsesSkinnedAvatar(lod);
+		_bodyRig.Visible = usesFullAvatar && !_usingCanonicalAsset;
+		if (_canonicalAvatar != null)
+		{
+			_canonicalAvatar.Visible = usesFullAvatar;
+		}
 		_faceDetail.Visible = lod is AvatarLodLevel.Cinematic or AvatarLodLevel.Street;
 		_distanceAvatar.Visible = lod == AvatarLodLevel.Distance;
 		_marker.Visible = lod == AvatarLodLevel.Marker;
@@ -407,7 +423,8 @@ public partial class AnimeAvatarStreetTest : Node3D
 				_rightLowerLeg.Rotation = new Vector3(Mathf.Max(0.0f, -stride) * 0.55f, 0.0f, 0.0f);
 				break;
 			case AvatarActivity.Sit:
-				_avatarRoot.Position = new Vector3(2.25f, -0.58f, -0.32f);
+				float seatOffset = _usingCanonicalAsset ? -0.30f : -0.58f;
+				_avatarRoot.Position = new Vector3(2.25f, seatOffset, -0.32f);
 				_leftUpperLeg.Rotation = new Vector3(-1.22f, 0.0f, -0.04f);
 				_rightUpperLeg.Rotation = new Vector3(-1.22f, 0.0f, 0.04f);
 				_leftLowerLeg.Rotation = new Vector3(1.20f, 0.0f, 0.0f);
@@ -445,8 +462,134 @@ public partial class AnimeAvatarStreetTest : Node3D
 	{
 		if (_statusLabel != null)
 		{
-			_statusLabel.Text = $"{AvatarPresentationRules.ActivityCode(_activity).ToUpperInvariant()}  /  {_lod.ToString().ToUpperInvariant()} LOD";
+			string source = _usingCanonicalAsset ? "GLB" : "PROXY";
+			_statusLabel.Text =
+				$"{AvatarPresentationRules.ActivityCode(_activity).ToUpperInvariant()}  /  {_lod.ToString().ToUpperInvariant()} LOD  /  {source}";
 		}
+	}
+
+	private void LoadCanonicalAvatar()
+	{
+		var packedScene = GD.Load<PackedScene>(CanonicalAvatarPath);
+		if (packedScene == null)
+		{
+			GD.PushWarning($"Canonical avatar unavailable: {CanonicalAvatarPath}");
+			return;
+		}
+
+		_canonicalAvatar = packedScene.Instantiate<Node3D>();
+		_canonicalAvatar.Name = "CanonicalAnimeAvatar";
+		_canonicalAvatar.Scale = Vector3.One * 1.45f;
+		_avatarRoot.AddChild(_canonicalAvatar);
+		_canonicalAnimationPlayer = FindDescendant<AnimationPlayer>(_canonicalAvatar);
+		var skeleton = FindDescendant<Skeleton3D>(_canonicalAvatar);
+		_usingCanonicalAsset = skeleton != null;
+		if (!_usingCanonicalAsset)
+		{
+			GD.PushWarning("Canonical avatar GLB imported without Skeleton3D; using procedural proxy.");
+			_canonicalAvatar.QueueFree();
+			_canonicalAvatar = null;
+			_canonicalAnimationPlayer = null;
+			return;
+		}
+
+		AttachCanonicalPhone(skeleton!);
+		string animations = "(none)";
+		if (_canonicalAnimationPlayer != null)
+		{
+			var summaries = new List<string>();
+			foreach (StringName animationName in _canonicalAnimationPlayer.GetAnimationList())
+			{
+				var animation = _canonicalAnimationPlayer.GetAnimation(animationName);
+				summaries.Add(
+					$"{animationName}(tracks={animation?.GetTrackCount() ?? 0},length={animation?.Length ?? 0.0:0.00})"
+				);
+			}
+			animations = string.Join(", ", summaries);
+		}
+		GD.Print(
+			$"Canonical avatar loaded: bones={skeleton!.GetBoneCount()}, animations=[{animations}]"
+		);
+	}
+
+	private void AttachCanonicalPhone(Skeleton3D skeleton)
+	{
+		var attachment = new BoneAttachment3D
+		{
+			Name = "PhoneAttachment",
+			BoneName = "RightHand",
+		};
+		skeleton.AddChild(attachment);
+
+		var phoneMaterial = new StandardMaterial3D
+		{
+			AlbedoColor = new Color("182235"),
+			Metallic = 0.18f,
+			Roughness = 0.36f,
+		};
+		var phone = new MeshInstance3D
+		{
+			Name = "Phone",
+			Mesh = new BoxMesh { Size = new Vector3(0.10f, 0.22f, 0.03f) },
+			MaterialOverride = phoneMaterial,
+			Position = new Vector3(0.0f, 0.09f, 0.045f),
+			RotationDegrees = new Vector3(0.0f, 0.0f, 12.0f),
+			Visible = false,
+		};
+		attachment.AddChild(phone);
+		_canonicalPhone = phone;
+	}
+
+	private void PlayCanonicalAnimation(AvatarActivity activity)
+	{
+		if (_canonicalAnimationPlayer == null)
+		{
+			return;
+		}
+
+		string code = AvatarPresentationRules.ActivityCode(activity);
+		StringName? resolved = null;
+		foreach (StringName animationName in _canonicalAnimationPlayer.GetAnimationList())
+		{
+			string candidate = animationName.ToString();
+			if (candidate.Equals(code, StringComparison.OrdinalIgnoreCase)
+				|| candidate.EndsWith($"|{code}", StringComparison.OrdinalIgnoreCase)
+				|| candidate.EndsWith($"/{code}", StringComparison.OrdinalIgnoreCase))
+			{
+				resolved = animationName;
+				break;
+			}
+		}
+		if (resolved == null)
+		{
+			GD.PushWarning($"Canonical avatar animation unavailable: {code}");
+			return;
+		}
+
+		var animation = _canonicalAnimationPlayer.GetAnimation(resolved);
+		if (animation != null)
+		{
+			animation.LoopMode = Animation.LoopModeEnum.Linear;
+		}
+		_canonicalAnimationPlayer.Play(resolved, 0.18);
+		GD.Print($"Canonical avatar animation playing: {resolved}");
+	}
+
+	private static T? FindDescendant<T>(Node root) where T : Node
+	{
+		if (root is T match)
+		{
+			return match;
+		}
+		foreach (Node child in root.GetChildren())
+		{
+			var descendant = FindDescendant<T>(child);
+			if (descendant != null)
+			{
+				return descendant;
+			}
+		}
+		return null;
 	}
 
 	private void ApplyCommandLinePreview()
