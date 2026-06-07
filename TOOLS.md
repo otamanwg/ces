@@ -69,6 +69,20 @@ just build-client    # dotnet build client/city_economic_simulator.csproj
 just format-csharp   # dotnet format client/city_economic_simulator.csproj
 ```
 
+### OpenAPI → C# DTO Generation
+
+- **Tool:** NSwag.ConsoleCore 14.7 (`C:\Users\agga\.dotnet\tools\nswag.exe`)
+- **Generator:** `nswag openapi2csclient`
+- **Output:** `client/scripts/generated/CityApiModels.cs`
+- **Format:** System.Text.Json (Godot .NET compatible)
+
+```bash
+# Backend має бути запущений на :8000
+just generate-api-client
+```
+
+Це створює type-safe C# DTO класи з усіх FastAPI Pydantic models.
+
 ## Godot MCP Bridge
 
 - **Bridge script:** `scripts/godot_mcp_bridge.py`

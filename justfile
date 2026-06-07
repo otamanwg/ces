@@ -44,6 +44,11 @@ migrate:
 migrate-create msg:
     .venv/Scripts/python.exe -m alembic revision --autogenerate -m "{{msg}}"
 
+# Генерація C# DTO з OpenAPI (потребує запущеного backend на :8000)
+generate-api-client:
+    $env:Path = "C:\Users\agga\.dotnet\tools;C:\ces\.tools\node;" + $env:Path
+    nswag openapi2csclient /input:http://127.0.0.1:8000/openapi.json /output:client/scripts/generated/CityApiModels.cs /namespace:City.Api /classname:CityApiClient /generateClientClasses:false /generateDtoTypes:true /jsonLibrary:SystemTextJson
+
 # Запуск Godot MCP bridge
 mcp-bridge:
     .venv/Scripts/python.exe scripts/godot_mcp_bridge.py
