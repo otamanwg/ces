@@ -16,7 +16,12 @@ class BaseRepository(Generic[ModelT]):
         return self.db.query(self.model).filter(self.model.id == id_).first()
 
     def get_by_id_for_update(self, id_) -> ModelT | None:
-        return self.db.query(self.model).filter(self.model.id == id_).with_for_update().first()
+        return (
+            self.db.query(self.model)
+            .filter(self.model.id == id_)
+            .with_for_update()
+            .first()
+        )
 
     def list_all(self, *, limit: int | None = None, offset: int = 0) -> list[ModelT]:
         query = self.db.query(self.model).offset(offset)

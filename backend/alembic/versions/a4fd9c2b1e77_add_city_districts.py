@@ -26,7 +26,9 @@ def upgrade() -> None:
         sa.Column("zone_type", sa.String(length=50), nullable=False),
         sa.Column("description", sa.String(length=300), nullable=False),
         sa.Column("display_order", sa.Integer(), nullable=False),
-        sa.Column("land_available_hectares", sa.Numeric(precision=10, scale=2), nullable=False),
+        sa.Column(
+            "land_available_hectares", sa.Numeric(precision=10, scale=2), nullable=False
+        ),
         sa.Column("rent_level", sa.Integer(), nullable=False),
         sa.Column("job_supply", sa.Integer(), nullable=False),
         sa.Column("crime_risk", sa.Integer(), nullable=False),
@@ -35,7 +37,12 @@ def upgrade() -> None:
         sa.Column("medical_coverage", sa.Integer(), nullable=False),
         sa.Column("land_value", sa.Integer(), nullable=False),
         sa.Column("desirability", sa.Integer(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["city_id"], ["cities.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("city_id", "code", name="uq_city_districts_city_code"),

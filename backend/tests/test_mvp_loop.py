@@ -35,11 +35,24 @@ from backend.app.services.business_market import (
     process_business_dividend_collection,
     process_business_purchase,
 )
-from backend.app.services.buildings import ACTIVE, BUILDING_UPKEEP_PURPOSE, BUILT, MAINTENANCE_DUE
-from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work
+from backend.app.services.buildings import (
+    ACTIVE,
+    BUILDING_UPKEEP_PURPOSE,
+    BUILT,
+    MAINTENANCE_DUE,
+)
+from backend.app.services.economy import (
+    game_day_tick,
+    process_rent_payment,
+    process_shift_work,
+)
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.needs import process_meal_purchase
-from backend.app.services.sports import sign_athlete_contract, simulate_league_matches, train_at_gym
+from backend.app.services.sports import (
+    sign_athlete_contract,
+    simulate_league_matches,
+    train_at_gym,
+)
 from backend.tests.db import make_test_session
 
 TEST_DATABASE_URL = os.getenv("CITY_TEST_DATABASE_URL")
@@ -57,8 +70,14 @@ def create_active_blueprint_building(
     blueprint_code: str = "station_kiosk",
     business_cash: Decimal = Decimal("0.00"),
 ):
-    blueprint = db.query(BusinessBlueprint).filter(BusinessBlueprint.code == blueprint_code).one()
-    parcel = db.query(LandParcel).filter(LandParcel.code == "bus_station_kiosk_lot").one()
+    blueprint = (
+        db.query(BusinessBlueprint)
+        .filter(BusinessBlueprint.code == blueprint_code)
+        .one()
+    )
+    parcel = (
+        db.query(LandParcel).filter(LandParcel.code == "bus_station_kiosk_lot").one()
+    )
     parcel.owner_player_id = owner.id
     parcel.status = BUILT
 
@@ -174,7 +193,9 @@ def test_seed_backfills_districts_for_existing_city():
         assert db.query(CityDistrict).count() == 6
         assert db.query(LandParcel).count() == 6
 
-        missing_parcel = db.query(LandParcel).filter(LandParcel.code == "outer_expansion_lot").one()
+        missing_parcel = (
+            db.query(LandParcel).filter(LandParcel.code == "outer_expansion_lot").one()
+        )
         db.delete(missing_parcel)
         db.commit()
         assert db.query(LandParcel).count() == 5
@@ -205,7 +226,12 @@ def test_work_and_sleep_loop_updates_player_and_logs_transactions():
         room = db.query(Hostel).first()
         room.tenant_player_id = player.id
 
-        job = db.query(Job).filter(Job.min_education == "High School").order_by(Job.salary_per_hour).first()
+        job = (
+            db.query(Job)
+            .filter(Job.min_education == "High School")
+            .order_by(Job.salary_per_hour)
+            .first()
+        )
         job.filled_by_player_id = player.id
         db.commit()
         starting_treasury = Decimal(str(city.treasury_balance))
@@ -217,7 +243,9 @@ def test_work_and_sleep_loop_updates_player_and_logs_transactions():
         assert work_result["player"]["hunger"] == 20
         assert work_result["player"]["balance"] > 500
         db.refresh(city)
-        assert Decimal(str(city.treasury_balance)) == starting_treasury - Decimal("180.00")
+        assert Decimal(str(city.treasury_balance)) == starting_treasury - Decimal(
+            "180.00"
+        )
 
         sleep_result = process_rent_payment(db, str(player.id))
         assert sleep_result["success"] is True
@@ -225,10 +253,16 @@ def test_work_and_sleep_loop_updates_player_and_logs_transactions():
         assert sleep_result["player"]["energy"] == 100
         assert sleep_result["player"]["hunger"] == 30
         db.refresh(city)
-        assert Decimal(str(city.treasury_balance)) == starting_treasury - Decimal("165.00")
+        assert Decimal(str(city.treasury_balance)) == starting_treasury - Decimal(
+            "165.00"
+        )
         assert db.query(TransactionModelLog).count() == 2
 
-        salary_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "salary").one()
+        salary_log = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "salary")
+            .one()
+        )
         assert salary_log.sender_id == city.id
         assert salary_log.sender_type == "treasury"
         assert salary_log.receiver_id == player.id
@@ -236,7 +270,11 @@ def test_work_and_sleep_loop_updates_player_and_logs_transactions():
         assert salary_log.amount == Decimal("180.00")
         assert salary_log.tax_deducted == Decimal("20.00")
 
-        rent_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "rent").one()
+        rent_log = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "rent")
+            .one()
+        )
         assert rent_log.sender_id == player.id
         assert rent_log.sender_type == "player"
         assert rent_log.receiver_id == city.id
@@ -272,11 +310,17 @@ def test_meal_purchase_reduces_hunger_charges_player_and_logs_food():
         db.refresh(player)
         db.refresh(city)
         assert Decimal(str(player.balance)) == Decimal("75.00")
-        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal("25.00")
+        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal(
+            "25.00"
+        )
         assert player.hunger == 45
         assert player.mood == 85
 
-        food_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "food").one()
+        food_log = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "food")
+            .one()
+        )
         assert food_log.sender_id == player.id
         assert food_log.sender_type == "player"
         assert food_log.receiver_id == city.id
@@ -335,9 +379,15 @@ def test_private_business_shift_pays_worker_from_business_cash_and_taxes_city():
         db.refresh(city)
         assert Decimal(str(worker.balance)) == Decimal("172.00")
         assert Decimal(str(business.cash_balance)) == Decimal("920.00")
-        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal("8.00")
+        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal(
+            "8.00"
+        )
 
-        salary_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "salary").one()
+        salary_log = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "salary")
+            .one()
+        )
         assert salary_log.sender_id == business.id
         assert salary_log.sender_type == "business"
         assert salary_log.receiver_id == worker.id
@@ -376,9 +426,15 @@ def test_business_purchase_transfers_money_to_treasury_and_assigns_owner():
         db.refresh(business)
         assert business.owner_player_id == player.id
         assert Decimal(str(player.balance)) == Decimal("300.00")
-        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal("1200.00")
+        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal(
+            "1200.00"
+        )
 
-        purchase_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "business_purchase").one()
+        purchase_log = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "business_purchase")
+            .one()
+        )
         assert purchase_log.sender_id == player.id
         assert purchase_log.sender_type == "player"
         assert purchase_log.receiver_id == city.id
@@ -408,7 +464,9 @@ def test_business_dividend_moves_cash_from_owned_business_to_player():
         business.owner_player_id = player.id
         db.commit()
 
-        result = process_business_dividend_collection(db, str(player.id), str(business.id))
+        result = process_business_dividend_collection(
+            db, str(player.id), str(business.id)
+        )
 
         assert result["success"] is True
         BusinessDividendServiceResult.model_validate(result)
@@ -417,7 +475,11 @@ def test_business_dividend_moves_cash_from_owned_business_to_player():
         assert Decimal(str(player.balance)) == Decimal("200.00")
         assert Decimal(str(business.cash_balance)) == Decimal("900.00")
 
-        dividend_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "business_dividend").one()
+        dividend_log = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "business_dividend")
+            .one()
+        )
         assert dividend_log.sender_id == business.id
         assert dividend_log.sender_type == "business"
         assert dividend_log.receiver_id == player.id
@@ -460,9 +522,15 @@ def test_gym_training_charges_player_treasury_and_logs_fee():
         assert player.energy == 60
         assert result["stats"]["strength"] >= 12
         assert result["stats"]["strength"] <= 15
-        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal("40.00")
+        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal(
+            "40.00"
+        )
 
-        gym_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "gym_training").one()
+        gym_log = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "gym_training")
+            .one()
+        )
         assert gym_log.sender_id == player.id
         assert gym_log.sender_type == "player"
         assert gym_log.receiver_id == city.id
@@ -495,7 +563,9 @@ def test_sports_matches_create_ticket_revenue_and_pay_winning_athlete(monkeypatc
         SportsContractServiceResult.model_validate(contract_result)
         starting_club_cash = Decimal(str(club.cash_balance))
 
-        monkeypatch.setattr("backend.app.services.sports.random.randint", lambda _start, _end: 1)
+        monkeypatch.setattr(
+            "backend.app.services.sports.random.randint", lambda _start, _end: 1
+        )
         results = simulate_league_matches(db, str(city.id))
 
         assert len(results) == 3
@@ -506,11 +576,19 @@ def test_sports_matches_create_ticket_revenue_and_pay_winning_athlete(monkeypatc
         assert Decimal(str(player.balance)) == Decimal("290.00")
         assert Decimal(str(club.cash_balance)) > starting_club_cash
 
-        ticket_logs = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "ticket_revenue").all()
+        ticket_logs = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "ticket_revenue")
+            .all()
+        )
         assert len(ticket_logs) == 3
         assert all(log.receiver_type == "business" for log in ticket_logs)
 
-        salary_logs = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "athlete_match_salary").all()
+        salary_logs = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "athlete_match_salary")
+            .all()
+        )
         assert len(salary_logs) == 2
         assert all(log.sender_id == club.id for log in salary_logs)
         assert all(log.receiver_id == player.id for log in salary_logs)
@@ -558,8 +636,16 @@ def test_game_day_tick_applies_decay_without_rent():
         assert player.energy == 0
         assert player.mood >= 10
         assert city.inflation_rate >= 0
-        assert Decimal(str(last_result["stats"]["active_money_after"])) == starting_active_money
-        assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "daily_rent").count() == 0
+        assert (
+            Decimal(str(last_result["stats"]["active_money_after"]))
+            == starting_active_money
+        )
+        assert (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "daily_rent")
+            .count()
+            == 0
+        )
     finally:
         db.close()
 
@@ -591,7 +677,11 @@ def test_sleep_then_tick_does_not_double_charge_rent():
 
         db.refresh(player)
         balance_after_sleep = Decimal(str(player.balance))
-        rent_logs = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "rent").count()
+        rent_logs = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "rent")
+            .count()
+        )
         assert rent_logs == 1
 
         tick_result = game_day_tick(db, str(city.id))
@@ -601,8 +691,18 @@ def test_sleep_then_tick_does_not_double_charge_rent():
 
         db.refresh(player)
         assert player.balance == balance_after_sleep
-        assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "rent").count() == 1
-        assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "daily_rent").count() == 0
+        assert (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "rent")
+            .count()
+            == 1
+        )
+        assert (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "daily_rent")
+            .count()
+            == 0
+        )
     finally:
         db.close()
 
@@ -648,10 +748,16 @@ def test_game_day_tick_charges_building_upkeep_from_business_cash():
         db.refresh(building)
         assert Decimal(str(player.balance)) == Decimal("500.00")
         assert Decimal(str(business.cash_balance)) == Decimal("42.00")
-        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal(str(blueprint.upkeep_daily))
+        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal(
+            str(blueprint.upkeep_daily)
+        )
         assert building.operating_status == ACTIVE
 
-        upkeep_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == BUILDING_UPKEEP_PURPOSE).one()
+        upkeep_log = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == BUILDING_UPKEEP_PURPOSE)
+            .one()
+        )
         assert upkeep_log.sender_id == business.id
         assert upkeep_log.sender_type == "business"
         assert upkeep_log.receiver_id == city.id
@@ -702,7 +808,11 @@ def test_game_day_tick_falls_back_to_owner_balance_for_building_upkeep():
         assert Decimal(str(business.cash_balance)) == Decimal("0.00")
         assert building.operating_status == ACTIVE
 
-        upkeep_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == BUILDING_UPKEEP_PURPOSE).one()
+        upkeep_log = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == BUILDING_UPKEEP_PURPOSE)
+            .one()
+        )
         assert upkeep_log.sender_id == player.id
         assert upkeep_log.sender_type == "player"
     finally:
@@ -749,7 +859,12 @@ def test_game_day_tick_marks_building_maintenance_due_when_upkeep_cannot_be_paid
         assert Decimal(str(player.balance)) == Decimal("1.00")
         assert Decimal(str(business.cash_balance)) == Decimal("0.00")
         assert building.operating_status == MAINTENANCE_DUE
-        assert db.query(TransactionModelLog).filter(TransactionModelLog.purpose == BUILDING_UPKEEP_PURPOSE).count() == 0
+        assert (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == BUILDING_UPKEEP_PURPOSE)
+            .count()
+            == 0
+        )
     finally:
         db.close()
 
@@ -786,7 +901,11 @@ def test_exam_payment_updates_treasury_and_logs_fee():
         assert Decimal(str(player.balance)) == starting_player_balance - exam_cost
         assert Decimal(str(city.treasury_balance)) == starting_treasury + exam_cost
 
-        exam_fee = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "exam_fee").one()
+        exam_fee = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "exam_fee")
+            .one()
+        )
         assert exam_fee.sender_id == player.id
         assert exam_fee.sender_type == "player"
         assert exam_fee.receiver_id == city.id
@@ -816,7 +935,12 @@ def test_starter_balance_reaches_college_after_one_work_sleep_cycle():
 
         room = db.query(Hostel).first()
         room.tenant_player_id = player.id
-        job = db.query(Job).filter(Job.min_education == "High School").order_by(Job.salary_per_hour).first()
+        job = (
+            db.query(Job)
+            .filter(Job.min_education == "High School")
+            .order_by(Job.salary_per_hour)
+            .first()
+        )
         job.filled_by_player_id = player.id
         db.commit()
 
@@ -848,7 +972,12 @@ def test_starter_balance_reaches_college_after_one_work_sleep_cycle():
         assert player.education_level == "College"
         assert Decimal(str(player.balance)) == Decimal("15.00")
 
-        purposes = [row.purpose for row in db.query(TransactionModelLog).order_by(TransactionModelLog.timestamp).all()]
+        purposes = [
+            row.purpose
+            for row in db.query(TransactionModelLog)
+            .order_by(TransactionModelLog.timestamp)
+            .all()
+        ]
         assert purposes == ["salary", "rent", "exam_fee"]
     finally:
         db.close()

@@ -16,9 +16,9 @@ test:
 test-verbose:
     .venv/Scripts/python.exe -m pytest backend/tests -v --tb=short
 
-# Форматування Python коду
+# Форматування Python коду (ruff — заміна black)
 format-python:
-    .venv/Scripts/python.exe -m black backend/app backend/main.py
+    .venv/Scripts/python.exe -m ruff format backend/app backend/main.py
 
 # Форматування C# коду (Godot client)
 format-csharp:
@@ -31,9 +31,10 @@ format: format-python format-csharp
 build-client:
     C:\tools\dotnet-sdk\dotnet.exe build client/city_economic_simulator.csproj
 
-# Перевірка стилю Python (black --check)
+# Перевірка стилю Python (ruff lint + format check)
 check-python:
-    .venv/Scripts/python.exe -m black --check backend/app backend/main.py
+    .venv/Scripts/python.exe -m ruff check backend/app backend/main.py
+    .venv/Scripts/python.exe -m ruff format --check backend/app backend/main.py
 
 # Міграції бази даних (upgrade)
 migrate:
@@ -50,6 +51,14 @@ mcp-bridge:
 # Статус Godot MCP bridge
 mcp-status:
     Invoke-RestMethod -Uri "http://127.0.0.1:6507/status" -Method Get | ConvertTo-Json
+
+# Лінтинг Python (ruff)
+lint-python:
+    .venv/Scripts/python.exe -m ruff check backend/app backend/main.py
+
+# Автофікс лінтинг-помилок Python
+lint-fix-python:
+    .venv/Scripts/python.exe -m ruff check --fix backend/app backend/main.py
 
 # Очистка кешів Python
 clean:

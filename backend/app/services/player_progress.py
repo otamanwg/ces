@@ -4,12 +4,22 @@ from sqlalchemy.orm import Session
 
 from backend.app.models import Player
 from backend.app.schemas.response import GameEffect
-from backend.app.services.business_market import MIN_DIVIDEND_AMOUNT, cheapest_business_price, get_owned_businesses
+from backend.app.services.business_market import (
+    MIN_DIVIDEND_AMOUNT,
+    cheapest_business_price,
+    get_owned_businesses,
+)
 from backend.app.services.education import load_manager_exam
-from backend.app.services.job_queries import get_active_job, get_first_vacant_job_by_min_education
+from backend.app.services.job_queries import (
+    get_active_job,
+    get_first_vacant_job_by_min_education,
+)
 from backend.app.services.money import money
 from backend.app.services.needs import HUNGER_WARNING_THRESHOLD, MEAL_COST
-from backend.app.services.onboarding import build_onboarding_snapshot, is_onboarding_complete
+from backend.app.services.onboarding import (
+    build_onboarding_snapshot,
+    is_onboarding_complete,
+)
 from backend.app.services.sports import GYM_COST, GYM_ENERGY_COST
 
 
@@ -83,7 +93,11 @@ def build_next_action_hint(db: Session, player: Player) -> dict:
     if player.education_level == "College":
         owned_businesses = get_owned_businesses(db, player.id)
         dividend_business = next(
-            (business for business in owned_businesses if money(business.cash_balance) >= MIN_DIVIDEND_AMOUNT),
+            (
+                business
+                for business in owned_businesses
+                if money(business.cash_balance) >= MIN_DIVIDEND_AMOUNT
+            ),
             None,
         )
         if dividend_business:

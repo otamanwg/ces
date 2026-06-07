@@ -27,8 +27,18 @@ def upgrade() -> None:
         sa.Column("hair_color_code", sa.String(length=40), nullable=False),
         sa.Column("equipped_outfit", sa.JSON(), nullable=False),
         sa.Column("animation_profile_code", sa.String(length=50), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["player_id"], ["players.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("player_id"),
     )

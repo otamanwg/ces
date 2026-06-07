@@ -13,7 +13,9 @@ class HostelRepository(BaseRepository[Hostel]):
         super().__init__(db, Hostel)
 
     def get_by_tenant(self, player_id: UUID) -> Hostel | None:
-        return self.db.query(Hostel).filter(Hostel.tenant_player_id == player_id).first()
+        return (
+            self.db.query(Hostel).filter(Hostel.tenant_player_id == player_id).first()
+        )
 
     def get_first_free(self) -> Hostel | None:
         return (

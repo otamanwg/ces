@@ -22,10 +22,19 @@ def upgrade() -> None:
         sa.Column("player_id", sa.Uuid(), nullable=False),
         sa.Column("stage", sa.String(length=30), nullable=False),
         sa.Column("police_report_status", sa.String(length=30), nullable=False),
-        sa.Column("police_recovery_amount", sa.Numeric(precision=15, scale=2), nullable=True),
-        sa.Column("police_recovery_available_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column(
+            "police_recovery_amount", sa.Numeric(precision=15, scale=2), nullable=True
+        ),
+        sa.Column(
+            "police_recovery_available_at", sa.DateTime(timezone=True), nullable=True
+        ),
         sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["player_id"], ["players.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("player_id"),
     )

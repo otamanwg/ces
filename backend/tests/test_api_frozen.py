@@ -4,7 +4,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.app.database import get_db
-from backend.app.schemas.frozen import FrozenSportsClubsResponse, FrozenSportsMatchesResponse
+from backend.app.schemas.frozen import (
+    FrozenSportsClubsResponse,
+    FrozenSportsMatchesResponse,
+)
 from backend.app.seed import seed_initial_data
 from backend.main import app
 from backend.tests.db import make_test_session

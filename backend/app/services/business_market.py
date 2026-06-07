@@ -4,7 +4,10 @@ from sqlalchemy.orm import Session
 
 from backend.app.models import Business, City, Player
 from backend.app.repositories.business import BusinessRepository
-from backend.app.schemas.service_results import BusinessDividendServiceResult, BusinessPurchaseServiceResult
+from backend.app.schemas.service_results import (
+    BusinessDividendServiceResult,
+    BusinessPurchaseServiceResult,
+)
 from backend.app.services.ids import to_uuid
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
@@ -64,7 +67,10 @@ def process_business_purchase(db: Session, player_id: str, business_id: str) -> 
         return {"success": False, "message": "Цей бізнес уже має власника."}
 
     if money(player.balance) < price:
-        return {"success": False, "message": f"Недостатньо коштів для купівлі бізнесу! Потрібно: {price:.2f} ₴."}
+        return {
+            "success": False,
+            "message": f"Недостатньо коштів для купівлі бізнесу! Потрібно: {price:.2f} ₴.",
+        }
 
     city = db.query(City).filter(City.id == player.city_id).first()
     if not city:
@@ -103,7 +109,9 @@ def process_business_purchase(db: Session, player_id: str, business_id: str) -> 
     ).model_dump()
 
 
-def process_business_dividend_collection(db: Session, player_id: str, business_id: str) -> dict:
+def process_business_dividend_collection(
+    db: Session, player_id: str, business_id: str
+) -> dict:
     player_uuid = to_uuid(player_id)
     business_uuid = to_uuid(business_id)
     player = db.query(Player).filter(Player.id == player_uuid).with_for_update().first()

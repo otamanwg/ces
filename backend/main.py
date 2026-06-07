@@ -79,7 +79,12 @@ def read_root():
 async def websocket_city_hub(websocket: WebSocket, city_id: str):
     await ws_manager.connect(websocket)
     try:
-        await websocket.send_json({"type": "system", "content": f"Ви підключились до реалтайм мережі міста {city_id}."})
+        await websocket.send_json(
+            {
+                "type": "system",
+                "content": f"Ви підключились до реалтайм мережі міста {city_id}.",
+            }
+        )
         while True:
             data = await websocket.receive_json()
             if data.get("type") == "chat":

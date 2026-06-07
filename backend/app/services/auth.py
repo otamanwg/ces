@@ -11,7 +11,9 @@ def new_player_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-def get_authorized_player(db: Session, player_id: str, player_token: str | None) -> Player | None:
+def get_authorized_player(
+    db: Session, player_id: str, player_token: str | None
+) -> Player | None:
     if not player_token:
         return None
     player_uuid = try_uuid(player_id)

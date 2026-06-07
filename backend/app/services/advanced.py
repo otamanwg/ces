@@ -5,7 +5,15 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
-from backend.app.models import Player, Business, LaborUnion, BankLoan, InsurancePolicy, Cartel, City
+from backend.app.models import (
+    Player,
+    Business,
+    LaborUnion,
+    BankLoan,
+    InsurancePolicy,
+    Cartel,
+    City,
+)
 from backend.app.schemas.service_results import (
     InsurancePolicyPurchaseServiceResult,
     LaborUnionStrikeServiceResult,
@@ -27,7 +35,9 @@ def toggle_labor_union_strike(db: Session, business_id: str, union_name: str) ->
 
     if not union:
         # Якщо профспілки немає, створюємо її
-        union = LaborUnion(business_id=business_uuid, name=union_name, strike_active=False)
+        union = LaborUnion(
+            business_id=business_uuid, name=union_name, strike_active=False
+        )
         db.add(union)
         db.commit()
 
@@ -35,10 +45,10 @@ def toggle_labor_union_strike(db: Session, business_id: str, union_name: str) ->
     union.strike_active = not union.strike_active
 
     if union.strike_active:
-        union.strike_ends_at = datetime.now(timezone.utc) + timedelta(days=1)  # страйк на 1 день
-        message = (
-            f"✊ УВАГА! Робітники компанії '{business.name}' оголосили СТРАЙК! Робочі зміни заблоковано на 24 години."
-        )
+        union.strike_ends_at = datetime.now(timezone.utc) + timedelta(
+            days=1
+        )  # страйк на 1 день
+        message = f"✊ УВАГА! Робітники компанії '{business.name}' оголосили СТРАЙК! Робочі зміни заблоковано на 24 години."
     else:
         union.strike_ends_at = None
         message = f"🤝 Профспілка припинила страйк на '{business.name}'. Виробництво відновлено."
@@ -52,7 +62,12 @@ def toggle_labor_union_strike(db: Session, business_id: str, union_name: str) ->
 
 
 def buy_insurance_policy(
-    db: Session, player_id: str, business_id: str, provider_business_id: str, coverage: float, premium: float
+    db: Session,
+    player_id: str,
+    business_id: str,
+    provider_business_id: str,
+    coverage: float,
+    premium: float,
 ) -> dict:
     """Купівля страхового полісу у страхової компанії іншого гравця"""
     player_uuid = to_uuid(player_id)
@@ -62,11 +77,17 @@ def buy_insurance_policy(
     provider = db.query(Business).filter(Business.id == provider_uuid).first()
 
     if not player or not provider:
-        return {"success": False, "message": "Гравця чи страхового провайдера не знайдено"}
+        return {
+            "success": False,
+            "message": "Гравця чи страхового провайдера не знайдено",
+        }
 
     premium_amount = money(premium)
     if money(player.balance) < premium_amount:
-        return {"success": False, "message": "Недостатньо грошей для першого страхового внеску!"}
+        return {
+            "success": False,
+            "message": "Недостатньо грошей для першого страхового внеску!",
+        }
 
     # Оплата внеску
     debit(db, player, "balance", premium_amount)
@@ -126,7 +147,9 @@ def process_daily_loan_installments_and_collectors(db: Session, player_id: str) 
         if money(player.balance) >= payment:
             # Успішна сплата кредиту
             debit(db, player, "balance", payment)
-            loan.remaining_debt = max(money("0.00"), money(loan.remaining_debt) - payment)
+            loan.remaining_debt = max(
+                money("0.00"), money(loan.remaining_debt) - payment
+            )
 
             # Гроші повертаються в міський банк (Скарбницю)
             credit(db, city, "treasury_balance", payment)
@@ -136,7 +159,9 @@ def process_daily_loan_installments_and_collectors(db: Session, player_id: str) 
                 results.append(f"🎉 Кредит №{str(loan.id)[:8]} повністю виплачено!")
             else:
                 loan.status = "active"
-                results.append(f"✅ Сплачено внесок за кредит: -{payment:.2f} ₴. Борг: {loan.remaining_debt:.2f} ₴.")
+                results.append(
+                    f"✅ Сплачено внесок за кредит: -{payment:.2f} ₴. Борг: {loan.remaining_debt:.2f} ₴."
+                )
 
             log_transaction(
                 db,
@@ -156,7 +181,9 @@ def process_daily_loan_installments_and_collectors(db: Session, player_id: str) 
             # Колектори конфісковують 50% від усіх поточних грошей гравця на рахунку
             seizure = money(player.balance) * money("0.50")
             debit(db, player, "balance", seizure)
-            loan.remaining_debt = max(money("0.00"), money(loan.remaining_debt) - seizure)
+            loan.remaining_debt = max(
+                money("0.00"), money(loan.remaining_debt) - seizure
+            )
 
             # Кошти вилучаються в Скарбницю
             credit(db, city, "treasury_balance", seizure)
@@ -183,7 +210,12 @@ def process_daily_loan_installments_and_collectors(db: Session, player_id: str) 
 
 
 def donate_to_lobby_fund(
-    db: Session, cartel_name: str, city_id: str, industry: str, player_id: str, amount: float
+    db: Session,
+    cartel_name: str,
+    city_id: str,
+    industry: str,
+    player_id: str,
+    amount: float,
 ) -> dict:
     """Внесення коштів гравцем до Лобістського Фонду промислового Картелю"""
     player_uuid = to_uuid(player_id)
@@ -193,11 +225,23 @@ def donate_to_lobby_fund(
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
     if money(player.balance) < donation:
-        return {"success": False, "message": "Недостатньо грошей для внеску в лобі-фонд!"}
+        return {
+            "success": False,
+            "message": "Недостатньо грошей для внеску в лобі-фонд!",
+        }
 
-    cartel = db.query(Cartel).filter(Cartel.city_id == city_uuid, Cartel.industry_type == industry).first()
+    cartel = (
+        db.query(Cartel)
+        .filter(Cartel.city_id == city_uuid, Cartel.industry_type == industry)
+        .first()
+    )
     if not cartel:
-        cartel = Cartel(city_id=city_uuid, name=cartel_name, industry_type=industry, lobby_fund=money("0.00"))
+        cartel = Cartel(
+            city_id=city_uuid,
+            name=cartel_name,
+            industry_type=industry,
+            lobby_fund=money("0.00"),
+        )
         db.add(cartel)
         db.commit()
         db.refresh(cartel)
@@ -225,7 +269,9 @@ def donate_to_lobby_fund(
     action_triggered = False
     if money(cartel.lobby_fund) >= money("5000.00"):
         city = db.query(City).filter(City.id == city_uuid).first()
-        city.tax_rate_property = max(money("0.50"), money(city.tax_rate_property) - money("2.00"))
+        city.tax_rate_property = max(
+            money("0.50"), money(city.tax_rate_property) - money("2.00")
+        )
         debit(db, cartel, "lobby_fund", money("5000.00"))
         action_triggered = True
         message = (

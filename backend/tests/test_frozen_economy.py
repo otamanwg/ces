@@ -70,10 +70,15 @@ def test_fake_diploma_purchase_and_audit_do_not_create_treasury_money():
         assert Decimal(str(city.treasury_balance)) == starting_treasury
         assert player.education_level == "College"
         assert player.diploma_verified is False
-        assert db.query(PoliceRecord).filter(PoliceRecord.player_id == player.id).count() == 1
+        assert (
+            db.query(PoliceRecord).filter(PoliceRecord.player_id == player.id).count()
+            == 1
+        )
 
         purchase_log = (
-            db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "fake_diploma_purchase").one()
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "fake_diploma_purchase")
+            .one()
         )
         assert purchase_log.sender_id == player.id
         assert purchase_log.sender_type == "player"
@@ -88,11 +93,17 @@ def test_fake_diploma_purchase_and_audit_do_not_create_treasury_money():
         db.refresh(player)
         db.refresh(city)
         assert Decimal(str(player.balance)) == Decimal("0.00")
-        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal("100.00")
+        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal(
+            "100.00"
+        )
         assert player.education_level == "High School"
         assert player.diploma_verified is True
 
-        fine_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "fake_diploma_fine").one()
+        fine_log = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "fake_diploma_fine")
+            .one()
+        )
         assert fine_log.sender_id == player.id
         assert fine_log.sender_type == "player"
         assert fine_log.receiver_id == city.id
@@ -122,18 +133,29 @@ def test_insurance_policy_moves_premium_from_player_to_provider():
         db.commit()
 
         starting_provider_cash = Decimal(str(provider.cash_balance))
-        result = buy_insurance_policy(db, str(player.id), str(target_business.id), str(provider.id), 1000.0, 75.0)
+        result = buy_insurance_policy(
+            db, str(player.id), str(target_business.id), str(provider.id), 1000.0, 75.0
+        )
 
         assert result["success"] is True
         InsurancePolicyPurchaseServiceResult.model_validate(result)
         db.refresh(player)
         db.refresh(provider)
         assert Decimal(str(player.balance)) == Decimal("425.00")
-        assert Decimal(str(provider.cash_balance)) == starting_provider_cash + Decimal("75.00")
-        assert db.query(InsurancePolicy).filter(InsurancePolicy.player_id == player.id).count() == 1
+        assert Decimal(str(provider.cash_balance)) == starting_provider_cash + Decimal(
+            "75.00"
+        )
+        assert (
+            db.query(InsurancePolicy)
+            .filter(InsurancePolicy.player_id == player.id)
+            .count()
+            == 1
+        )
 
         premium_log = (
-            db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "insurance_premium_initial").one()
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "insurance_premium_initial")
+            .one()
         )
         assert premium_log.sender_id == player.id
         assert premium_log.sender_type == "player"
@@ -187,7 +209,9 @@ def test_loan_installments_and_collector_seizure_transfer_available_money_to_tre
 
         starting_treasury = Decimal(str(city.treasury_balance))
         paid_result = process_daily_loan_installments_and_collectors(db, str(payer.id))
-        seized_result = process_daily_loan_installments_and_collectors(db, str(delinquent.id))
+        seized_result = process_daily_loan_installments_and_collectors(
+            db, str(delinquent.id)
+        )
         assert paid_result["success"] is True
         assert seized_result["success"] is True
         LoanDailyServiceResult.model_validate(paid_result)
@@ -204,12 +228,20 @@ def test_loan_installments_and_collector_seizure_transfer_available_money_to_tre
         assert Decimal(str(seized_loan.remaining_debt)) == Decimal("180.00")
         assert paid_loan.status == "active"
         assert seized_loan.status == "delinquent"
-        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal("100.00")
+        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal(
+            "100.00"
+        )
 
-        repayment_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "loan_repayment").one()
+        repayment_log = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "loan_repayment")
+            .one()
+        )
         assert repayment_log.amount == Decimal("80.00")
         seizure_log = (
-            db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "collector_debt_seizure").one()
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "collector_debt_seizure")
+            .one()
         )
         assert seizure_log.amount == Decimal("20.00")
     finally:
@@ -222,7 +254,12 @@ def test_labor_union_strike_blocks_worker_shift():
         seed_initial_data(db)
 
         city = db.query(City).first()
-        job = db.query(Job).filter(Job.min_education == "High School").order_by(Job.salary_per_hour).first()
+        job = (
+            db.query(Job)
+            .filter(Job.min_education == "High School")
+            .order_by(Job.salary_per_hour)
+            .first()
+        )
         business = db.query(Business).filter(Business.id == job.business_id).one()
         player = Player(
             city_id=city.id,
@@ -237,7 +274,9 @@ def test_labor_union_strike_blocks_worker_shift():
         job.filled_by_player_id = player.id
         db.commit()
 
-        strike_result = toggle_labor_union_strike(db, str(business.id), "Працівники MVP")
+        strike_result = toggle_labor_union_strike(
+            db, str(business.id), "Працівники MVP"
+        )
 
         assert strike_result["success"] is True
         LaborUnionStrikeServiceResult.model_validate(strike_result)
@@ -272,7 +311,9 @@ def test_lobby_fund_donation_triggers_property_tax_cut_and_logs_transfer():
         db.commit()
 
         starting_tax_rate = Decimal(str(city.tax_rate_property))
-        result = donate_to_lobby_fund(db, "Ритейл Картель", str(city.id), "retail", str(player.id), 5000.0)
+        result = donate_to_lobby_fund(
+            db, "Ритейл Картель", str(city.id), "retail", str(player.id), 5000.0
+        )
 
         assert result["success"] is True
         LobbyFundDonationServiceResult.model_validate(result)
@@ -280,12 +321,22 @@ def test_lobby_fund_donation_triggers_property_tax_cut_and_logs_transfer():
 
         db.refresh(player)
         db.refresh(city)
-        cartel = db.query(Cartel).filter(Cartel.city_id == city.id, Cartel.industry_type == "retail").one()
+        cartel = (
+            db.query(Cartel)
+            .filter(Cartel.city_id == city.id, Cartel.industry_type == "retail")
+            .one()
+        )
         assert Decimal(str(player.balance)) == Decimal("1000.00")
         assert Decimal(str(cartel.lobby_fund)) == Decimal("0.00")
-        assert Decimal(str(city.tax_rate_property)) == max(Decimal("0.50"), starting_tax_rate - Decimal("2.00"))
+        assert Decimal(str(city.tax_rate_property)) == max(
+            Decimal("0.50"), starting_tax_rate - Decimal("2.00")
+        )
 
-        donation_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == "lobby_fund_donation").one()
+        donation_log = (
+            db.query(TransactionModelLog)
+            .filter(TransactionModelLog.purpose == "lobby_fund_donation")
+            .one()
+        )
         assert donation_log.sender_id == player.id
         assert donation_log.sender_type == "player"
         assert donation_log.receiver_id == cartel.id

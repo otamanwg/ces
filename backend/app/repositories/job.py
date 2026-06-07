@@ -19,4 +19,10 @@ class JobRepository(BaseRepository[Job]):
         return self.db.query(Job).filter(Job.filled_by_player_id == player_id).first()
 
     def get_first_vacant_by_min_education(self, min_education: str) -> Job | None:
-        return self.db.query(Job).filter(Job.min_education == min_education, Job.filled_by_player_id.is_(None)).first()
+        return (
+            self.db.query(Job)
+            .filter(
+                Job.min_education == min_education, Job.filled_by_player_id.is_(None)
+            )
+            .first()
+        )

@@ -29,33 +29,53 @@ BUILDING_OPENING_FEES = {
 }
 
 
-def activate_building_application(db: Session, player: Player, application_id: UUID) -> dict:
+def activate_building_application(
+    db: Session, player: Player, application_id: UUID
+) -> dict:
     application = (
-        db.query(BuildingApplication).filter(BuildingApplication.id == application_id).with_for_update().first()
+        db.query(BuildingApplication)
+        .filter(BuildingApplication.id == application_id)
+        .with_for_update()
+        .first()
     )
     if not application or application.city_id != player.city_id:
         return {"success": False, "message": "Будівельну заявку не знайдено."}
 
     if application.applicant_player_id != player.id:
-        return {"success": False, "message": "Активувати можна лише власну будівельну заявку."}
+        return {
+            "success": False,
+            "message": "Активувати можна лише власну будівельну заявку.",
+        }
 
     if application.status == APPLICATION_ACTIVATED:
         return {"success": False, "message": "Цю будівельну заявку вже активовано."}
 
     if application.status != "approved":
-        return {"success": False, "message": "Активувати можна лише погоджену AI-мером заявку."}
+        return {
+            "success": False,
+            "message": "Активувати можна лише погоджену AI-мером заявку.",
+        }
 
     parcel = application.land_parcel
     if parcel.owner_player_id != player.id or parcel.status != "owned":
-        return {"success": False, "message": "Ділянка має бути у власності заявника і без готової будівлі."}
+        return {
+            "success": False,
+            "message": "Ділянка має бути у власності заявника і без готової будівлі.",
+        }
 
     existing_building = (
         db.query(Building)
-        .filter((Building.land_parcel_id == parcel.id) | (Building.source_application_id == application.id))
+        .filter(
+            (Building.land_parcel_id == parcel.id)
+            | (Building.source_application_id == application.id)
+        )
         .first()
     )
     if existing_building:
-        return {"success": False, "message": "Для цієї ділянки або заявки вже існує будівля."}
+        return {
+            "success": False,
+            "message": "Для цієї ділянки або заявки вже існує будівля.",
+        }
 
     building = Building(
         city_id=application.city_id,
@@ -91,7 +111,9 @@ def get_building_opening_fee(building: Building):
 def get_building_repair_fee(building: Building):
     if building.business_blueprint:
         return max(
-            money(building.business_blueprint.upkeep_daily) * BUILDING_REPAIR_UPKEEP_MULTIPLIER, MIN_BUILDING_REPAIR_FEE
+            money(building.business_blueprint.upkeep_daily)
+            * BUILDING_REPAIR_UPKEEP_MULTIPLIER,
+            MIN_BUILDING_REPAIR_FEE,
         )
     return money("50.00")
 
@@ -121,14 +143,18 @@ def get_player_building_portfolio(db: Session, player: Player) -> list[Building]
             joinedload(Building.business_blueprint),
             joinedload(Building.business),
         )
-        .filter(Building.city_id == player.city_id, Building.owner_player_id == player.id)
+        .filter(
+            Building.city_id == player.city_id, Building.owner_player_id == player.id
+        )
         .order_by(Building.created_at.desc(), Building.name)
         .all()
     )
 
 
 def open_building_operations(db: Session, player: Player, building_id: UUID) -> dict:
-    building = db.query(Building).filter(Building.id == building_id).with_for_update().first()
+    building = (
+        db.query(Building).filter(Building.id == building_id).with_for_update().first()
+    )
     if not building or building.city_id != player.city_id:
         return {"success": False, "message": "Будівлю не знайдено."}
 
@@ -146,7 +172,10 @@ def open_building_operations(db: Session, player: Player, building_id: UUID) -> 
 
     fee = get_building_opening_fee(building)
     if money(player.balance) < fee:
-        return {"success": False, "message": f"Недостатньо коштів для відкриття будівлі! Потрібно: {fee:.2f} ₴."}
+        return {
+            "success": False,
+            "message": f"Недостатньо коштів для відкриття будівлі! Потрібно: {fee:.2f} ₴.",
+        }
 
     city = db.query(City).filter(City.id == player.city_id).first()
     if not city:
@@ -202,7 +231,9 @@ def open_building_operations(db: Session, player: Player, building_id: UUID) -> 
 
 
 def repair_building_operations(db: Session, player: Player, building_id: UUID) -> dict:
-    building = db.query(Building).filter(Building.id == building_id).with_for_update().first()
+    building = (
+        db.query(Building).filter(Building.id == building_id).with_for_update().first()
+    )
     if not building or building.city_id != player.city_id:
         return {"success": False, "message": "Будівлю не знайдено."}
 
@@ -223,7 +254,10 @@ def repair_building_operations(db: Session, player: Player, building_id: UUID) -
 
     fee = get_building_repair_fee(building)
     if money(player.balance) < fee:
-        return {"success": False, "message": f"Недостатньо коштів для ремонту будівлі! Потрібно: {fee:.2f} ₴."}
+        return {
+            "success": False,
+            "message": f"Недостатньо коштів для ремонту будівлі! Потрібно: {fee:.2f} ₴.",
+        }
 
     city = db.query(City).filter(City.id == player.city_id).first()
     if not city:
@@ -308,7 +342,9 @@ def process_daily_building_upkeep(db: Session, city: City) -> dict:
             tax=0.0,
             purpose=BUILDING_UPKEEP_PURPOSE,
         )
-        stats["building_upkeep_charged"] = float(money(stats["building_upkeep_charged"]) + upkeep)
+        stats["building_upkeep_charged"] = float(
+            money(stats["building_upkeep_charged"]) + upkeep
+        )
         stats["buildings_upkeep_charged"] += 1
 
     return stats

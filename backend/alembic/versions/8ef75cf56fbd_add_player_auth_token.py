@@ -17,7 +17,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column("players", sa.Column("auth_token", sa.String(length=120), nullable=True))
+    op.add_column(
+        "players", sa.Column("auth_token", sa.String(length=120), nullable=True)
+    )
     op.execute(
         "UPDATE players "
         "SET auth_token = md5(random()::text || clock_timestamp()::text || id::text) "

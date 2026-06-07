@@ -8,13 +8,14 @@ repos:
       - id: check-added-large-files
         args: ["--maxkb=1000"]
 
-  - repo: https://github.com/psf/black
-    rev: 26.5.1
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.0
     hooks:
-      - id: black
-        language_version: python3.13
+      - id: ruff
+        args: ["--fix", "--exit-non-zero-on-fix"]
         files: ^backend/
-        args: ["--line-length=120"]
+      - id: ruff-format
+        files: ^backend/
 
   - repo: local
     hooks:

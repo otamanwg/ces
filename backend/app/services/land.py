@@ -87,10 +87,18 @@ def ensure_starter_land_parcels(db: Session, city: City) -> None:
     ensure_starter_districts(db, city)
     db.flush()
     district_by_code = {
-        district.code: district for district in db.query(CityDistrict).filter(CityDistrict.city_id == city.id).all()
+        district.code: district
+        for district in db.query(CityDistrict)
+        .filter(CityDistrict.city_id == city.id)
+        .all()
     }
-    existing_codes = {row[0] for row in db.query(LandParcel.code).filter(LandParcel.city_id == city.id).all()}
-    missing_parcels = [parcel for parcel in STARTER_LAND_PARCELS if parcel.code not in existing_codes]
+    existing_codes = {
+        row[0]
+        for row in db.query(LandParcel.code).filter(LandParcel.city_id == city.id).all()
+    }
+    missing_parcels = [
+        parcel for parcel in STARTER_LAND_PARCELS if parcel.code not in existing_codes
+    ]
     if not missing_parcels:
         return
 
@@ -120,7 +128,9 @@ def get_land_parcels(db: Session, city_id: UUID) -> list[LandParcel]:
         db.query(LandParcel)
         .join(CityDistrict, CityDistrict.id == LandParcel.district_id)
         .filter(LandParcel.city_id == city_id)
-        .order_by(CityDistrict.display_order, LandParcel.current_price, LandParcel.label)
+        .order_by(
+            CityDistrict.display_order, LandParcel.current_price, LandParcel.label
+        )
         .all()
     )
 
@@ -132,7 +142,12 @@ def process_land_purchase(db: Session, player_id: str, land_parcel_id: str) -> d
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
 
-    parcel = db.query(LandParcel).filter(LandParcel.id == parcel_uuid).with_for_update().first()
+    parcel = (
+        db.query(LandParcel)
+        .filter(LandParcel.id == parcel_uuid)
+        .with_for_update()
+        .first()
+    )
     if not parcel or parcel.city_id != player.city_id:
         return {"success": False, "message": "Ділянку не знайдено."}
 
@@ -141,7 +156,10 @@ def process_land_purchase(db: Session, player_id: str, land_parcel_id: str) -> d
 
     price = money(parcel.current_price)
     if money(player.balance) < price:
-        return {"success": False, "message": f"Недостатньо коштів для купівлі землі! Потрібно: {price:.2f} ₴."}
+        return {
+            "success": False,
+            "message": f"Недостатньо коштів для купівлі землі! Потрібно: {price:.2f} ₴.",
+        }
 
     city = db.query(City).filter(City.id == player.city_id).first()
     if not city:
@@ -177,14 +195,22 @@ def process_land_purchase(db: Session, player_id: str, land_parcel_id: str) -> d
     }
 
 
-def calculate_player_city_land_share_pct(db: Session, city_id: UUID, player_id: UUID) -> Decimal:
+def calculate_player_city_land_share_pct(
+    db: Session, city_id: UUID, player_id: UUID
+) -> Decimal:
     all_parcels = db.query(LandParcel).filter(LandParcel.city_id == city_id).all()
-    total_area = sum((Decimal(str(parcel.area_hectares)) for parcel in all_parcels), Decimal("0.00"))
+    total_area = sum(
+        (Decimal(str(parcel.area_hectares)) for parcel in all_parcels), Decimal("0.00")
+    )
     if total_area <= Decimal("0.00"):
         return Decimal("0.00")
 
     owned_area = sum(
-        (Decimal(str(parcel.area_hectares)) for parcel in all_parcels if parcel.owner_player_id == player_id),
+        (
+            Decimal(str(parcel.area_hectares))
+            for parcel in all_parcels
+            if parcel.owner_player_id == player_id
+        ),
         Decimal("0.00"),
     )
     return (owned_area / total_area * Decimal("100.00")).quantize(Decimal("0.01"))

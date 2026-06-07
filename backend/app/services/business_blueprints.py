@@ -185,7 +185,10 @@ STARTER_BUSINESS_BLUEPRINTS: tuple[StarterBusinessBlueprint, ...] = (
         daily_profit_max=Decimal("115.00"),
         upkeep_daily=Decimal("30.00"),
         risk_level=2,
-        risks=("Залежність від заселення.", "Потрібне медичне і сервісне покриття району."),
+        risks=(
+            "Залежність від заселення.",
+            "Потрібне медичне і сервісне покриття району.",
+        ),
         metric_effects={
             "expected_jobs": 2,
             "traffic_load": 4,
@@ -218,7 +221,10 @@ STARTER_BUSINESS_BLUEPRINTS: tuple[StarterBusinessBlueprint, ...] = (
         daily_profit_max=Decimal("100.00"),
         upkeep_daily=Decimal("22.00"),
         risk_level=2,
-        risks=("Потребує ліцензування в майбутній версії.", "Попит залежить від щільності району."),
+        risks=(
+            "Потребує ліцензування в майбутній версії.",
+            "Попит залежить від щільності району.",
+        ),
         metric_effects={
             "expected_jobs": 3,
             "traffic_load": 4,
@@ -251,7 +257,11 @@ STARTER_BUSINESS_BLUEPRINTS: tuple[StarterBusinessBlueprint, ...] = (
         daily_profit_max=Decimal("240.00"),
         upkeep_daily=Decimal("70.00"),
         risk_level=5,
-        risks=("Велике транспортне навантаження.", "Високий upkeep.", "AI-мер вимагатиме план сервісів."),
+        risks=(
+            "Велике транспортне навантаження.",
+            "Високий upkeep.",
+            "AI-мер вимагатиме план сервісів.",
+        ),
         metric_effects={
             "expected_jobs": 10,
             "traffic_load": 18,
@@ -270,7 +280,9 @@ STARTER_BUSINESS_BLUEPRINTS: tuple[StarterBusinessBlueprint, ...] = (
 
 
 def ensure_business_blueprints(db: Session) -> None:
-    existing_by_code = {blueprint.code: blueprint for blueprint in db.query(BusinessBlueprint).all()}
+    existing_by_code = {
+        blueprint.code: blueprint for blueprint in db.query(BusinessBlueprint).all()
+    }
 
     for starter in STARTER_BUSINESS_BLUEPRINTS:
         data = _starter_to_model_data(starter)
@@ -286,7 +298,11 @@ def get_active_business_blueprints(db: Session) -> list[BusinessBlueprint]:
     return (
         db.query(BusinessBlueprint)
         .filter(BusinessBlueprint.is_active.is_(True))
-        .order_by(BusinessBlueprint.risk_level, BusinessBlueprint.category, BusinessBlueprint.name)
+        .order_by(
+            BusinessBlueprint.risk_level,
+            BusinessBlueprint.category,
+            BusinessBlueprint.name,
+        )
         .all()
     )
 
@@ -294,12 +310,16 @@ def get_active_business_blueprints(db: Session) -> list[BusinessBlueprint]:
 def get_business_blueprint(db: Session, blueprint_id: UUID) -> BusinessBlueprint | None:
     return (
         db.query(BusinessBlueprint)
-        .filter(BusinessBlueprint.id == blueprint_id, BusinessBlueprint.is_active.is_(True))
+        .filter(
+            BusinessBlueprint.id == blueprint_id, BusinessBlueprint.is_active.is_(True)
+        )
         .first()
     )
 
 
-def validate_blueprint_for_parcel(blueprint: BusinessBlueprint, parcel: LandParcel) -> str | None:
+def validate_blueprint_for_parcel(
+    blueprint: BusinessBlueprint, parcel: LandParcel
+) -> str | None:
     allowed_land_types = blueprint.allowed_land_types or []
     if allowed_land_types and parcel.land_type not in allowed_land_types:
         return "Цей бізнес не підходить для типу землі обраної ділянки."

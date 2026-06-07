@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from backend.app.models import City, Player
+from backend.app.models import Player
 from backend.app.repositories.city import CityRepository
 from backend.app.repositories.player import PlayerRepository
 from backend.app.schemas.service_results import MealPurchaseServiceResult
@@ -38,7 +38,10 @@ def process_meal_purchase(db: Session, player_id: str) -> dict:
         return {"success": False, "message": "Ви вже ситі. Їжу краще лишити на потім."}
 
     if money(player.balance) < MEAL_COST:
-        return {"success": False, "message": f"Недостатньо коштів на їжу! Потрібно: {MEAL_COST:.2f} ₴."}
+        return {
+            "success": False,
+            "message": f"Недостатньо коштів на їжу! Потрібно: {MEAL_COST:.2f} ₴.",
+        }
 
     city = CityRepository(db).get_by_id(player.city_id)
     if not city:

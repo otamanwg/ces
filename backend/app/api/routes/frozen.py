@@ -4,7 +4,10 @@ from sqlalchemy.orm import Session
 
 from backend.app.database import get_db
 from backend.app.models import City, Player, SportsClub
-from backend.app.schemas.frozen import FrozenSportsClubsResponse, FrozenSportsMatchesResponse
+from backend.app.schemas.frozen import (
+    FrozenSportsClubsResponse,
+    FrozenSportsMatchesResponse,
+)
 from backend.app.services.advanced import (
     buy_insurance_policy,
     donate_to_lobby_fund,
@@ -12,7 +15,11 @@ from backend.app.services.advanced import (
     toggle_labor_union_strike,
 )
 from backend.app.services.education import purchase_fake_diploma, run_police_audit
-from backend.app.services.sports import sign_athlete_contract, simulate_league_matches, train_at_gym
+from backend.app.services.sports import (
+    sign_athlete_contract,
+    simulate_league_matches,
+    train_at_gym,
+)
 
 router = APIRouter(prefix="/api/frozen", tags=["frozen"])
 
@@ -71,7 +78,10 @@ def get_sports_clubs(db: Session = Depends(get_db)):
                 "name": c.name,
                 "sport_type": c.sport_type,
                 "owner": (
-                    db.query(Player).filter(Player.id == c.owner_player_id).first().username
+                    db.query(Player)
+                    .filter(Player.id == c.owner_player_id)
+                    .first()
+                    .username
                     if c.owner_player_id
                     else "ШІ-Управління"
                 ),
@@ -118,7 +128,12 @@ def toggle_strike(data: UnionStrikeToggle, db: Session = Depends(get_db)):
 @router.post("/advanced/insurance/buy")
 def buy_insurance(data: BuyInsurance, db: Session = Depends(get_db)):
     res = buy_insurance_policy(
-        db, data.player_id, data.business_id, data.provider_business_id, data.coverage, data.premium
+        db,
+        data.player_id,
+        data.business_id,
+        data.provider_business_id,
+        data.coverage,
+        data.premium,
     )
     if not res["success"]:
         raise HTTPException(status_code=400, detail=res["message"])
@@ -135,7 +150,9 @@ def lobby_cartel(data: CartelLobby, db: Session = Depends(get_db)):
     city = db.query(City).first()
     if not city:
         raise HTTPException(status_code=404, detail="Місто не знайдене")
-    res = donate_to_lobby_fund(db, data.cartel_name, city.id, data.industry, data.player_id, data.amount)
+    res = donate_to_lobby_fund(
+        db, data.cartel_name, city.id, data.industry, data.player_id, data.amount
+    )
     if not res["success"]:
         raise HTTPException(status_code=400, detail=res["message"])
     return res

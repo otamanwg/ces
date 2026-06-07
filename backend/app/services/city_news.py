@@ -1,12 +1,14 @@
 from sqlalchemy.orm import Session
 
-from backend.app.models import Business, City, Hostel, Player
+from backend.app.models import Business, City
 from backend.app.repositories.business import BusinessRepository
 from backend.app.repositories.player import PlayerRepository
 from backend.app.schemas.mvp import CityNewsItem
 
 
-def _news_item(news_type: str, title: str, message: str, severity: str, priority: int) -> dict:
+def _news_item(
+    news_type: str, title: str, message: str, severity: str, priority: int
+) -> dict:
     return CityNewsItem(
         type=news_type,
         title=title,

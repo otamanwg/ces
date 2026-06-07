@@ -36,16 +36,29 @@ def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
         return {"success": False, "message": "Невідомий тип тренування"}
 
     if money(player.balance) < GYM_COST:
-        return {"success": False, "message": f"Недостатньо грошей на абонемент! Потрібно: {GYM_COST} ₴"}
+        return {
+            "success": False,
+            "message": f"Недостатньо грошей на абонемент! Потрібно: {GYM_COST} ₴",
+        }
     if player.energy < GYM_ENERGY_COST:
-        return {"success": False, "message": f"Недостатньо енергії для тренування! Потрібно: {GYM_ENERGY_COST}%"}
+        return {
+            "success": False,
+            "message": f"Недостатньо енергії для тренування! Потрібно: {GYM_ENERGY_COST}%",
+        }
 
     # Знаходження контракту гравця або створення стартового
-    contract = db.query(PlayerAthleteContract).filter(PlayerAthleteContract.player_id == player_uuid).first()
+    contract = (
+        db.query(PlayerAthleteContract)
+        .filter(PlayerAthleteContract.player_id == player_uuid)
+        .first()
+    )
     if not contract:
         # Якщо контракту немає, створюємо аматорський статус (без клубу)
         # Для простоти MVP, гравець повинен спершу підписати контракт або мати запис характеристик
-        return {"success": False, "message": "Спочатку підпишіть контракт у Центрі Зайнятості чи Спортивній Асоціації."}
+        return {
+            "success": False,
+            "message": "Спочатку підпишіть контракт у Центрі Зайнятості чи Спортивній Асоціації.",
+        }
 
     # Списання ресурсів
     debit(db, player, "balance", GYM_COST)
@@ -85,7 +98,9 @@ def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
     ).model_dump()
 
 
-def sign_athlete_contract(db: Session, player_id: str, club_id: str, salary: float) -> dict:
+def sign_athlete_contract(
+    db: Session, player_id: str, club_id: str, salary: float
+) -> dict:
     """Підписання контракту спортсмена з клубом"""
     player_uuid = to_uuid(player_id)
     club_uuid = to_uuid(club_id)
@@ -96,7 +111,11 @@ def sign_athlete_contract(db: Session, player_id: str, club_id: str, salary: flo
         return {"success": False, "message": "Гравця чи клуб не знайдено"}
 
     # Перевірка наявності чинного контракту
-    existing = db.query(PlayerAthleteContract).filter(PlayerAthleteContract.player_id == player_uuid).first()
+    existing = (
+        db.query(PlayerAthleteContract)
+        .filter(PlayerAthleteContract.player_id == player_uuid)
+        .first()
+    )
     if existing:
         return {
             "success": False,
@@ -145,7 +164,10 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
             # Сила = Базова ефективність клубу + сума статсів усіх залучених реальних гравців
             contracts_a = (
                 db.query(PlayerAthleteContract)
-                .filter(PlayerAthleteContract.club_id == club_a.id, PlayerAthleteContract.contract_status == "active")
+                .filter(
+                    PlayerAthleteContract.club_id == club_a.id,
+                    PlayerAthleteContract.contract_status == "active",
+                )
                 .all()
             )
             strength_a = 50 + sum(c.strength_stat + c.stamina_stat for c in contracts_a)
@@ -153,7 +175,10 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
             # Розрахунок сили команди Б
             contracts_b = (
                 db.query(PlayerAthleteContract)
-                .filter(PlayerAthleteContract.club_id == club_b.id, PlayerAthleteContract.contract_status == "active")
+                .filter(
+                    PlayerAthleteContract.club_id == club_b.id,
+                    PlayerAthleteContract.contract_status == "active",
+                )
                 .all()
             )
             strength_b = 50 + sum(c.strength_stat + c.stamina_stat for c in contracts_b)
@@ -164,12 +189,12 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
 
             if roll <= strength_a:
                 # Перемога клубу А
-                winner, loser = club_a, club_b
+                winner = club_a
                 score_w = random.randint(1, 4)
                 score_l = random.randint(0, score_w - 1)
             else:
                 # Перемога клубу Б
-                winner, loser = club_b, club_a
+                winner = club_b
                 score_w = random.randint(1, 4)
                 score_l = random.randint(0, score_w - 1)
 

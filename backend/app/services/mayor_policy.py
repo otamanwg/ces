@@ -38,12 +38,28 @@ PROJECT_ZONE_RULES: dict[str, set[str]] = {
     "residential": {"residential", "suburban", "expansion"},
     "commercial": {"commercial", "transit", "residential", "suburban", "expansion"},
     "industrial": {"industrial", "expansion"},
-    "civic": {"transit", "commercial", "residential", "industrial", "suburban", "expansion"},
-    "medical": {"transit", "commercial", "residential", "industrial", "suburban", "expansion"},
+    "civic": {
+        "transit",
+        "commercial",
+        "residential",
+        "industrial",
+        "suburban",
+        "expansion",
+    },
+    "medical": {
+        "transit",
+        "commercial",
+        "residential",
+        "industrial",
+        "suburban",
+        "expansion",
+    },
 }
 
 
-def evaluate_building_proposal(district: CityDistrict, proposal: BuildingProposal) -> MayorPolicyDecision:
+def evaluate_building_proposal(
+    district: CityDistrict, proposal: BuildingProposal
+) -> MayorPolicyDecision:
     issues: list[MayorPolicyIssue] = []
     questions: list[str] = []
 
@@ -83,7 +99,10 @@ def evaluate_building_proposal(district: CityDistrict, proposal: BuildingProposa
             "Зменшіть площу або оберіть район із більшим земельним резервом.",
         )
 
-    if proposal.owner_city_land_share_pct >= Decimal("35.00") and project_type not in {"civic", "medical"}:
+    if proposal.owner_city_land_share_pct >= Decimal("35.00") and project_type not in {
+        "civic",
+        "medical",
+    }:
         _add_issue(
             issues,
             questions,
@@ -128,7 +147,10 @@ def evaluate_building_proposal(district: CityDistrict, proposal: BuildingProposa
             "Додайте компенсацію: комунальні роботи, сервісний внесок або нижче навантаження.",
         )
 
-    if project_type in {"residential", "commercial"} and district.medical_coverage - proposal.medical_load < 30:
+    if (
+        project_type in {"residential", "commercial"}
+        and district.medical_coverage - proposal.medical_load < 30
+    ):
         _add_issue(
             issues,
             questions,

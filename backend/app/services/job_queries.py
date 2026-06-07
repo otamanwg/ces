@@ -22,10 +22,14 @@ def get_active_job(db: Session, player_id: uuid.UUID) -> Job | None:
     return JobRepository(db).get_active_for_player(player_id)
 
 
-def get_first_vacant_job_by_min_education(db: Session, min_education: str) -> Job | None:
+def get_first_vacant_job_by_min_education(
+    db: Session, min_education: str
+) -> Job | None:
     return JobRepository(db).get_first_vacant_by_min_education(min_education)
 
 
 def has_eligible_vacancy(db: Session, education_level: str) -> bool:
     player_rank = education_rank(education_level)
-    return any(education_rank(job.min_education) <= player_rank for job in get_vacant_jobs(db))
+    return any(
+        education_rank(job.min_education) <= player_rank for job in get_vacant_jobs(db)
+    )

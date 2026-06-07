@@ -1,6 +1,9 @@
 from pydantic import BaseModel
 
-from backend.app.schemas.service_results import SportsLeagueMatchServiceResult, SportsLeagueMessageServiceResult
+from backend.app.schemas.service_results import (
+    SportsLeagueMatchServiceResult,
+    SportsLeagueMessageServiceResult,
+)
 
 
 class FrozenSportsMatchesResponse(BaseModel):

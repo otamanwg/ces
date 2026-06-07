@@ -126,8 +126,17 @@ STARTER_DISTRICTS: tuple[StarterDistrict, ...] = (
 
 
 def ensure_starter_districts(db: Session, city: City) -> None:
-    existing_codes = {row[0] for row in db.query(CityDistrict.code).filter(CityDistrict.city_id == city.id).all()}
-    missing_districts = [district for district in STARTER_DISTRICTS if district.code not in existing_codes]
+    existing_codes = {
+        row[0]
+        for row in db.query(CityDistrict.code)
+        .filter(CityDistrict.city_id == city.id)
+        .all()
+    }
+    missing_districts = [
+        district
+        for district in STARTER_DISTRICTS
+        if district.code not in existing_codes
+    ]
     if not missing_districts:
         return
 

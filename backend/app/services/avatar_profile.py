@@ -58,7 +58,9 @@ def validate_avatar_selection(selection: dict) -> str | None:
     return None
 
 
-def create_player_avatar(db: Session, player: Player, selection: dict | None = None) -> PlayerAvatar:
+def create_player_avatar(
+    db: Session, player: Player, selection: dict | None = None
+) -> PlayerAvatar:
     data = selection or {}
     avatar = PlayerAvatar(
         player_id=player.id,
@@ -93,7 +95,10 @@ def build_avatar_snapshot(db: Session, player: Player) -> dict:
         "hair_color_code": avatar.hair_color_code,
         "equipped_outfit": equipped_outfit,
         "animation_profile_code": avatar.animation_profile_code,
-        "fashion_score": sum(STOCK_FASHION_SCORES.get(item_code, 0) for item_code in equipped_outfit.values()),
+        "fashion_score": sum(
+            STOCK_FASHION_SCORES.get(item_code, 0)
+            for item_code in equipped_outfit.values()
+        ),
     }
 
 
@@ -104,6 +109,8 @@ def build_avatar_catalog() -> dict:
         "skin_tones": list(SKIN_TONE_CODES),
         "hair_styles": list(HAIR_STYLE_CODES),
         "hair_colors": list(HAIR_COLOR_CODES),
-        "outfit_slots": {slot: list(options) for slot, options in OUTFIT_SLOT_OPTIONS.items()},
+        "outfit_slots": {
+            slot: list(options) for slot, options in OUTFIT_SLOT_OPTIONS.items()
+        },
         "animation_profile_code": ANIMATION_PROFILE_CODE,
     }

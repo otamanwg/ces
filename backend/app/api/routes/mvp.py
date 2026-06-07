@@ -5,9 +5,20 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.app.core.config import settings
-from backend.app.api.responses import build_player_action_response, save_player_action_response
+from backend.app.api.responses import (
+    build_player_action_response,
+    save_player_action_response,
+)
 from backend.app.database import get_db
-from backend.app.models import Building, BuildingApplication, BusinessBlueprint, City, LandParcel, Player, SportsClub
+from backend.app.models import (
+    Building,
+    BuildingApplication,
+    BusinessBlueprint,
+    City,
+    LandParcel,
+    Player,
+    SportsClub,
+)
 from backend.app.schemas.mvp import (
     BuildingApplicationData,
     BuildingActivationActionData,
@@ -65,15 +76,31 @@ from backend.app.services.buildings import (
     open_building_operations,
     repair_building_operations,
 )
-from backend.app.services.economy import game_day_tick, process_rent_payment, process_shift_work, update_inflation_rate
+from backend.app.services.economy import (
+    game_day_tick,
+    process_rent_payment,
+    process_shift_work,
+    update_inflation_rate,
+)
 from backend.app.services.education import load_manager_exam, process_exam_submission
 from backend.app.services.ids import to_uuid, try_uuid
-from backend.app.services.idempotency import get_idempotent_response, save_idempotent_response
+from backend.app.services.idempotency import (
+    get_idempotent_response,
+    save_idempotent_response,
+)
 from backend.app.services.city_news import build_city_news, build_day_tick_news
 from backend.app.services.city_districts import get_city_districts
 from backend.app.services.land import get_land_parcels, process_land_purchase
-from backend.app.services.job_queries import education_rank, get_active_job, get_job, get_vacant_jobs
-from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE, JOB_NOT_FOUND_MESSAGE
+from backend.app.services.job_queries import (
+    education_rank,
+    get_active_job,
+    get_job,
+    get_vacant_jobs,
+)
+from backend.app.services.messages import (
+    INVALID_PLAYER_SESSION_MESSAGE,
+    JOB_NOT_FOUND_MESSAGE,
+)
 from backend.app.services.needs import process_meal_purchase
 from backend.app.services.onboarding import (
     ONBOARDING_REQUIRED_MESSAGE,
@@ -84,7 +111,10 @@ from backend.app.services.onboarding import (
     is_onboarding_complete,
     random_starting_cash,
 )
-from backend.app.services.player_profile import build_player_snapshot, get_player_snapshot
+from backend.app.services.player_profile import (
+    build_player_snapshot,
+    get_player_snapshot,
+)
 from backend.app.services.player_progress import build_goal_effects
 from backend.app.services.sports import sign_athlete_contract, train_at_gym
 
@@ -174,7 +204,9 @@ class ExamAnswers(BaseModel):
     answers: Dict[str, int]
 
 
-def require_player(db: Session, player_id: str, player_token: str | None) -> Player | None:
+def require_player(
+    db: Session, player_id: str, player_token: str | None
+) -> Player | None:
     return get_authorized_player(db, player_id, player_token)
 
 
@@ -206,13 +238,17 @@ def land_parcel_item(parcel: LandParcel) -> LandParcelItem:
     )
 
 
-def building_application_data(application: BuildingApplication) -> BuildingApplicationData:
+def building_application_data(
+    application: BuildingApplication,
+) -> BuildingApplicationData:
     return BuildingApplicationData(
         id=str(application.id),
         city_id=str(application.city_id),
         district_id=str(application.district_id),
         land_parcel_id=str(application.land_parcel_id),
-        business_blueprint_id=str(application.business_blueprint_id) if application.business_blueprint_id else None,
+        business_blueprint_id=str(application.business_blueprint_id)
+        if application.business_blueprint_id
+        else None,
         applicant_player_id=str(application.applicant_player_id),
         proposed_name=application.proposed_name,
         project_type=application.project_type,
@@ -226,7 +262,9 @@ def building_application_data(application: BuildingApplication) -> BuildingAppli
         mayor_score=application.mayor_score,
         mayor_summary=application.mayor_summary,
         mayor_issues=[
-            MayorPolicyIssueData(code=issue.get("code", ""), message=issue.get("message", ""))
+            MayorPolicyIssueData(
+                code=issue.get("code", ""), message=issue.get("message", "")
+            )
             for issue in application.mayor_issues
         ],
         mayor_questions=list(application.mayor_questions),
@@ -240,7 +278,9 @@ def building_item(building: Building) -> BuildingItem:
         district_id=str(building.district_id),
         land_parcel_id=str(building.land_parcel_id),
         source_application_id=str(building.source_application_id),
-        business_blueprint_id=str(building.business_blueprint_id) if building.business_blueprint_id else None,
+        business_blueprint_id=str(building.business_blueprint_id)
+        if building.business_blueprint_id
+        else None,
         business_id=str(building.business_id) if building.business_id else None,
         owner_player_id=str(building.owner_player_id),
         name=building.name,
@@ -263,12 +303,16 @@ def building_portfolio_item(building: Building) -> BuildingPortfolioItem:
         land_parcel_code=building.land_parcel.code,
         land_parcel_label=building.land_parcel.label,
         source_application_id=str(building.source_application_id),
-        business_blueprint_id=str(building.business_blueprint_id) if building.business_blueprint_id else None,
+        business_blueprint_id=str(building.business_blueprint_id)
+        if building.business_blueprint_id
+        else None,
         blueprint_code=blueprint.code if blueprint else None,
         blueprint_name=blueprint.name if blueprint else None,
         blueprint_category=blueprint.category if blueprint else None,
         business_id=str(building.business_id) if building.business_id else None,
-        business_type=business.type if business else (blueprint.business_type if blueprint else None),
+        business_type=business.type
+        if business
+        else (blueprint.business_type if blueprint else None),
         business_cash_balance=float(business.cash_balance) if business else None,
         owner_player_id=str(building.owner_player_id),
         name=building.name,
@@ -303,7 +347,9 @@ def business_blueprint_item(blueprint: BusinessBlueprint) -> BusinessBlueprintIt
         upkeep_daily=float(blueprint.upkeep_daily),
         risk_level=blueprint.risk_level,
         risks=list(blueprint.risks or []),
-        metric_effects={key: int(value) for key, value in (blueprint.metric_effects or {}).items()},
+        metric_effects={
+            key: int(value) for key, value in (blueprint.metric_effects or {}).items()
+        },
         visual_archetype=blueprint.visual_archetype,
         style_tags=list(blueprint.style_tags or []),
         player_hints=list(blueprint.player_hints or []),
@@ -355,14 +401,19 @@ def get_public_land_parcels(db: Session = Depends(get_db)):
     if not city:
         return api_error("Місто не знайдене.")
 
-    data = LandParcelsData(parcels=[land_parcel_item(parcel) for parcel in get_land_parcels(db, city.id)])
+    data = LandParcelsData(
+        parcels=[land_parcel_item(parcel) for parcel in get_land_parcels(db, city.id)]
+    )
     return api_success("Доступні земельні ділянки.", data.model_dump())
 
 
 @router.get("/business/blueprints")
 def get_business_blueprints(db: Session = Depends(get_db)):
     data = BusinessBlueprintsData(
-        blueprints=[business_blueprint_item(blueprint) for blueprint in get_active_business_blueprints(db)]
+        blueprints=[
+            business_blueprint_item(blueprint)
+            for blueprint in get_active_business_blueprints(db)
+        ]
     )
     return api_success("Доступні бізнес-шаблони.", data.model_dump())
 
@@ -426,7 +477,9 @@ def submit_building_application(
     if onboarding_error:
         return onboarding_error
 
-    cached = get_idempotent_response(db, "building_application", idempotency_key, data.player_id)
+    cached = get_idempotent_response(
+        db, "building_application", idempotency_key, data.player_id
+    )
     if cached:
         return cached
 
@@ -460,7 +513,9 @@ def submit_building_application(
         res["message"],
         building_application_data(res["application"]).model_dump(),
     )
-    return save_idempotent_response(db, "building_application", idempotency_key, data.player_id, response)
+    return save_idempotent_response(
+        db, "building_application", idempotency_key, data.player_id, response
+    )
 
 
 @router.post("/building/applications/{application_id}/activate")
@@ -478,7 +533,9 @@ def activate_approved_building_application(
     if onboarding_error:
         return onboarding_error
 
-    cached = get_idempotent_response(db, "building_application_activate", idempotency_key, data.player_id)
+    cached = get_idempotent_response(
+        db, "building_application_activate", idempotency_key, data.player_id
+    )
     if cached:
         return cached
 
@@ -518,7 +575,9 @@ def open_building(
     if onboarding_error:
         return onboarding_error
 
-    cached = get_idempotent_response(db, "building_open", idempotency_key, data.player_id)
+    cached = get_idempotent_response(
+        db, "building_open", idempotency_key, data.player_id
+    )
     if cached:
         return cached
 
@@ -559,7 +618,9 @@ def repair_building(
     if onboarding_error:
         return onboarding_error
 
-    cached = get_idempotent_response(db, "building_repair", idempotency_key, data.player_id)
+    cached = get_idempotent_response(
+        db, "building_repair", idempotency_key, data.player_id
+    )
     if cached:
         return cached
 
@@ -588,7 +649,9 @@ def repair_building(
 @router.post("/city/tick-day")
 def run_city_day_tick(db: Session = Depends(get_db)):
     if not settings.debug:
-        raise HTTPException(status_code=403, detail="Day tick endpoint is available only in debug mode.")
+        raise HTTPException(
+            status_code=403, detail="Day tick endpoint is available only in debug mode."
+        )
 
     city = db.query(City).first()
     if not city:
@@ -597,7 +660,9 @@ def run_city_day_tick(db: Session = Depends(get_db)):
     res = game_day_tick(db, str(city.id))
     if not res["success"]:
         return api_error(res["message"])
-    data = DayTickData(city=res["city"], stats=res["stats"], news=build_day_tick_news(res["stats"]))
+    data = DayTickData(
+        city=res["city"], stats=res["stats"], news=build_day_tick_news(res["stats"])
+    )
     return api_success(res["message"], data.model_dump())
 
 
@@ -671,7 +736,9 @@ def choose_arrival_path(
     if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
 
-    cached = get_idempotent_response(db, "onboarding_choose", idempotency_key, data.player_id)
+    cached = get_idempotent_response(
+        db, "onboarding_choose", idempotency_key, data.player_id
+    )
     if cached:
         return cached
 
@@ -701,7 +768,9 @@ def collect_police_recovery(
     if not player:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
 
-    cached = get_idempotent_response(db, "onboarding_police_recovery", idempotency_key, data.player_id)
+    cached = get_idempotent_response(
+        db, "onboarding_police_recovery", idempotency_key, data.player_id
+    )
     if cached:
         return cached
 
@@ -731,7 +800,10 @@ def get_player_buildings(
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
 
     data = BuildingPortfolioData(
-        buildings=[building_portfolio_item(building) for building in get_player_building_portfolio(db, player)]
+        buildings=[
+            building_portfolio_item(building)
+            for building in get_player_building_portfolio(db, player)
+        ]
     )
     return api_success("Будівлі гравця.", data.model_dump())
 
@@ -802,7 +874,9 @@ def buy_business(
     if onboarding_error:
         return onboarding_error
 
-    cached = get_idempotent_response(db, "business_buy", idempotency_key, data.player_id)
+    cached = get_idempotent_response(
+        db, "business_buy", idempotency_key, data.player_id
+    )
     if cached:
         return cached
 
@@ -841,7 +915,9 @@ def collect_business_dividend(
     if onboarding_error:
         return onboarding_error
 
-    cached = get_idempotent_response(db, "business_dividend", idempotency_key, data.player_id)
+    cached = get_idempotent_response(
+        db, "business_dividend", idempotency_key, data.player_id
+    )
     if cached:
         return cached
 
@@ -912,7 +988,9 @@ def join_sports_club(
         return api_error(res["message"])
 
     db.refresh(player)
-    return save_player_action_response(db, "sports_join", idempotency_key, data.player_id, player, res["message"])
+    return save_player_action_response(
+        db, "sports_join", idempotency_key, data.player_id, player, res["message"]
+    )
 
 
 @router.post("/sports/train")
@@ -929,7 +1007,9 @@ def train_sports(
     if onboarding_error:
         return onboarding_error
 
-    cached = get_idempotent_response(db, "sports_train", idempotency_key, data.player_id)
+    cached = get_idempotent_response(
+        db, "sports_train", idempotency_key, data.player_id
+    )
     if cached:
         return cached
 
@@ -992,7 +1072,9 @@ def apply_for_job(
     job.filled_by_player_id = player.id
     db.commit()
 
-    return build_player_action_response(db, player, f"Вас працевлаштовано на '{job.title}'.")
+    return build_player_action_response(
+        db, player, f"Вас працевлаштовано на '{job.title}'."
+    )
 
 
 @router.post("/jobs/work/{player_id}")
@@ -1053,7 +1135,9 @@ def sleep_in_hostel(
         return api_error(res["message"])
 
     player = db.query(Player).filter(Player.id == to_uuid(player_id)).first()
-    return save_player_action_response(db, "sleep", idempotency_key, player_id, player, res["message"])
+    return save_player_action_response(
+        db, "sleep", idempotency_key, player_id, player, res["message"]
+    )
 
 
 @router.post("/needs/eat/{player_id}")
@@ -1079,7 +1163,9 @@ def eat_meal(
         return api_error(res["message"])
 
     player = db.query(Player).filter(Player.id == to_uuid(player_id)).first()
-    return save_player_action_response(db, "eat", idempotency_key, player_id, player, res["message"])
+    return save_player_action_response(
+        db, "eat", idempotency_key, player_id, player, res["message"]
+    )
 
 
 @router.get("/education/exam/info")
@@ -1095,7 +1181,10 @@ def get_exam_details():
         passing_score=exam["passing_score"],
         time_limit_seconds=exam["time_limit_seconds"],
         description=exam["description"],
-        questions=[ExamQuestionData(id=q["id"], text=q["text"], options=q["options"]) for q in exam["questions"]],
+        questions=[
+            ExamQuestionData(id=q["id"], text=q["text"], options=q["options"])
+            for q in exam["questions"]
+        ],
     )
     return api_success("Інформація про іспит.", clean_exam.model_dump())
 

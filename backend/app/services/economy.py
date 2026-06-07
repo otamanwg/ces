@@ -5,18 +5,30 @@ from decimal import Decimal
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session, joinedload
 
-from backend.app.models import Player, City, Job, Hostel, TransactionModelLog, Business
-from backend.app.schemas.service_results import DayTickServiceResult, RentPaymentServiceResult, WorkShiftServiceResult
+from backend.app.models import Player, City, Hostel, Business
+from backend.app.schemas.service_results import (
+    DayTickServiceResult,
+    RentPaymentServiceResult,
+    WorkShiftServiceResult,
+)
 from backend.app.services.buildings import process_daily_building_upkeep
 from backend.app.services.ids import to_uuid
 from backend.app.services.job_queries import get_active_job
 from backend.app.services.ledger import credit, debit, log_transaction
 from backend.app.services.money import money
-from backend.app.services.needs import DAY_HUNGER_INCREASE, SLEEP_HUNGER_INCREASE, WORK_HUNGER_INCREASE, increase_hunger
+from backend.app.services.needs import (
+    DAY_HUNGER_INCREASE,
+    SLEEP_HUNGER_INCREASE,
+    WORK_HUNGER_INCREASE,
+    increase_hunger,
+)
 
 
 def _active_money_supply(db: Session, city_id) -> Decimal:
-    players_balance = db.query(func.sum(Player.balance)).filter(Player.city_id == city_id).scalar() or 0
+    players_balance = (
+        db.query(func.sum(Player.balance)).filter(Player.city_id == city_id).scalar()
+        or 0
+    )
     businesses_balance = (
         db.query(func.sum(Business.cash_balance))
         .filter(
@@ -38,12 +50,17 @@ def process_shift_work(db: Session, player_id: str) -> dict:
 
     job = get_active_job(db, player_uuid)
     if not job:
-        return {"success": False, "message": "Ви не працевлаштовані. Знайдіть роботу в Центрі Зайнятості."}
+        return {
+            "success": False,
+            "message": "Ви не працевлаштовані. Знайдіть роботу в Центрі Зайнятості.",
+        }
 
     # Перевірка на активний страйк профспілки
     from backend.app.models import LaborUnion
 
-    union = db.query(LaborUnion).filter(LaborUnion.business_id == job.business_id).first()
+    union = (
+        db.query(LaborUnion).filter(LaborUnion.business_id == job.business_id).first()
+    )
     if union and union.strike_active:
         return {
             "success": False,
@@ -121,7 +138,10 @@ def process_rent_payment(db: Session, player_id: str) -> dict:
 
     hostel = db.query(Hostel).filter(Hostel.tenant_player_id == player_uuid).first()
     if not hostel:
-        return {"success": False, "message": "У вас немає орендованого житла. Ви спите на вулиці."}
+        return {
+            "success": False,
+            "message": "У вас немає орендованого житла. Ви спите на вулиці.",
+        }
 
     city = db.query(City).filter(City.id == player.city_id).first()
     business = db.query(Business).filter(Business.id == hostel.business_id).first()
@@ -131,7 +151,9 @@ def process_rent_payment(db: Session, player_id: str) -> dict:
     # Перевірка наявності коштів
     if money(player.balance) >= rent_price:
         debit(db, player, "balance", rent_price)
-        player.energy = min(100, player.energy + (hostel.energy_regen_per_hour * 8))  # 8 годин сну
+        player.energy = min(
+            100, player.energy + (hostel.energy_regen_per_hour * 8)
+        )  # 8 годин сну
         player.mood = min(100, player.mood + 15)
         increase_hunger(player, SLEEP_HUNGER_INCREASE)
 
@@ -147,7 +169,9 @@ def process_rent_payment(db: Session, player_id: str) -> dict:
             sender_id=player.id,
             sender_type="player",
             receiver_id=city.id if business.owner_player_id is None else business.id,
-            receiver_type="treasury" if business.owner_player_id is None else "business",
+            receiver_type="treasury"
+            if business.owner_player_id is None
+            else "business",
             amount=float(rent_price),
             tax=0.0,
             purpose="rent",
@@ -181,7 +205,10 @@ def update_inflation_rate(db: Session, city_id: str) -> float:
         return 0.0
 
     # Грошова маса у гравців
-    players_balance = db.query(func.sum(Player.balance)).filter(Player.city_id == city_uuid).scalar() or 0.0
+    players_balance = (
+        db.query(func.sum(Player.balance)).filter(Player.city_id == city_uuid).scalar()
+        or 0.0
+    )
     # Грошова маса в приватному бізнесі
     businesses_balance = (
         db.query(func.sum(Business.cash_balance))
@@ -193,7 +220,10 @@ def update_inflation_rate(db: Session, city_id: str) -> float:
     active_money = float(players_balance) + float(businesses_balance)
 
     # Базове цільове зростання (наприклад, 500 ₴ на кожного гравця)
-    num_players = db.query(func.count(Player.id)).filter(Player.city_id == city_uuid).scalar() or 1
+    num_players = (
+        db.query(func.count(Player.id)).filter(Player.city_id == city_uuid).scalar()
+        or 1
+    )
     target_circulation = num_players * 600.00
 
     if active_money > target_circulation:
@@ -216,16 +246,21 @@ def game_day_tick(db: Session, city_id: str) -> dict:
     # Очищення застарілих записів ідемпотентності (старших за 1 день)
     from backend.app.models import IdempotencyRecord
 
-    db.query(IdempotencyRecord).filter(IdempotencyRecord.created_at < func.now() - text("INTERVAL '1 day'")).delete(
-        synchronize_session=False
-    )
+    db.query(IdempotencyRecord).filter(
+        IdempotencyRecord.created_at < func.now() - text("INTERVAL '1 day'")
+    ).delete(synchronize_session=False)
 
     active_before = _active_money_supply(db, city_uuid)
     players_updated = 0
     homeless_players = 0
     hungry_players = 0
 
-    players = db.query(Player).options(joinedload(Player.hostel_rented)).filter(Player.city_id == city_uuid).all()
+    players = (
+        db.query(Player)
+        .options(joinedload(Player.hostel_rented))
+        .filter(Player.city_id == city_uuid)
+        .all()
+    )
     for player in players:
         players_updated += 1
         player.energy = max(0, player.energy - 5)
@@ -268,7 +303,9 @@ def game_day_tick(db: Session, city_id: str) -> dict:
             "homeless_players": homeless_players,
             "hungry_players": hungry_players,
             "building_upkeep_charged": building_upkeep_stats["building_upkeep_charged"],
-            "buildings_upkeep_charged": building_upkeep_stats["buildings_upkeep_charged"],
+            "buildings_upkeep_charged": building_upkeep_stats[
+                "buildings_upkeep_charged"
+            ],
             "buildings_upkeep_failed": building_upkeep_stats["buildings_upkeep_failed"],
             "active_money_before": float(active_before),
             "active_money_after": float(active_after),

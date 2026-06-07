@@ -5,18 +5,29 @@ from sqlalchemy.orm import Session
 from backend.app.models import Hostel, Job, Player
 from backend.app.schemas.mvp import PlayerActionsData, PlayerSnapshotData
 from backend.app.services.avatar_profile import build_avatar_snapshot
-from backend.app.services.business_market import cheapest_business_price, get_owned_businesses
+from backend.app.services.business_market import (
+    cheapest_business_price,
+    get_owned_businesses,
+)
 from backend.app.services.education import load_manager_exam
 from backend.app.services.ids import to_uuid
-from backend.app.services.job_queries import education_rank, get_active_job, has_eligible_vacancy
+from backend.app.services.job_queries import (
+    get_active_job,
+    has_eligible_vacancy,
+)
 from backend.app.services.money import money
 from backend.app.services.needs import MEAL_COST
-from backend.app.services.onboarding import build_onboarding_snapshot, is_onboarding_complete
+from backend.app.services.onboarding import (
+    build_onboarding_snapshot,
+    is_onboarding_complete,
+)
 from backend.app.services.player_progress import build_goal_effects
 from backend.app.services.sports import GYM_COST, GYM_ENERGY_COST
 
 
-def build_player_actions(db: Session, player: Player, job: Job | None, hostel: Hostel | None) -> dict:
+def build_player_actions(
+    db: Session, player: Player, job: Job | None, hostel: Hostel | None
+) -> dict:
     if not is_onboarding_complete(db, player):
         return PlayerActionsData(
             can_apply_job=False,
@@ -38,15 +49,20 @@ def build_player_actions(db: Session, player: Player, job: Job | None, hostel: H
         can_work=bool(job and player.energy >= job.energy_cost_per_shift),
         can_sleep=hostel is not None,
         can_eat=(player.hunger or 0) > 0 and money(player.balance) >= MEAL_COST,
-        can_buy_business=(cheapest_business_price(db) or Decimal("999999999.00")) <= money(player.balance),
+        can_buy_business=(cheapest_business_price(db) or Decimal("999999999.00"))
+        <= money(player.balance),
         can_collect_dividend=any(
-            money(b.cash_balance) >= Decimal("250.00") for b in get_owned_businesses(db, player.id)
+            money(b.cash_balance) >= Decimal("250.00")
+            for b in get_owned_businesses(db, player.id)
         ),
         can_join_sports=player.athlete_contract is None,
         can_train_sports=bool(
-            player.athlete_contract and money(player.balance) >= GYM_COST and player.energy >= GYM_ENERGY_COST
+            player.athlete_contract
+            and money(player.balance) >= GYM_COST
+            and player.energy >= GYM_ENERGY_COST
         ),
-        can_take_exam=player.education_level == "High School" and money(player.balance) >= exam_cost,
+        can_take_exam=player.education_level == "High School"
+        and money(player.balance) >= exam_cost,
     ).model_dump()
 
 

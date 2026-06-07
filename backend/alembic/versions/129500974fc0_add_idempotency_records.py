@@ -25,10 +25,17 @@ def upgrade() -> None:
         sa.Column("key", sa.String(length=120), nullable=False),
         sa.Column("player_id", sa.Uuid(), nullable=True),
         sa.Column("response_json", sa.JSON(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["player_id"], ["players.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("action", "key", "player_id", name="uq_idempotency_action_key_player"),
+        sa.UniqueConstraint(
+            "action", "key", "player_id", name="uq_idempotency_action_key_player"
+        ),
     )
     # ### end Alembic commands ###
 

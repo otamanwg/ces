@@ -18,7 +18,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.add_column("buildings", sa.Column("business_id", sa.Uuid(), nullable=True))
-    op.create_unique_constraint("uq_buildings_business_id", "buildings", ["business_id"])
+    op.create_unique_constraint(
+        "uq_buildings_business_id", "buildings", ["business_id"]
+    )
     op.create_foreign_key(
         "fk_buildings_business_id",
         "buildings",

@@ -17,7 +17,9 @@ class ApiEnvelope(BaseModel):
     effects: list[GameEffect] = Field(default_factory=list)
 
 
-def api_success(message: str, data: dict | None = None, effects: list | None = None) -> dict:
+def api_success(
+    message: str, data: dict | None = None, effects: list | None = None
+) -> dict:
     return {
         "success": True,
         "message": message,

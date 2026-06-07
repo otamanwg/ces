@@ -29,15 +29,30 @@ def upgrade() -> None:
         sa.Column("project_type", sa.String(length=50), nullable=False),
         sa.Column("status", sa.String(length=30), nullable=False),
         sa.Column("operating_status", sa.String(length=30), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["city_id"], ["cities.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["district_id"], ["city_districts.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["land_parcel_id"], ["land_parcels.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["owner_player_id"], ["players.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["source_application_id"], ["building_applications.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["district_id"], ["city_districts.id"], ondelete="CASCADE"
+        ),
+        sa.ForeignKeyConstraint(
+            ["land_parcel_id"], ["land_parcels.id"], ondelete="CASCADE"
+        ),
+        sa.ForeignKeyConstraint(
+            ["owner_player_id"], ["players.id"], ondelete="CASCADE"
+        ),
+        sa.ForeignKeyConstraint(
+            ["source_application_id"], ["building_applications.id"], ondelete="CASCADE"
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("land_parcel_id", name="uq_buildings_land_parcel_id"),
-        sa.UniqueConstraint("source_application_id", name="uq_buildings_source_application_id"),
+        sa.UniqueConstraint(
+            "source_application_id", name="uq_buildings_source_application_id"
+        ),
     )
 
 
