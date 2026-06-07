@@ -2,14 +2,15 @@
 Тести для системи управління бізнесом (AI/manual/shadow) та daily revenue.
 """
 
+import os
 import uuid
 from decimal import Decimal
 
 import pytest
 from sqlalchemy.orm import Session
 
-from backend.app.database import SessionLocal
 from backend.app.models import Business, City, Player
+from backend.app.seed import seed_initial_data
 from backend.app.services.business_management import (
     get_business_tier,
     switch_management_mode,
@@ -22,6 +23,7 @@ from backend.app.services.daily_business_revenue import (
     process_daily_business_revenue,
 )
 from backend.app.services.money import money
+from backend.tests.db import make_test_session
 
 
 class TestBusinessTier:
@@ -66,12 +68,22 @@ class TestCompetitionModifier:
         assert _competition_modifier_from_count(20) == 0.6
 
 
+TEST_DATABASE_URL = os.getenv("CITY_TEST_DATABASE_URL")
+
+pytestmark_integration = pytest.mark.skipif(
+    not TEST_DATABASE_URL,
+    reason="Set CITY_TEST_DATABASE_URL to run PostgreSQL integration tests.",
+)
+
+
+@pytest.mark.skipif(not TEST_DATABASE_URL, reason="Set CITY_TEST_DATABASE_URL to run PostgreSQL integration tests.")
 class TestBusinessManagementService:
     """Інтеграційні тести сервісу управління бізнесом."""
 
     @pytest.fixture
     def db_session(self):
-        db = SessionLocal()
+        db = make_test_session(TEST_DATABASE_URL)
+        seed_initial_data(db)
         try:
             yield db
         finally:
@@ -82,8 +94,13 @@ class TestBusinessManagementService:
     def city_and_player(self, db_session: Session):
         city = db_session.query(City).first()
         assert city is not None, "Потрібне місто у БД"
-        player = db_session.query(Player).first()
-        assert player is not None, "Потрібен гравець у БД"
+        player = Player(
+            city_id=city.id,
+            username=f"test_biz_{uuid.uuid4().hex[:8]}",
+            balance=1000.00,
+        )
+        db_session.add(player)
+        db_session.flush()
         return city, player
 
     @pytest.fixture
