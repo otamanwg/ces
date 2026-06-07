@@ -146,7 +146,12 @@ class OnboardingClaim(BaseModel):
 
 class JobApply(BaseModel):
     player_id: str
-    job_id: str
+    job_id: str | None = None
+    vacancy_id: str | None = None
+
+    @property
+    def resolved_job_id(self) -> str | None:
+        return self.job_id or self.vacancy_id
 
 
 class BusinessBuy(BaseModel):
@@ -996,7 +1001,7 @@ def apply_for_job(
     if onboarding_error:
         return onboarding_error
 
-    job_uuid = try_uuid(data.job_id)
+    job_uuid = try_uuid(data.resolved_job_id)
     if job_uuid is None:
         return api_error(JOB_NOT_FOUND_MESSAGE)
 
