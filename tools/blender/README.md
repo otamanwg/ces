@@ -20,6 +20,7 @@ The Python generator is the editable source of truth. It creates:
 
 - a humanoid armature with semantic Godot-compatible bone names;
 - an original stylized mesh and materials;
+- modular low-poly mesh groups for seven hairstyles; `hair_bald` hides them all;
 - `idle`, `walk`, `sit`, `phone`, and `talk` actions;
 - a GLB in `client/assets/visual/anime/avatar`.
 

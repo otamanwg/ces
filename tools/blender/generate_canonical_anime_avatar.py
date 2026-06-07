@@ -188,6 +188,64 @@ def create_cylinder_between(
     return obj
 
 
+def tag_avatar_part(obj, part: str, variant_code: str = "") -> None:
+    obj["avatar_part"] = part
+    if variant_code:
+        obj["variant_code"] = variant_code
+
+
+def tag_hair(obj, variant_code: str) -> None:
+    tag_avatar_part(obj, "hair", variant_code)
+
+
+def create_hair_variants(armature, material) -> None:
+    short_01 = "hair_short_01"
+    tag_hair(create_sphere("HairShort01_Cap", (0.0, 0.01, 2.17), (0.32, 0.28, 0.23), material, armature, "Head"), short_01)
+    tag_hair(create_cylinder_between("HairShort01_SideLeft", (0.23, 0.02, 2.16), (0.26, 0.03, 1.91), 0.072, material, armature, "Head"), short_01)
+    tag_hair(create_cylinder_between("HairShort01_SideRight", (-0.23, 0.02, 2.16), (-0.26, 0.03, 1.91), 0.072, material, armature, "Head"), short_01)
+    tag_hair(create_cylinder_between("HairShort01_FringeLeft", (0.08, -0.23, 2.25), (0.12, -0.27, 2.03), 0.052, material, armature, "Head"), short_01)
+    tag_hair(create_cylinder_between("HairShort01_FringeRight", (-0.08, -0.23, 2.25), (-0.12, -0.27, 2.03), 0.052, material, armature, "Head"), short_01)
+
+    short_02 = "hair_short_02"
+    tag_hair(create_sphere("HairShort02_Cap", (0.0, 0.015, 2.18), (0.325, 0.285, 0.225), material, armature, "Head"), short_02)
+    tag_hair(create_cylinder_between("HairShort02_SweepA", (-0.17, -0.20, 2.25), (0.06, -0.28, 2.04), 0.058, material, armature, "Head"), short_02)
+    tag_hair(create_cylinder_between("HairShort02_SweepB", (-0.04, -0.23, 2.27), (0.16, -0.27, 2.08), 0.050, material, armature, "Head"), short_02)
+    tag_hair(create_cylinder_between("HairShort02_Temple", (-0.24, 0.0, 2.15), (-0.25, -0.01, 1.96), 0.066, material, armature, "Head"), short_02)
+
+    medium_01 = "hair_medium_01"
+    tag_hair(create_sphere("HairMedium01_Cap", (0.0, 0.015, 2.17), (0.325, 0.29, 0.235), material, armature, "Head"), medium_01)
+    tag_hair(create_cylinder_between("HairMedium01_SideLeft", (0.24, 0.02, 2.14), (0.27, 0.04, 1.75), 0.080, material, armature, "Head"), medium_01)
+    tag_hair(create_cylinder_between("HairMedium01_SideRight", (-0.24, 0.02, 2.14), (-0.27, 0.04, 1.75), 0.080, material, armature, "Head"), medium_01)
+    tag_hair(create_cylinder_between("HairMedium01_Fringe", (0.02, -0.24, 2.27), (0.14, -0.27, 2.01), 0.055, material, armature, "Head"), medium_01)
+
+    medium_02 = "hair_medium_02"
+    tag_hair(create_sphere("HairMedium02_Cap", (0.0, 0.02, 2.17), (0.33, 0.29, 0.235), material, armature, "Head"), medium_02)
+    tag_hair(create_cylinder_between("HairMedium02_SideLeft", (0.24, 0.01, 2.14), (0.29, -0.01, 1.72), 0.078, material, armature, "Head"), medium_02)
+    tag_hair(create_cylinder_between("HairMedium02_SideRight", (-0.24, 0.01, 2.14), (-0.29, -0.01, 1.72), 0.078, material, armature, "Head"), medium_02)
+    tag_hair(create_cylinder_between("HairMedium02_BackLeft", (0.14, 0.20, 2.15), (0.16, 0.21, 1.74), 0.084, material, armature, "Head"), medium_02)
+    tag_hair(create_cylinder_between("HairMedium02_BackRight", (-0.14, 0.20, 2.15), (-0.16, 0.21, 1.74), 0.084, material, armature, "Head"), medium_02)
+    tag_hair(create_cylinder_between("HairMedium02_Fringe", (-0.10, -0.24, 2.25), (0.02, -0.28, 2.00), 0.054, material, armature, "Head"), medium_02)
+
+    long_01 = "hair_long_01"
+    tag_hair(create_sphere("HairLong01_Cap", (0.0, 0.02, 2.17), (0.335, 0.295, 0.24), material, armature, "Head"), long_01)
+    tag_hair(create_cylinder_between("HairLong01_SideLeft", (0.24, 0.02, 2.14), (0.30, 0.04, 1.50), 0.086, material, armature, "Head"), long_01)
+    tag_hair(create_cylinder_between("HairLong01_SideRight", (-0.24, 0.02, 2.14), (-0.30, 0.04, 1.50), 0.086, material, armature, "Head"), long_01)
+    tag_hair(create_cylinder_between("HairLong01_Back", (0.0, 0.23, 2.14), (0.0, 0.25, 1.48), 0.145, material, armature, "Head"), long_01)
+    tag_hair(create_cylinder_between("HairLong01_FringeLeft", (0.08, -0.24, 2.26), (0.12, -0.27, 1.99), 0.052, material, armature, "Head"), long_01)
+    tag_hair(create_cylinder_between("HairLong01_FringeRight", (-0.08, -0.24, 2.26), (-0.12, -0.27, 1.99), 0.052, material, armature, "Head"), long_01)
+
+    long_02 = "hair_long_02"
+    tag_hair(create_sphere("HairLong02_Cap", (0.0, 0.02, 2.17), (0.33, 0.29, 0.235), material, armature, "Head"), long_02)
+    tag_hair(create_cylinder_between("HairLong02_SideLeft", (0.24, 0.01, 2.14), (0.27, 0.02, 1.62), 0.078, material, armature, "Head"), long_02)
+    tag_hair(create_cylinder_between("HairLong02_SideRight", (-0.24, 0.01, 2.14), (-0.27, 0.02, 1.62), 0.078, material, armature, "Head"), long_02)
+    tag_hair(create_cylinder_between("HairLong02_PonytailTop", (0.0, 0.22, 2.13), (0.0, 0.34, 1.92), 0.105, material, armature, "Head"), long_02)
+    tag_hair(create_cylinder_between("HairLong02_Ponytail", (0.0, 0.34, 1.92), (0.0, 0.38, 1.33), 0.090, material, armature, "Head"), long_02)
+    tag_hair(create_cylinder_between("HairLong02_Fringe", (0.10, -0.23, 2.25), (-0.04, -0.28, 2.00), 0.055, material, armature, "Head"), long_02)
+
+    buzz = "hair_buzz_01"
+    tag_hair(create_sphere("HairBuzz01_Cap", (0.0, 0.015, 2.17), (0.302, 0.263, 0.195), material, armature, "Head", 20, 10), buzz)
+
+
 def add_smile_shape(mouth) -> None:
     basis = mouth.shape_key_add(name="Basis")
     smile = mouth.shape_key_add(name="smile")
@@ -211,16 +269,16 @@ def create_avatar_meshes(armature) -> None:
     shoes = make_material("ShoesCoral", (0.92, 0.22, 0.29, 1.0), 0.62)
     mouth_material = make_material("MouthCoral", (0.78, 0.10, 0.18, 1.0), 0.52)
 
-    create_sphere("HipsMesh", (0.0, 0.0, 1.02), (0.31, 0.20, 0.20), trousers, armature, "Hips")
-    create_sphere("TorsoMesh", (0.0, 0.0, 1.48), (0.38, 0.22, 0.48), jacket, armature, "Chest")
-    create_cube("ShirtPanel", (0.0, -0.225, 1.49), (0.13, 0.025, 0.29), shirt, armature, "Chest")
+    hips = create_sphere("HipsMesh", (0.0, 0.0, 1.02), (0.31, 0.20, 0.20), trousers, armature, "Hips")
+    torso = create_sphere("TorsoMesh", (0.0, 0.0, 1.48), (0.38, 0.22, 0.48), jacket, armature, "Chest")
+    shirt_panel = create_cube("ShirtPanel", (0.0, -0.225, 1.49), (0.13, 0.025, 0.29), shirt, armature, "Chest")
+    tag_avatar_part(hips, "lower")
+    tag_avatar_part(torso, "upper")
+    tag_avatar_part(shirt_panel, "shirt")
 
-    create_sphere("FaceMesh", (0.0, -0.01, 2.04), (0.29, 0.25, 0.33), skin, armature, "Head")
-    create_sphere("HairCap", (0.0, 0.01, 2.17), (0.32, 0.28, 0.23), hair, armature, "Head")
-    create_cylinder_between("HairSideLeft", (0.23, 0.02, 2.16), (0.26, 0.03, 1.88), 0.075, hair, armature, "Head")
-    create_cylinder_between("HairSideRight", (-0.23, 0.02, 2.16), (-0.26, 0.03, 1.88), 0.075, hair, armature, "Head")
-    create_cylinder_between("FringeLeft", (0.08, -0.23, 2.25), (0.12, -0.27, 2.03), 0.052, hair, armature, "Head")
-    create_cylinder_between("FringeRight", (-0.08, -0.23, 2.25), (-0.12, -0.27, 2.03), 0.052, hair, armature, "Head")
+    face = create_sphere("FaceMesh", (0.0, -0.01, 2.04), (0.29, 0.25, 0.33), skin, armature, "Head")
+    tag_avatar_part(face, "skin")
+    create_hair_variants(armature, hair)
 
     create_sphere("EyeLeft", (0.105, -0.253, 2.08), (0.045, 0.018, 0.064), eyes, armature, "Head", 16, 8)
     create_sphere("EyeRight", (-0.105, -0.253, 2.08), (0.045, 0.018, 0.064), eyes, armature, "Head", 16, 8)

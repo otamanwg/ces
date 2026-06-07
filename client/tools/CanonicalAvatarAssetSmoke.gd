@@ -2,6 +2,15 @@ extends Node
 
 const AVATAR_PATH := "res://assets/visual/anime/avatar/canonical_anime_avatar.glb"
 const REQUIRED_ANIMATIONS := ["idle", "walk", "sit", "phone", "talk"]
+const REQUIRED_HAIR_GROUPS := [
+	"HairShort01",
+	"HairShort02",
+	"HairMedium01",
+	"HairMedium02",
+	"HairLong01",
+	"HairLong02",
+	"HairBuzz01",
+]
 const MINIMUM_BONE_COUNT := 23
 
 
@@ -40,9 +49,14 @@ func _run_smoke() -> void:
 			_fail("animation has no tracks: %s" % animation_name)
 			return
 
+	for hair_group in REQUIRED_HAIR_GROUPS:
+		if not _has_name_prefix(avatar, hair_group):
+			_fail("missing hair mesh group: %s" % hair_group)
+			return
+
 	print(
-		"CANONICAL_AVATAR_SMOKE_OK bones=%d animations=%s"
-		% [skeleton.get_bone_count(), ",".join(REQUIRED_ANIMATIONS)]
+		"CANONICAL_AVATAR_SMOKE_OK bones=%d animations=%s hair_groups=%d"
+		% [skeleton.get_bone_count(), ",".join(REQUIRED_ANIMATIONS), REQUIRED_HAIR_GROUPS.size()]
 	)
 	get_tree().quit()
 
@@ -55,6 +69,15 @@ func _find_type(root: Node, class_name_value: String) -> Node:
 		if match != null:
 			return match
 	return null
+
+
+func _has_name_prefix(root: Node, prefix: String) -> bool:
+	if root.name.begins_with(prefix):
+		return true
+	for child in root.get_children():
+		if _has_name_prefix(child, prefix):
+			return true
+	return false
 
 
 func _fail(message: String) -> void:

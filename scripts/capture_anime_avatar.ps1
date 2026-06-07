@@ -4,6 +4,16 @@ param(
     [string]$Activity = "talk",
     [ValidateSet("cinematic", "street", "distance", "marker")]
     [string]$Lod = "street",
+    [ValidateSet("body_standard", "body_sturdy")]
+    [string]$Body = "body_standard",
+    [ValidatePattern("^face_(0[1-9]|1[0-9]|20)$")]
+    [string]$Face = "face_01",
+    [ValidatePattern("^skin_0[1-6]$")]
+    [string]$Skin = "skin_03",
+    [ValidateSet("hair_short_01", "hair_short_02", "hair_medium_01", "hair_medium_02", "hair_long_01", "hair_long_02", "hair_buzz_01", "hair_bald")]
+    [string]$Hair = "hair_short_01",
+    [ValidateSet("hair_black", "hair_brown", "hair_blond", "hair_auburn", "hair_gray", "hair_white")]
+    [string]$HairColor = "hair_brown",
     [double]$DelaySeconds = 2.0,
     [switch]$SkipBuild
 )
@@ -51,7 +61,12 @@ $delayArgument = $DelaySeconds.ToString([System.Globalization.CultureInfo]::Inva
     "--output=$godotOutputPath",
     "--delay=$delayArgument",
     "--activity=$Activity",
-    "--lod=$Lod"
+    "--lod=$Lod",
+    "--body=$Body",
+    "--face=$Face",
+    "--skin=$Skin",
+    "--hair=$Hair",
+    "--hair-color=$HairColor"
 )
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

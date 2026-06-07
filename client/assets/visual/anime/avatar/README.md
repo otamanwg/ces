@@ -19,6 +19,9 @@ Current contract:
 
 - 23 semantic humanoid bones;
 - `idle`, `walk`, `sit`, `phone`, and `talk`;
+- one skeleton with runtime body, face, skin, hair, and outfit presentation;
+- seven generated hair mesh groups plus a mesh-free bald variant;
+- 20 deterministic face presets driven by semantic profile codes;
 - Godot-generated mesh LOD enabled;
 - phone prop attached at runtime to `RightHand`;
 - procedural model remains a technical reference, not final production art.

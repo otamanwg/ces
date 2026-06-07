@@ -33,6 +33,7 @@ public partial class AnimeAvatarStreetTest : Node3D
 	private Node3D? _canonicalPhone;
 	private AnimationPlayer? _canonicalAnimationPlayer;
 	private bool _usingCanonicalAsset;
+	private AvatarAppearance _appearance = AvatarAppearanceResolver.Resolve(null);
 
 	private AvatarActivity _activity = AvatarActivity.Idle;
 	private AvatarLodLevel _lod = AvatarLodLevel.Street;
@@ -42,6 +43,7 @@ public partial class AnimeAvatarStreetTest : Node3D
 
 	public override void _Ready()
 	{
+		_appearance = AvatarAppearanceResolver.Resolve(BuildCommandLineProfile());
 		_stylizedShader = GD.Load<Shader>(StylizedShaderPath);
 		BuildEnvironment();
 		BuildStreet();
@@ -162,12 +164,12 @@ public partial class AnimeAvatarStreetTest : Node3D
 		_bodyRig = new Node3D { Name = "SkinnedProxy" };
 		_avatarRoot.AddChild(_bodyRig);
 
-		var skin = new Color("f2c3a7");
-		var hair = new Color("33415c");
-		var jacket = new Color("35a9b8");
+		var skin = ToColor(_appearance.SkinColor);
+		var hair = ToColor(_appearance.HairColor);
+		var jacket = ToColor(_appearance.UpperColor);
 		var shirt = new Color("fff0d4");
-		var trousers = new Color("33415c");
-		var shoes = new Color("f26b6f");
+		var trousers = ToColor(_appearance.LowerColor);
+		var shoes = ToColor(_appearance.FootwearColor);
 
 		CreateBox(_bodyRig, "Hips", new Vector3(0.62f, 0.25f, 0.34f), new Vector3(0.0f, 1.58f, 0.0f), trousers);
 		CreateCapsule(_bodyRig, "Torso", 0.44f, 1.18f, new Vector3(0.0f, 2.28f, 0.0f), jacket, new Vector3(0.82f, 1.0f, 0.60f));
@@ -464,7 +466,8 @@ public partial class AnimeAvatarStreetTest : Node3D
 		{
 			string source = _usingCanonicalAsset ? "GLB" : "PROXY";
 			_statusLabel.Text =
-				$"{AvatarPresentationRules.ActivityCode(_activity).ToUpperInvariant()}  /  {_lod.ToString().ToUpperInvariant()} LOD  /  {source}";
+				$"{AvatarPresentationRules.ActivityCode(_activity).ToUpperInvariant()} / {_lod.ToString().ToUpperInvariant()} LOD / {source}\n" +
+				$"{_appearance.BodyPresetCode} / face_{_appearance.Face.PresetIndex:00} / {_appearance.HairStyleCode}";
 		}
 	}
 
@@ -493,6 +496,7 @@ public partial class AnimeAvatarStreetTest : Node3D
 			return;
 		}
 
+		ApplyAppearanceToCanonical();
 		AttachCanonicalPhone(skeleton!);
 		string animations = "(none)";
 		if (_canonicalAnimationPlayer != null)
@@ -510,6 +514,97 @@ public partial class AnimeAvatarStreetTest : Node3D
 		GD.Print(
 			$"Canonical avatar loaded: bones={skeleton!.GetBoneCount()}, animations=[{animations}]"
 		);
+	}
+
+	private void ApplyAppearanceToCanonical()
+	{
+		if (_canonicalAvatar == null)
+		{
+			return;
+		}
+
+		var skinMaterial = CreateMaterial(ToColor(_appearance.SkinColor));
+		var hairMaterial = CreateMaterial(ToColor(_appearance.HairColor));
+		var upperMaterial = CreateMaterial(ToColor(_appearance.UpperColor));
+		var lowerMaterial = CreateMaterial(ToColor(_appearance.LowerColor));
+		var footwearMaterial = CreateMaterial(ToColor(_appearance.FootwearColor));
+
+		VisitMeshes(_canonicalAvatar, mesh =>
+		{
+			string name = mesh.Name.ToString();
+			if (name.StartsWith("Hair", StringComparison.Ordinal))
+			{
+				mesh.Visible = IsVisibleHairGroup(name);
+				mesh.MaterialOverride = hairMaterial;
+				return;
+			}
+			if (name is "FaceMesh" or "LowerArmLeft" or "LowerArmRight"
+				or "HandLeft" or "HandRight" or "LowerLegLeft" or "LowerLegRight")
+			{
+				mesh.MaterialOverride = skinMaterial;
+			}
+			else if (name is "TorsoMesh" or "UpperArmLeft" or "UpperArmRight")
+			{
+				mesh.MaterialOverride = upperMaterial;
+			}
+			else if (name is "HipsMesh" or "UpperLegLeft" or "UpperLegRight")
+			{
+				mesh.MaterialOverride = lowerMaterial;
+			}
+			else if (name is "FootLeft" or "FootRight")
+			{
+				mesh.MaterialOverride = footwearMaterial;
+			}
+		});
+
+		ScaleMesh("TorsoMesh", new Vector3(_appearance.TorsoWidthScale, 1.0f, _appearance.TorsoWidthScale));
+		ScaleMesh("HipsMesh", new Vector3(_appearance.TorsoWidthScale, 1.0f, _appearance.TorsoWidthScale));
+		ScaleMesh("UpperArmLeft", new Vector3(_appearance.LimbWidthScale, _appearance.LimbWidthScale, 1.0f));
+		ScaleMesh("UpperArmRight", new Vector3(_appearance.LimbWidthScale, _appearance.LimbWidthScale, 1.0f));
+		ScaleMesh(
+			"FaceMesh",
+			new Vector3(_appearance.Face.HeadWidthScale, _appearance.Face.HeadHeightScale, 1.0f)
+		);
+		ScaleMesh("EyeLeft", Vector3.One * _appearance.Face.EyeScale);
+		ScaleMesh("EyeRight", Vector3.One * _appearance.Face.EyeScale);
+		ScaleMesh("Mouth", new Vector3(_appearance.Face.MouthWidthScale, 1.0f, 1.0f));
+		OffsetEye("EyeLeft");
+		OffsetEye("EyeRight");
+	}
+
+	private void OffsetEye(string name)
+	{
+		var eye = FindDescendantByName<MeshInstance3D>(_canonicalAvatar!, name);
+		if (eye == null)
+		{
+			return;
+		}
+		eye.Position = new Vector3(
+			eye.Position.X * _appearance.Face.EyeSpacingScale,
+			eye.Position.Y + _appearance.Face.EyeHeightOffset,
+			eye.Position.Z
+		);
+	}
+
+	private void ScaleMesh(string name, Vector3 scale)
+	{
+		var mesh = FindDescendantByName<MeshInstance3D>(_canonicalAvatar!, name);
+		if (mesh != null)
+		{
+			mesh.Scale *= scale;
+		}
+	}
+
+	private bool IsVisibleHairGroup(string meshName)
+	{
+		foreach (string group in _appearance.VisibleHairGroups)
+		{
+			if (meshName.StartsWith(group, StringComparison.Ordinal))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private void AttachCanonicalPhone(Skeleton3D skeleton)
@@ -590,6 +685,75 @@ public partial class AnimeAvatarStreetTest : Node3D
 			}
 		}
 		return null;
+	}
+
+	private static T? FindDescendantByName<T>(Node root, string name) where T : Node
+	{
+		if (root is T match && root.Name.ToString() == name)
+		{
+			return match;
+		}
+		foreach (Node child in root.GetChildren())
+		{
+			var descendant = FindDescendantByName<T>(child, name);
+			if (descendant != null)
+			{
+				return descendant;
+			}
+		}
+		return null;
+	}
+
+	private static void VisitMeshes(Node root, Action<MeshInstance3D> visit)
+	{
+		if (root is MeshInstance3D mesh)
+		{
+			visit(mesh);
+		}
+		foreach (Node child in root.GetChildren())
+		{
+			VisitMeshes(child, visit);
+		}
+	}
+
+	private static DashboardAvatarProfile BuildCommandLineProfile()
+	{
+		string body = "body_standard";
+		string face = "face_01";
+		string skin = "skin_03";
+		string hair = "hair_short_01";
+		string hairColor = "hair_brown";
+		foreach (string argument in OS.GetCmdlineUserArgs())
+		{
+			if (argument.StartsWith("--body=", StringComparison.Ordinal))
+			{
+				body = argument["--body=".Length..];
+			}
+			else if (argument.StartsWith("--face=", StringComparison.Ordinal))
+			{
+				face = argument["--face=".Length..];
+			}
+			else if (argument.StartsWith("--skin=", StringComparison.Ordinal))
+			{
+				skin = argument["--skin=".Length..];
+			}
+			else if (argument.StartsWith("--hair=", StringComparison.Ordinal))
+			{
+				hair = argument["--hair=".Length..];
+			}
+			else if (argument.StartsWith("--hair-color=", StringComparison.Ordinal))
+			{
+				hairColor = argument["--hair-color=".Length..];
+			}
+		}
+		return new DashboardAvatarProfile
+		{
+			BodyPresetCode = body,
+			FacePresetCode = face,
+			SkinToneCode = skin,
+			HairStyleCode = hair,
+			HairColorCode = hairColor,
+		};
 	}
 
 	private void ApplyCommandLinePreview()
@@ -707,5 +871,10 @@ public partial class AnimeAvatarStreetTest : Node3D
 		material.SetShaderParameter("base_color", color);
 		material.SetShaderParameter("shadow_tint", color.Darkened(0.48f));
 		return material;
+	}
+
+	private static Color ToColor(AvatarColorToken token)
+	{
+		return new Color(token.Red, token.Green, token.Blue);
 	}
 }

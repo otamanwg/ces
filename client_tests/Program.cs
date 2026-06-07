@@ -491,6 +491,64 @@ AssertEqual(AvatarLodLevel.Street, AvatarPresentationRules.ResolveLod(8.0f), "Ne
 AssertEqual(AvatarLodLevel.Distance, AvatarPresentationRules.ResolveLod(18.0f), "District camera uses distance avatar");
 AssertEqual(AvatarLodLevel.Marker, AvatarPresentationRules.ResolveLod(40.0f), "City camera uses marker");
 AssertEqual(false, AvatarPresentationRules.UsesSkinnedAvatar(AvatarLodLevel.Distance), "Distance LOD disables skinned avatar");
+var defaultAppearance = AvatarAppearanceResolver.Resolve(new DashboardAvatarProfile());
+AssertEqual("body_standard", defaultAppearance.BodyPresetCode, "Avatar appearance keeps default body");
+AssertEqual(1, defaultAppearance.Face.PresetIndex, "Avatar appearance resolves default face");
+AssertEqual("hair_short_01", defaultAppearance.HairStyleCode, "Avatar appearance resolves default hair");
+AssertSequence(new[] { "HairShort01" }, defaultAppearance.VisibleHairGroups.ToArray(), "Default hair mesh group");
+AssertNear(1.0, defaultAppearance.TorsoWidthScale, 0.0001, "Default body width");
+AssertNear(0.90, defaultAppearance.SkinColor.Red, 0.0001, "Default skin token");
+
+var sturdyAppearance = AvatarAppearanceResolver.Resolve(
+	new DashboardAvatarProfile
+	{
+		BodyPresetCode = "body_sturdy",
+		FacePresetCode = "face_20",
+		SkinToneCode = "skin_06",
+		HairStyleCode = "hair_long_02",
+		HairColorCode = "hair_auburn",
+	}
+);
+AssertEqual("body_sturdy", sturdyAppearance.BodyPresetCode, "Avatar appearance resolves sturdy body");
+AssertEqual(20, sturdyAppearance.Face.PresetIndex, "Avatar appearance resolves face 20");
+AssertSequence(new[] { "HairLong02" }, sturdyAppearance.VisibleHairGroups.ToArray(), "Long hair mesh group");
+AssertNear(1.14, sturdyAppearance.TorsoWidthScale, 0.0001, "Sturdy torso width");
+AssertNear(0.30, sturdyAppearance.SkinColor.Red, 0.0001, "Deep skin token");
+AssertNear(0.54, sturdyAppearance.HairColor.Red, 0.0001, "Auburn hair token");
+
+var fallbackAppearance = AvatarAppearanceResolver.Resolve(
+	new DashboardAvatarProfile
+	{
+		BodyPresetCode = "body_unknown",
+		FacePresetCode = "face_99",
+		SkinToneCode = "skin_unknown",
+		HairStyleCode = "hair_unknown",
+		HairColorCode = "hair_unknown",
+	}
+);
+AssertEqual("body_standard", fallbackAppearance.BodyPresetCode, "Unknown body falls back");
+AssertEqual(1, fallbackAppearance.Face.PresetIndex, "Unknown face falls back");
+AssertEqual("skin_03", fallbackAppearance.SkinToneCode, "Unknown skin falls back");
+AssertEqual("hair_short_01", fallbackAppearance.HairStyleCode, "Unknown hair falls back");
+
+var faceShapes = Enumerable.Range(1, 20)
+	.Select(index => AvatarAppearanceResolver.Resolve(
+		new DashboardAvatarProfile { FacePresetCode = $"face_{index:00}" }
+	).Face)
+	.ToArray();
+AssertEqual(20, faceShapes.Select(face =>
+	$"{face.HeadWidthScale:F3}:{face.HeadHeightScale:F3}:{face.EyeSpacingScale:F3}:{face.EyeScale:F3}:{face.EyeHeightOffset:F3}:{face.MouthWidthScale:F3}"
+).Distinct().Count(), "All face presets resolve unique geometry parameters");
+AssertEqual(true, faceShapes.All(face =>
+	face.HeadWidthScale is >= 0.90f and <= 1.10f
+	&& face.HeadHeightScale is >= 0.90f and <= 1.10f
+	&& face.EyeScale is >= 0.88f and <= 1.08f
+	&& face.MouthWidthScale is >= 0.85f and <= 1.10f
+), "Face preset parameters stay within safe bounds");
+var baldAppearance = AvatarAppearanceResolver.Resolve(
+	new DashboardAvatarProfile { HairStyleCode = "hair_bald" }
+);
+AssertEqual(0, baldAppearance.VisibleHairGroups.Count, "Bald appearance hides every hair mesh group");
 
 var landCatalogJson = JsonNode.Parse(
 	"""

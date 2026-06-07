@@ -868,6 +868,20 @@ DoD:
 
 ---
 
+## Sprint 52 — Modular Avatar Appearance
+
+Ціль: один canonical rig відображає semantic avatar profile без дублювання skeleton або animation set.
+
+Порядок:
+
+1. ✅ Client resolver/tests: body, 20 face presets, skin, hair та deterministic fallback.
+2. ✅ Blender generator: окремі mesh-групи для 8 зачісок і runtime recolor.
+3. ✅ Godot renderer: застосування profile codes до canonical `.glb`.
+4. ✅ Visual QA: стандартний і контрастний profile capture.
+5. ✅ Повний checkpoint, asset smoke, MCP smoke і commit.
+
+---
+
 ## Checkpoints Де Потрібен Користувач
 
 | Checkpoint | Коли | Що потрібно |
