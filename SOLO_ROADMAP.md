@@ -168,7 +168,7 @@ DoD:
 2. ✅ Backend: `eat` action, ledger `food`, idempotent API endpoint.
 3. ✅ Tests: service/API/player progress coverage для hunger/eat.
 4. ✅ Client: HungerBar + кнопка “Поїсти” у dashboard.
-5. ⏳ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
+5. ✅ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
 
 Наступні кандидати після закриття Sprint 9:
 
@@ -189,7 +189,7 @@ DoD:
 3. ✅ Tests: service/API/idempotency coverage для купівлі бізнесу.
 4. ✅ Client: показ власного бізнесу + кнопка “Купити бізнес”.
 5. ✅ Backend/client: owner dividend action із каси бізнесу.
-6. ⏳ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
+6. ✅ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
 
 Наступний вузький крок після Sprint 10:
 
@@ -208,7 +208,7 @@ DoD:
 2. ✅ Backend: day tick news для `/api/city/tick-day`.
 3. ✅ Tests: API/service coverage для news payload.
 4. ✅ Client: додавати `news[]` в історію подій dashboard.
-5. ⏳ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
+5. ✅ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
 
 Наступний вузький крок після Sprint 11:
 
@@ -228,7 +228,7 @@ DoD:
 3. ✅ Backend: authenticated/idempotent gym training із ledger `gym_training`.
 4. ✅ Tests: service/API money, energy, idempotency, sports actions.
 5. ✅ Client: sport status + кнопки “У спорт” і “Тренуватись”.
-6. ⏳ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
+6. ✅ Перевірка: `scripts/check.ps1`, Godot MCP `get_errors`, commit.
 
 Наступний вузький крок після Sprint 12:
 
@@ -380,7 +380,7 @@ DoD:
 4. ✅ Tests: seed/API contract coverage для стартових районів.
 5. ✅ Docs: зафіксувати правила AI-мера, debt recovery, onboarding age adaptation і 24h move cooldown.
 6. ✅ Backend/tests: rule-based AI mayor policy для майбутніх building applications.
-7. ⏳ Наступний backend крок: `BuildingApplication` або `LandParcel` skeleton.
+7. ✅ Наступний backend крок: `BuildingApplication` або `LandParcel` skeleton. (Sprint 21)
 
 ---
 
@@ -398,7 +398,7 @@ DoD:
 6. ✅ Backend: заявка можлива тільки на власну ділянку.
 7. ✅ Backend/tests: AI mayor policy інтегровано в building application response.
 8. ✅ Backend/API/tests: land purchase з ledger `land_purchase`, ownership transfer і перевіркою балансу.
-9. ⏳ Наступний backend крок: approved building application activation у building/asset record.
+9. ✅ Наступний backend крок: approved building application activation у building/asset record. (Sprint 22)
 
 ---
 
@@ -459,7 +459,7 @@ DoD:
 3. ✅ Backend: якщо upkeep не сплачено, переводити будівлю у м'який проблемний стан без миттєвого знищення активу.
 4. ✅ Backend/tests: day tick coverage для active building upkeep, недостатніх коштів і ledger.
 5. ✅ Docs: описати, як upkeep переходить у майбутні правила банкрутства/аукціону.
-6. ⏳ Наступний backend крок: repair/reopen endpoint для `maintenance_due`.
+6. ✅ Наступний backend крок: repair/reopen endpoint для `maintenance_due`. (Sprint 26)
 
 ---
 
@@ -540,7 +540,7 @@ DoD:
 
 1. ✅ Building archetype markers: kiosk, coffee, hostel, pharmacy, workshop, factory.
 2. ✅ Видимий стан будівлі: inactive/active/maintenance_due.
-3. ⏳ Легке zoom-перемикання між overview і street-focus без зміни backend mechanics.
+3. ✅ Легке zoom-перемикання між overview і street-focus без зміни backend mechanics. (Sprint 32)
 
 ---
 
@@ -559,8 +559,8 @@ DoD:
 Наступний visual крок після Sprint 31:
 
 1. ✅ Overview/street-focus toggle.
-2. ⏳ Легка анімація міського шару без зміни gameplay state.
-3. ⏳ Підготовка style-token palette для майбутніх visual packs.
+2. ✅ Легка анімація міського шару без зміни gameplay state. (Sprint 33)
+3. ✅ Підготовка style-token palette для майбутніх visual packs. (Sprint 34)
 
 ---
 

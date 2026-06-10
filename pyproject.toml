@@ -22,6 +22,7 @@ dev = [
     "alembic>=1.13.0",
     "ruff>=0.11.0",
     "pre-commit>=4.6.0",
+    "httpx2>=2.3.0",
 ]
 
 [tool.ruff]
@@ -48,6 +49,9 @@ convention = "google"
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.pytest.ini_options]
+pythonpath = "."
 
 [tool.pyright]
 include = ["backend/app", "backend/main.py"]
