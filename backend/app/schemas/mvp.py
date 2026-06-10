@@ -1,9 +1,22 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from backend.app.schemas.response import GameEffect
 
 
 class VacancyItem(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "business_name": "Tech Factory",
+                "title": "Software Engineer",
+                "salary_per_hour": 50.0,
+                "min_education": "High School",
+                "energy_cost": 30,
+            }
+        }
+    )
+
     id: str
     business_name: str
     title: str
@@ -17,6 +30,18 @@ class VacanciesData(BaseModel):
 
 
 class BusinessMarketItem(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "name": "Local Grocery Store",
+                "type": "shop",
+                "cash_balance": 10000.0,
+                "purchase_price": 5000.0,
+            }
+        }
+    )
+
     id: str
     name: str
     type: str
