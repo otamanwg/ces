@@ -348,11 +348,21 @@ def business_blueprint_item(blueprint: BusinessBlueprint) -> BusinessBlueprintIt
 
 
 @router.get("/city/status")
-def get_city_status(db: Session = Depends(get_db)):
+async def get_city_status(db: Session = Depends(get_db)):
+    from backend.app.core.redis import CacheService
+
     city = db.query(City).first()
     if not city:
         raise HTTPException(status_code=404, detail="Місто не знайдене")
 
+    # Спробуємо отримати з кешу
+    cache_key = CacheService.make_city_key(str(city.id))
+    cached_data = await CacheService.get(cache_key)
+
+    if cached_data:
+        return api_success("Статус міста (з кешу).", cached_data)
+
+    # Якщо немає в кеші, генеруємо дані
     update_inflation_rate(db, city.id)
     data = CityStatusData(
         id=str(city.id),
@@ -384,7 +394,12 @@ def get_city_status(db: Session = Depends(get_db)):
             for district in get_city_districts(db, city.id)
         ],
     )
-    return api_success("Статус міста оновлено.", data.model_dump())
+
+    # Зберігаємо в кеш на 1 хвилину
+    data_dict = data.model_dump()
+    await CacheService.set(cache_key, data_dict, CacheService.TTL_CITY_STATUS)
+
+    return api_success("Статус міста оновлено.", data_dict)
 
 
 @router.get("/land/parcels")
@@ -775,17 +790,41 @@ def get_player_buildings(
 
 
 @router.get("/player/{player_id}")
-def get_player_status(
+async def get_player_status(
     player_id: str,
     player_token: str | None = Header(default=None, alias="X-Player-Token"),
     db: Session = Depends(get_db),
 ):
+    from backend.app.core.redis import CacheService
+
     if not require_player(db, player_id, player_token):
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    # Спробуємо отримати з кешу (тільки для реальних даних, не для всього snapshot)
+    cache_key = CacheService.make_player_realtime_key(player_id)
+    cached_data = await CacheService.get(cache_key)
+
+    if cached_data:
+        # Якщо є в кешу, використовуємо його
+        return api_success("Статус гравця (з кешу).", cached_data, cached_data.get("goal_effects", []))
 
     snapshot = get_player_snapshot(db, player_id)
     if not snapshot:
         raise HTTPException(status_code=404, detail="Гравця не знайдено")
+
+    # Кешуємо тільки реальні дані (баланс, енергія, настрій, голод)
+    realtime_data = {
+        "balance": snapshot.get("balance"),
+        "energy": snapshot.get("energy"),
+        "mood": snapshot.get("mood"),
+        "hunger": snapshot.get("hunger"),
+        "current_job": snapshot.get("current_job"),
+        "owned_business": snapshot.get("owned_business"),
+    }
+
+    # Зберігаємо в кеш на 10 секунд
+    await CacheService.set(cache_key, realtime_data, CacheService.TTL_PLAYER_REALTIME)
+
     return api_success("Статус гравця.", snapshot, snapshot.get("goal_effects", []))
 
 
@@ -1034,7 +1073,7 @@ def apply_for_job(
 
 
 @router.post("/jobs/work/{player_id}")
-def do_work_shift(
+async def do_work_shift(
     player_id: str,
     player_token: str | None = Header(default=None, alias="X-Player-Token"),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
@@ -1054,6 +1093,11 @@ def do_work_shift(
     res = process_shift_work(db, player_id)
     if not res["success"]:
         return api_error(res["message"])
+
+    # Інвалідуємо кеш гравця після успішної зміни
+    from backend.app.core.redis import invalidate_player_cache
+
+    await invalidate_player_cache(player_id)
 
     player = db.query(Player).filter(Player.id == to_uuid(player_id)).first()
     return save_player_action_response(

@@ -2,7 +2,7 @@
 # Використання: just <task>
 # Приклад: just test
 
-set shell := ["C:\tools\PowerShell\7.6.2\pwsh.exe", "-c"]
+set shell := ["C:/Tools/PowerShell/7.6.2/pwsh.exe", "-c"]
 
 # Запуск backend в режимі розробки
 run:

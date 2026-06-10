@@ -1,11 +1,15 @@
 import logging
 import os
 from contextlib import asynccontextmanager
+from datetime import datetime
+from uuid import UUID, uuid4
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from backend.app.api.health import router as health_router
+from backend.app.api.presence import router as presence_router
 from backend.app.api.routes.business_management import router as business_router
 from backend.app.api.routes.frozen import router as frozen_router
 from backend.app.api.routes.mvp import router as mvp_router
@@ -66,7 +70,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(health_router)
 app.include_router(mvp_router)
+app.include_router(presence_router)
 app.include_router(frozen_router)
 app.include_router(business_router, prefix="/api")
 app.include_router(startup_router, prefix="/api")
@@ -84,26 +90,108 @@ def read_root():
 
 @app.websocket("/ws/city/{city_id}")
 async def websocket_city_hub(websocket: WebSocket, city_id: str):
-    await ws_manager.connect(websocket)
+    # Перевіряємо токен авторизації
+    token = websocket.query_params.get("token")
+    if not token:
+        await websocket.close(code=4001, reason="Missing auth token")
+        return
+
+    # Отримуємо DB сесію
+    db_gen = get_db()
+    db = next(db_gen)
+
     try:
+        # Знаходимо гравця за токеном
+        from backend.app.repositories.player import PlayerRepository
+
+        player_repo = PlayerRepository(db)
+        player = None
+
+        for session_data in ws_manager.active_connections.values():
+            if session_data.get("token") == token:
+                player_id = session_data.get("player_id")
+                if player_id:
+                    player = player_repo.get_by_id(UUID(player_id))
+                break
+
+        if not player:
+            await websocket.close(code=4002, reason="Invalid auth token")
+            return
+
+        # Підключаємо до presence
+        from backend.app.core.redis import PresenceService
+
+        session_id = str(uuid4())
+        await PresenceService.set_player_online(str(player.id), city_id, session_id)
+    except Exception as e:
+        logger.error(f"Error in WebSocket setup: {e}")
+        await websocket.close(code=4003, reason="Setup error")
+        return
+
+    await ws_manager.connect(websocket, str(player.id), token)
+
+    try:
+        # Відправляємо початкові дані
+        online_count = await PresenceService.get_online_players_count(city_id)
         await websocket.send_json(
             {
                 "type": "system",
                 "content": f"Ви підключились до реалтайм мережі міста {city_id}.",
+                "online_players": online_count,
             }
         )
+
+        # Сповіщаємо інших про нового гравця
+        await ws_manager.broadcast(
+            {
+                "type": "player_joined",
+                "player_id": str(player.id),
+                "username": player.username,
+                "online_count": online_count,
+            }
+        )
+
         while True:
             data = await websocket.receive_json()
+
+            # Оновлюємо активність гравця
+            await PresenceService.update_player_activity(str(player.id))
+
             if data.get("type") == "chat":
                 await ws_manager.broadcast(
                     {
                         "type": "chat",
-                        "sender": data.get("sender", "Громадянин"),
+                        "sender": player.username,
+                        "sender_id": str(player.id),
                         "text": data.get("text", ""),
+                        "timestamp": str(datetime.utcnow()),
                     }
                 )
+            elif data.get("type") == "ping":
+                # Відповідаємо на ping для підтримки з'єднання
+                await websocket.send_json({"type": "pong"})
+
     except WebSocketDisconnect:
+        logger.info(f"Player {player.username} disconnected from city {city_id}")
+        # Видаляємо з presence
+        await PresenceService.set_player_offline(str(player.id), city_id)
+
+        # Сповіщаємо інших
+        online_count = await PresenceService.get_online_players_count(city_id)
+        await ws_manager.broadcast(
+            {
+                "type": "player_left",
+                "player_id": str(player.id),
+                "username": player.username,
+                "online_count": online_count,
+            }
+        )
+
         ws_manager.disconnect(websocket)
     except Exception as e:
         logger.error(f"Помилка WebSocket зв'язку: {e}")
+        # Видаляємо з presence при помилці
+        await PresenceService.set_player_offline(str(player.id), city_id)
         ws_manager.disconnect(websocket)
+    finally:
+        db.close()
