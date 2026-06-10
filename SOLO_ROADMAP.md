@@ -957,6 +957,25 @@ DoD:
 
 ---
 
+## Sprint 58 — Async ApiClient Foundation
+
+Ціль: дати контролеру async/await API для HTTP-запитів, щоб завершити partial class рефакторинг у Sprint 59 без callback spaghetti.
+
+Контекст: `client/scripts/.wip/` містить незавершений partial class рефакторинг, який очікує `ApiClient.PostAsync/GetAsync`. Поточний `ApiClient` використовує Godot signal-based `HttpRequest` + callback queue — не async.
+
+Порядок:
+
+1. ✅ Client: додати `Task<JsonNode?> GetAsync(string path, string[]? headers = null)` до `ApiClient`.
+2. ✅ Client: додати `Task<JsonNode?> PostAsync(string path, object? body = null, string[]? headers = null)` до `ApiClient`.
+3. ⏳ Client/tests: unit тести для async wrappers (mock HTTP response, timeout, error).
+4. ✅ Перевірка: `check.ps1`, commit.
+
+Не робити у цьому спринті:
+- Переробляти весь контролер на async (це Sprint 59).
+- Чіпати backend.
+
+---
+
 ## Future: Local LLM Integration (після живого playtest)
 
 Передумова: MVP loop стабільний, є живі гравці, economic balance підтверджений руками.
