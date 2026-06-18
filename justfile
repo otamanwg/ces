@@ -57,6 +57,72 @@ mcp-bridge:
 mcp-status:
     Invoke-RestMethod -Uri "http://127.0.0.1:6507/status" -Method Get | ConvertTo-Json
 
+# Перевірка локального середовища розробки
+doctor:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/doctor.ps1
+
+# Повний локальний quality gate
+check:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check.ps1
+
+# Список targeted quality gates
+check-targets:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 list
+
+# Швидкі targeted gates для конкретних slices
+check-target profile:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 {{profile}}
+
+check-backend-fast:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 backend-fast
+
+check-auth:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 auth
+
+check-economy:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 economy
+
+check-buildings:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 buildings
+
+check-scheduler:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 scheduler
+
+check-observability:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 observability
+
+check-prod:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 prod-fast
+
+check-prod-smoke:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 prod-smoke
+
+check-client:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 client
+
+check-client-smoke:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 client-smoke
+
+# Перевірка tracked-файлів на випадково додані секрети
+secret-scan:
+    .venv/Scripts/python.exe scripts/check_secrets.py
+
+# API smoke проти запущеного backend
+smoke-api:
+    .venv/Scripts/python.exe scripts/smoke_mvp.py
+
+# Ізольований smoke production Compose stack
+smoke-production:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/smoke_production.ps1
+
+# Godot dashboard smoke через MCP bridge
+smoke-godot:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/smoke_godot_dashboard.ps1
+
+# Headless Godot smoke для API dispatch recovery
+smoke-client-api:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/smoke_client_api_dispatch.ps1
+
 # Лінтинг Python (ruff)
 lint-python:
     .venv/Scripts/python.exe -m ruff check backend/app backend/main.py

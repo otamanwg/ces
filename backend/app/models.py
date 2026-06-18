@@ -1,7 +1,6 @@
 # Моделі бази даних SQLAlchemy для MVP Економічного Симулятора
 # Файл: backend/app/models.py
 
-import secrets
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -11,6 +10,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     UniqueConstraint,
@@ -61,6 +61,30 @@ class CityMetrics(Base):
     )
 
     city: Mapped["City"] = relationship("City", back_populates="metrics")
+
+
+class CityEconomySnapshot(Base):
+    """Daily active-money snapshot used for inflation and balance diagnostics."""
+
+    __tablename__ = "city_economy_snapshots"
+    __table_args__ = (
+        UniqueConstraint("city_id", "game_day", name="uq_city_economy_snapshots_city_day"),
+        Index("ix_city_economy_snapshots_city_day", "city_id", "game_day"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    game_day: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    active_money_supply: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
+    previous_active_money_supply: Mapped[float | None] = mapped_column(Decimal(15, 2))
+    target_growth_rate: Mapped[float] = mapped_column(Decimal(6, 4), nullable=False, default=0.0300)
+    money_growth_rate: Mapped[float] = mapped_column(Decimal(8, 4), nullable=False, default=0.0000)
+    inflation_rate: Mapped[float] = mapped_column(Decimal(5, 2), nullable=False, default=0.00)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    city: Mapped["City"] = relationship("City", back_populates="economy_snapshots")
 
 
 class DistrictPrestige(Base):
@@ -232,6 +256,11 @@ class City(Base):
         cascade="all, delete-orphan",
     )
     metrics: Mapped[Optional["CityMetrics"]] = relationship("CityMetrics", back_populates="city", uselist=False)
+    economy_snapshots: Mapped[list["CityEconomySnapshot"]] = relationship(
+        "CityEconomySnapshot",
+        back_populates="city",
+        cascade="all, delete-orphan",
+    )
     events: Mapped[list["CityEvent"]] = relationship("CityEvent", back_populates="city", cascade="all, delete-orphan")
 
 
@@ -428,12 +457,12 @@ class Player(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="RESTRICT"), nullable=False)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    auth_token: Mapped[str] = mapped_column(
+    auth_token: Mapped[str | None] = mapped_column(
         String(120),
         unique=True,
-        nullable=False,
-        default=lambda: secrets.token_urlsafe(32),
+        nullable=True,
     )
+    auth_token_hash: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
     balance: Mapped[float] = mapped_column(Decimal(15, 2), default=500.00)
     energy: Mapped[int] = mapped_column(Integer, default=100)
     mood: Mapped[int] = mapped_column(Integer, default=100)
@@ -692,6 +721,7 @@ class SportsClub(Base):
 
     # Зв'язки ORM
     contracts: Mapped[list["PlayerAthleteContract"]] = relationship("PlayerAthleteContract", back_populates="club")
+    owner: Mapped["Player"] = relationship("Player", foreign_keys=[owner_player_id])
 
 
 # 10. МОДЕЛЬ СПОРТИВНОГО КОНТРАКТУ

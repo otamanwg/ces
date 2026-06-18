@@ -344,6 +344,7 @@ class BuildingPortfolioData(BaseModel):
 
 class DayTickCityData(BaseModel):
     id: str
+    game_day: int
     inflation_rate: float
     treasury_balance: float
 
@@ -356,6 +357,13 @@ class DayTickStatsData(BaseModel):
     building_upkeep_charged: float
     buildings_upkeep_charged: int
     buildings_upkeep_failed: int
+    businesses_processed: int
+    businesses_successful: int
+    businesses_failed: int
+    businesses_bankrupted: int
+    total_business_revenue: float
+    total_business_expenses: float
+    total_business_taxes: float
     active_money_before: float
     active_money_after: float
 

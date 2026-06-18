@@ -5,6 +5,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from backend.app.models import BusinessBlueprint, LandParcel
+from backend.app.repositories.business_blueprints import BusinessBlueprintRepository
 from backend.app.services.money import money
 
 
@@ -280,11 +281,11 @@ STARTER_BUSINESS_BLUEPRINTS: tuple[StarterBusinessBlueprint, ...] = (
 
 
 def ensure_business_blueprints(db: Session) -> None:
-    existing_by_code = {blueprint.code: blueprint for blueprint in db.query(BusinessBlueprint).all()}
+    blueprint_repo = BusinessBlueprintRepository(db)
 
     for starter in STARTER_BUSINESS_BLUEPRINTS:
         data = _starter_to_model_data(starter)
-        existing = existing_by_code.get(starter.code)
+        existing = blueprint_repo.get_by_code(starter.code)
         if existing:
             for key, value in data.items():
                 setattr(existing, key, value)
@@ -293,24 +294,14 @@ def ensure_business_blueprints(db: Session) -> None:
 
 
 def get_active_business_blueprints(db: Session) -> list[BusinessBlueprint]:
-    return (
-        db.query(BusinessBlueprint)
-        .filter(BusinessBlueprint.is_active.is_(True))
-        .order_by(
-            BusinessBlueprint.risk_level,
-            BusinessBlueprint.category,
-            BusinessBlueprint.name,
-        )
-        .all()
-    )
+    return BusinessBlueprintRepository(db).get_all_active()
 
 
 def get_business_blueprint(db: Session, blueprint_id: UUID) -> BusinessBlueprint | None:
-    return (
-        db.query(BusinessBlueprint)
-        .filter(BusinessBlueprint.id == blueprint_id, BusinessBlueprint.is_active.is_(True))
-        .first()
-    )
+    blueprint = BusinessBlueprintRepository(db).get_by_id(blueprint_id)
+    if blueprint and blueprint.is_active:
+        return blueprint
+    return None
 
 
 def validate_blueprint_for_parcel(blueprint: BusinessBlueprint, parcel: LandParcel) -> str | None:

@@ -1,26 +1,27 @@
 """Redis конфігурація та утиліти для кешування та presence"""
 
 import json
-import os
 from datetime import datetime
 from typing import Any
 
-import redis.asyncio as redis
-from redis.asyncio import Redis
+import redis
+import redis.asyncio as redis_asyncio
+from redis.asyncio import Redis as AsyncRedis
+
+from backend.app.core.config import settings
 
 
 class RedisManager:
     """Менеджер для роботи з Redis"""
 
     def __init__(self):
-        self._redis: Redis | None = None
+        self._redis: AsyncRedis | None = None
 
-    async def connect(self) -> Redis:
+    async def connect(self) -> AsyncRedis:
         """Встановлення з'єднання з Redis"""
         if self._redis is None:
-            redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-            self._redis = redis.from_url(
-                redis_url,
+            self._redis = redis_asyncio.from_url(
+                settings.redis_url,
                 encoding="utf-8",
                 decode_responses=True,
                 socket_connect_timeout=5,
@@ -31,9 +32,10 @@ class RedisManager:
 
     async def disconnect(self):
         """Закриття з'єднання"""
-        if self._redis:
-            await self._redis.close()
-            self._redis = None
+        client = self._redis
+        self._redis = None
+        if client:
+            await client.aclose()
 
     async def ping(self) -> bool:
         """Перевірка доступності Redis"""
@@ -47,6 +49,18 @@ class RedisManager:
 
 # Глобальний інстанс Redis менеджера
 redis_manager = RedisManager()
+
+
+def create_sync_redis_client() -> redis.Redis:
+    """Create a dedicated synchronous Redis client for background threads."""
+    return redis.Redis.from_url(
+        settings.redis_url,
+        encoding="utf-8",
+        decode_responses=True,
+        socket_connect_timeout=3,
+        socket_timeout=3,
+        retry_on_timeout=True,
+    )
 
 
 class CacheService:

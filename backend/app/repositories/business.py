@@ -25,6 +25,18 @@ class BusinessRepository(BaseRepository[Business]):
             .count()
         )
 
+    def count_buyable_in_city(self, city_id: UUID) -> int:
+        return (
+            self.db.query(Business)
+            .filter(
+                Business.city_id == city_id,
+                Business.owner_player_id.is_(None),
+                Business.type.in_(["shop", "factory", "private_hostel"]),
+                Business.status == "active",
+            )
+            .count()
+        )
+
     def count_owned_in_city(self, city_id: UUID) -> int:
         return (
             self.db.query(Business)

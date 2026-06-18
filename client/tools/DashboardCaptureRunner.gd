@@ -136,6 +136,7 @@ func _apply_stress_text(dashboard: Node) -> void:
 
 
 func _apply_onboarding_preview(dashboard: Node) -> void:
+	_hide_character_creation(dashboard)
 	var overlay := dashboard.find_child("OnboardingOverlay", true, false) as Control
 	if overlay == null:
 		push_error("Dashboard capture: onboarding overlay not found")
@@ -161,6 +162,7 @@ func _apply_onboarding_preview(dashboard: Node) -> void:
 
 
 func _apply_police_recovery_preview(dashboard: Node) -> void:
+	_hide_character_creation(dashboard)
 	var button := dashboard.find_child("PoliceRecoveryButton", true, false) as Button
 	if button == null:
 		push_error("Dashboard capture: police recovery button not found")
@@ -174,6 +176,7 @@ func _apply_police_recovery_preview(dashboard: Node) -> void:
 
 
 func _apply_arrival_story_preview(dashboard: Node) -> void:
+	_hide_character_creation(dashboard)
 	var overlay := dashboard.find_child("OnboardingOverlay", true, false) as Control
 	var continue_button := dashboard.find_child("OnboardingContinueButton", true, false) as Button
 	var police_button := dashboard.find_child("OnboardingPoliceButton", true, false) as Button
@@ -199,6 +202,7 @@ func _apply_arrival_story_preview(dashboard: Node) -> void:
 
 
 func _apply_arrival_guidance_preview(dashboard: Node) -> void:
+	_hide_character_creation(dashboard)
 	var overlay := dashboard.find_child("OnboardingOverlay", true, false) as Control
 	var continue_button := dashboard.find_child("OnboardingContinueButton", true, false) as Button
 	var police_button := dashboard.find_child("OnboardingPoliceButton", true, false) as Button
@@ -231,6 +235,7 @@ func _apply_arrival_guidance_preview(dashboard: Node) -> void:
 
 
 func _apply_taxi_story_preview(dashboard: Node) -> void:
+	_hide_character_creation(dashboard)
 	var overlay := dashboard.find_child("OnboardingOverlay", true, false) as Control
 	var continue_button := dashboard.find_child("OnboardingContinueButton", true, false) as Button
 	var police_button := dashboard.find_child("OnboardingPoliceButton", true, false) as Button
@@ -307,15 +312,20 @@ func _apply_character_avatar_variant(dashboard: Node) -> void:
 
 
 func _apply_street_focus(dashboard: Node) -> void:
+	_hide_character_creation(dashboard)
 	var focus_button := dashboard.find_child("VisualFocusButton", true, false) as Button
 	if focus_button == null:
 		push_error("Dashboard capture: visual focus button not found")
 		return
 	focus_button.emit_signal("pressed")
+	_force_street_avatar_preview(dashboard)
+	_apply_gameplay_hud_preview(dashboard)
 	print("DASHBOARD_STREET_FOCUS_APPLIED=1")
 
 
 func _apply_street_activity(dashboard: Node, activity_code: String) -> void:
+	_hide_character_creation(dashboard)
+	_force_street_avatar_preview(dashboard)
 	var avatar_preview := dashboard.find_child("StreetAvatarPreview", true, false)
 	if avatar_preview == null:
 		push_error("Dashboard capture: street avatar preview not found")
@@ -328,6 +338,28 @@ func _apply_street_activity(dashboard: Node, activity_code: String) -> void:
 		return
 	avatar_preview.call(method_name, activity_code)
 	print("DASHBOARD_STREET_ACTIVITY_APPLIED=", activity_code)
+
+
+func _force_street_avatar_preview(dashboard: Node) -> void:
+	var container := dashboard.find_child("StreetAvatarContainer", true, false) as Control
+	if container != null:
+		container.visible = true
+	var viewport := dashboard.find_child("StreetAvatarViewport", true, false) as SubViewport
+	if viewport != null:
+		viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	var label := dashboard.find_child("StreetAvatarNameLabel", true, false) as Label
+	if label != null:
+		label.text = "Alex"
+	var avatar_preview := dashboard.find_child("StreetAvatarPreview", true, false)
+	if avatar_preview != null and avatar_preview.has_method(&"SetPreviewActive"):
+		avatar_preview.call(&"SetPreviewActive", true)
+
+
+func _apply_gameplay_hud_preview(dashboard: Node) -> void:
+	_set_label(dashboard, "NextActionLabel", "Що робити зараз: знайти роботу біля вокзалу")
+	_set_label(dashboard, "GoalLabel", "Ціль: перший стабільний дохід — 35% (+12%)")
+	_set_label(dashboard, "EffectsLabel", "Наслідки: баланс +180 ₴ | енергія -30 | репутація +1")
+	_set_label(dashboard, "EventHistoryLabel", "Місто сьогодні:\nВакансії біля вокзалу оновлені.\nУ комерційному ядрі зросла оренда.")
 
 
 func _set_onboarding_texture(dashboard: Node, resource_path: String) -> void:
@@ -355,6 +387,15 @@ func _hide_onboarding_portrait(dashboard: Node) -> void:
 	var portrait := dashboard.find_child("OnboardingPortrait", true, false) as TextureRect
 	if portrait != null:
 		portrait.visible = false
+
+
+func _hide_character_creation(dashboard: Node) -> void:
+	var overlay := dashboard.find_child("CharacterCreationOverlay", true, false) as Control
+	if overlay != null:
+		overlay.visible = false
+	var viewport := dashboard.find_child("CharacterPreviewViewport", true, false) as SubViewport
+	if viewport != null:
+		viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 
 func _set_label(root_node: Node, unique_name: String, value: String) -> bool:

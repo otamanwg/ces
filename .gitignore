@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.cache/
 .ruff_cache/
 .mypy_cache/
 .venv/
@@ -13,7 +14,11 @@ venv/
 database/*.db
 database/*.sqlite
 database/*.sqlite3
-.env
+.env*
+!.env.example
+!.env.production.example
+secrets/*
+!secrets/*.example.txt
 
 # Godot
 client/.godot/
@@ -28,6 +33,7 @@ client_tests/obj/
 
 # Local tooling
 .tools/
+.playwright-mcp/
 /package-lock.json
 
 # OS/editor

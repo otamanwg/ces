@@ -48,17 +48,17 @@
 - **Framework:** FastAPI 0.100+ + SQLAlchemy 2.0+ + Pydantic 2.0+ + APScheduler 3.11
 - **DB:** PostgreSQL 16 (Docker container `city-economic-simulator-postgres`)
 - **Migrations:** Alembic
-- **Tests:** pytest (124 тести, всі проходять)
+- **Tests:** pytest (140 тестів, всі проходять)
 - **Type checker:** pyright (налаштований у `pyproject.toml`)
 
 ### Залежності керуються через `pyproject.toml`
 
 ```bash
 # Синхронізація залежностей
-uv sync --all-extras
+uv --system-certs sync --all-extras
 
 # Встановлення dev-залежностей
-uv pip install -e ".[dev]"
+uv --system-certs pip install -e ".[dev]"
 ```
 
 ### Запуск backend
@@ -84,6 +84,7 @@ just check-python      # ruff check + ruff format --check
 just postgres-up   # docker compose up -d postgres
 just postgres-down # docker compose down
 just migrate       # alembic upgrade head
+just smoke-production # ізольований production Compose smoke з автоматичним cleanup
 ```
 
 ## Godot Client (C#)
@@ -203,7 +204,7 @@ backend/
     seed.py          # Initial data
   main.py            # FastAPI app entrypoint
   alembic/           # Migrations
-  tests/             # pytest tests (90 passed)
+  tests/             # pytest tests (140 passed)
 ```
 
 ## Repository layer
@@ -262,11 +263,18 @@ CITY_DEBUG=true
 
 | Скрипт | Коли використовувати |
 |--------|---------------------|
-| `check.ps1` | Перед кожним комітом — pytest + C# build |
+| `check.ps1` | Фінальний локальний gate — pytest + C# build |
+| `check_targeted.ps1` | Швидкі profile gates: auth, economy, buildings, scheduler, observability, prod, client |
+| `doctor.ps1` | Перевірка локальних tools, PostgreSQL, Docker і Godot MCP |
+| `drill_backup_restore.ps1` | Ізольований production backup/restore drill для PostgreSQL dump validation |
+| `rollout_preflight.ps1` | Передрелізний production gate: env hardening, prod-fast, Compose config, backup drill, smoke |
+| `check_secrets.py` | Secret scan tracked-файлів; входить у local/CI gate |
 | `play.ps1 -ResetDb` | Playtest з нуля — скидає БД і запускає все |
 | `smoke_godot_dashboard.ps1` | Після змін у dashboard C# — smoke через MCP |
+| `smoke_client_api_dispatch.ps1` | Headless Godot regression для malformed/empty API payload і pending recovery |
 | `capture_dashboard.ps1` | Visual QA — скриншот поточного стану UI |
 | `smoke_mvp.py` | Після змін backend API — HTTP smoke test |
+| `smoke_production.ps1` | Production Compose: readiness, metrics, закриті docs/frozen routes, cleanup |
 | `start_backend.ps1` | Запустити тільки backend без Godot |
 | `reset_dev_db.ps1` | Скинути БД до чистого стану |
 | `godot_mcp_bridge.py` | MCP bridge для Godot — запустити перед роботою зі сценами |

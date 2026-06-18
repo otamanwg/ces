@@ -1,0 +1,97 @@
+name: Release image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - ".github/workflows/release-image.yml"
+      - "backend/Dockerfile"
+      - "backend/requirements.txt"
+      - "backend/**"
+      - "database/college_exams_manager.json"
+      - "alembic.ini"
+  pull_request:
+    paths:
+      - ".github/workflows/release-image.yml"
+      - "backend/Dockerfile"
+      - "backend/requirements.txt"
+      - "backend/**"
+      - "database/college_exams_manager.json"
+      - "alembic.ini"
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/ces-backend
+  CITY_RELEASE_VERSION: 0.3.0
+
+jobs:
+  backend-image:
+    name: Backend image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build metadata
+        id: meta
+        shell: bash
+        run: |
+          image="${REGISTRY}/${IMAGE_NAME}"
+          image="$(echo "$image" | tr '[:upper:]' '[:lower:]')"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          echo "tag_sha=$image:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "tag_version=$image:${CITY_RELEASE_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ steps.meta.outputs.tag_sha }}
+            ${{ steps.meta.outputs.tag_version }}
+          build-args: |
+            CITY_RELEASE_SHA=${{ github.sha }}
+            CITY_RELEASE_IMAGE=${{ steps.meta.outputs.tag_sha }}
+            CITY_RELEASE_VERSION=${{ env.CITY_RELEASE_VERSION }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ env.CITY_RELEASE_VERSION }}
+            org.opencontainers.image.ref.name=${{ steps.meta.outputs.tag_sha }}
+
+      - name: Release contract
+        shell: bash
+        run: |
+          {
+            echo "CITY_RELEASE_SHA=${GITHUB_SHA}"
+            echo "CITY_RELEASE_IMAGE=${{ steps.meta.outputs.tag_sha }}"
+            echo "CITY_RELEASE_VERSION=${CITY_RELEASE_VERSION}"
+          } > release.env
+          cat release.env
+
+      - name: Upload release contract
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-env
+          path: release.env

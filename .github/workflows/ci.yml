@@ -66,6 +66,23 @@ jobs:
         run: |
           uv run python -m alembic upgrade head
 
+      - name: Lint and typecheck backend
+        run: |
+          uv run ruff check backend/app backend/main.py
+          uv run ruff format --check backend/app backend/main.py
+          uv run pyright backend/app backend/main.py
+          uv run python scripts/check_secrets.py
+
+      - name: Validate production Compose
+        env:
+          POSTGRES_PASSWORD_FILE: ./secrets/postgres_password.example.txt
+          REDIS_PASSWORD_FILE: ./secrets/redis_password.example.txt
+          CITY_DATABASE_URL_FILE: ./secrets/city_database_url.example.txt
+          REDIS_URL_FILE: ./secrets/redis_url.example.txt
+          CITY_CORS_ORIGINS: https://ci.example.test
+          GRAFANA_ADMIN_PASSWORD_FILE: ./secrets/grafana_admin_password.example.txt
+        run: docker compose -f docker-compose.prod.yml config --quiet
+
       - name: Run backend tests
         run: |
           uv run python -m pytest backend/tests -v --tb=short 2>&1
@@ -85,6 +102,9 @@ jobs:
 
       - name: Restore client
         run: dotnet restore client/city_economic_simulator.csproj
+
+      - name: Run client logic tests
+        run: dotnet run --project client_tests/ClientLogicTests.csproj -c Debug
 
       - name: Build client
         run: dotnet build client/city_economic_simulator.csproj -c Debug --no-restore

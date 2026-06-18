@@ -4,11 +4,12 @@
 import random
 from decimal import Decimal
 
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
-from backend.app.models import PlayerAthleteContract, SportsClub
+from backend.app.models import PlayerAthleteContract
 from backend.app.repositories.city import CityRepository
 from backend.app.repositories.player import PlayerRepository
+from backend.app.repositories.sports import AthleteContractRepository, SportsRepository
 from backend.app.schemas.service_results import (
     SportsContractServiceResult,
     SportsLeagueMatchServiceResult,
@@ -49,7 +50,7 @@ def train_at_gym(db: Session, player_id: str, stat_to_train: str) -> dict:
         }
 
     # Знаходження контракту гравця або створення стартового
-    contract = db.query(PlayerAthleteContract).filter(PlayerAthleteContract.player_id == player_uuid).first()
+    contract = AthleteContractRepository(db).get_for_player(player_uuid)
     if not contract:
         # Якщо контракту немає, створюємо аматорський статус (без клубу)
         # Для простоти MVP, гравець повинен спершу підписати контракт або мати запис характеристик
@@ -103,13 +104,13 @@ def sign_athlete_contract(db: Session, player_id: str, club_id: str, salary: flo
     player_uuid = to_uuid(player_id)
     club_uuid = to_uuid(club_id)
     player = PlayerRepository(db).get_by_id(player_uuid)
-    club = db.query(SportsClub).filter(SportsClub.id == club_uuid).first()
+    club = SportsRepository(db).get_by_id(club_uuid)
 
     if not player or not club:
         return {"success": False, "message": "Гравця чи клуб не знайдено"}
 
     # Перевірка наявності чинного контракту
-    existing = db.query(PlayerAthleteContract).filter(PlayerAthleteContract.player_id == player_uuid).first()
+    existing = AthleteContractRepository(db).get_for_player(player_uuid)
     if existing:
         return {
             "success": False,
@@ -138,7 +139,7 @@ def sign_athlete_contract(db: Session, player_id: str, club_id: str, salary: flo
 def simulate_league_matches(db: Session, city_id: str) -> list:
     """Симуляція матчів ліги міста (ШІ-симуляція на основі сили команд)"""
     city_uuid = to_uuid(city_id)
-    clubs = db.query(SportsClub).filter(SportsClub.city_id == city_uuid).all()
+    clubs = SportsRepository(db).list_by_city(city_uuid)
     if len(clubs) < 2:
         return [
             SportsLeagueMessageServiceResult(
@@ -149,15 +150,7 @@ def simulate_league_matches(db: Session, city_id: str) -> list:
     club_ids = [c.id for c in clubs]
 
     # Один запит для всіх контрактів міста замість N+1 у циклі
-    all_contracts = (
-        db.query(PlayerAthleteContract)
-        .options(joinedload(PlayerAthleteContract.player))
-        .filter(
-            PlayerAthleteContract.club_id.in_(club_ids),
-            PlayerAthleteContract.contract_status == "active",
-        )
-        .all()
-    )
+    all_contracts = AthleteContractRepository(db).list_active_for_clubs_with_players(club_ids)
 
     from collections import defaultdict
 

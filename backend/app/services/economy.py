@@ -3,10 +3,10 @@
 
 from decimal import Decimal
 
-from sqlalchemy import func, text
+from sqlalchemy import desc, func, text
 from sqlalchemy.orm import Session
 
-from backend.app.models import Business, Player
+from backend.app.models import Business, CityEconomySnapshot, Player
 from backend.app.repositories.city import CityRepository
 from backend.app.repositories.hostel import HostelRepository
 from backend.app.repositories.player import PlayerRepository
@@ -28,6 +28,10 @@ from backend.app.services.needs import (
     increase_hunger,
 )
 
+ACTIVE_MONEY_TARGET_PER_PLAYER = money("3000.00")
+TARGET_DAILY_MONEY_GROWTH_RATE = Decimal("0.0300")
+MAX_REPORTED_INFLATION_RATE = Decimal("999.99")
+
 
 def _active_money_supply(db: Session, city_id) -> Decimal:
     players_balance = db.query(func.sum(Player.balance)).filter(Player.city_id == city_id).scalar() or 0
@@ -41,6 +45,68 @@ def _active_money_supply(db: Session, city_id) -> Decimal:
         or 0
     )
     return money(players_balance) + money(businesses_balance)
+
+
+def _capacity_inflation_rate(active_money: Decimal, player_count: int) -> Decimal:
+    target_circulation = money(max(1, player_count)) * ACTIVE_MONEY_TARGET_PER_PLAYER
+    if active_money <= target_circulation:
+        return money("0.00")
+
+    growth = (active_money - target_circulation) / target_circulation
+    return money(min(round(growth * 100, 2), MAX_REPORTED_INFLATION_RATE))
+
+
+def _calculate_money_growth_rate(active_money: Decimal, previous_active_money: Decimal | None) -> Decimal:
+    if previous_active_money is None or previous_active_money <= money("0.00"):
+        return money("0.0000")
+    return money(round((active_money - previous_active_money) / previous_active_money, 4))
+
+
+def _calculate_snapshot_inflation_rate(active_money: Decimal, previous_active_money: Decimal | None) -> Decimal:
+    if previous_active_money is None or previous_active_money <= money("0.00"):
+        return money("0.00")
+
+    money_growth_rate = _calculate_money_growth_rate(active_money, previous_active_money)
+    excess_growth = max(money("0.00"), money_growth_rate - TARGET_DAILY_MONEY_GROWTH_RATE)
+    return money(min(round(excess_growth * 100, 2), MAX_REPORTED_INFLATION_RATE))
+
+
+def _latest_economy_snapshot(db: Session, city_id) -> CityEconomySnapshot | None:
+    return (
+        db.query(CityEconomySnapshot)
+        .filter(CityEconomySnapshot.city_id == city_id)
+        .order_by(desc(CityEconomySnapshot.game_day))
+        .first()
+    )
+
+
+def _record_economy_snapshot(
+    db: Session,
+    city_id,
+    game_day: int,
+    active_money: Decimal,
+    player_count: int,
+) -> CityEconomySnapshot:
+    previous_snapshot = _latest_economy_snapshot(db, city_id)
+    previous_active_money = money(previous_snapshot.active_money_supply) if previous_snapshot is not None else None
+    money_growth_rate = _calculate_money_growth_rate(active_money, previous_active_money)
+    inflation_rate = (
+        _calculate_snapshot_inflation_rate(active_money, previous_active_money)
+        if previous_snapshot is not None
+        else _capacity_inflation_rate(active_money, player_count)
+    )
+
+    snapshot = CityEconomySnapshot(
+        city_id=city_id,
+        game_day=game_day,
+        active_money_supply=active_money,
+        previous_active_money_supply=previous_active_money,
+        target_growth_rate=TARGET_DAILY_MONEY_GROWTH_RATE,
+        money_growth_rate=money_growth_rate,
+        inflation_rate=inflation_rate,
+    )
+    db.add(snapshot)
+    return snapshot
 
 
 def process_shift_work(db: Session, player_id: str) -> dict:
@@ -200,27 +266,14 @@ def update_inflation_rate(db: Session, city_id: str) -> float:
     if not city:
         return 0.0
 
-    # Грошова маса у гравців
-    players_balance = db.query(func.sum(Player.balance)).filter(Player.city_id == city_uuid).scalar() or 0.0
-    # Грошова маса в приватному бізнесі
-    businesses_balance = (
-        db.query(func.sum(Business.cash_balance))
-        .filter(Business.city_id == city_uuid, Business.owner_player_id.isnot(None))
-        .scalar()
-        or 0.0
-    )
-
-    active_money = float(players_balance) + float(businesses_balance)
-
-    # Базове цільове зростання (наприклад, 500 ₴ на кожного гравця)
-    num_players = db.query(func.count(Player.id)).filter(Player.city_id == city_uuid).scalar() or 1
-    target_circulation = num_players * 600.00
-
-    if active_money > target_circulation:
-        growth = (active_money - target_circulation) / target_circulation
-        city.inflation_rate = money(min(round(growth * 100, 2), 999.99))
+    active_money = _active_money_supply(db, city_uuid)
+    latest_snapshot = _latest_economy_snapshot(db, city_uuid)
+    if latest_snapshot is not None:
+        previous_active_money = money(latest_snapshot.active_money_supply)
+        city.inflation_rate = _calculate_snapshot_inflation_rate(active_money, previous_active_money)
     else:
-        city.inflation_rate = money("0.00")
+        num_players = db.query(func.count(Player.id)).filter(Player.city_id == city_uuid).scalar() or 1
+        city.inflation_rate = _capacity_inflation_rate(active_money, num_players)
 
     db.commit()
     return float(city.inflation_rate)
@@ -268,14 +321,10 @@ def game_day_tick(db: Session, city_id: str) -> dict:
 
     active_after = _active_money_supply(db, city_uuid)
     player_count = max(1, len(players))
-    target_circulation = money(player_count * 600)
-    if active_after > target_circulation:
-        growth = (active_after - target_circulation) / target_circulation
-        city.inflation_rate = money(min(round(growth * 100, 2), 999.99))
-    else:
-        city.inflation_rate = money("0.00")
-
-    city.game_day = (city.game_day or 0) + 1
+    next_game_day = (city.game_day or 0) + 1
+    snapshot = _record_economy_snapshot(db, city_uuid, next_game_day, active_after, player_count)
+    city.inflation_rate = snapshot.inflation_rate
+    city.game_day = next_game_day
     db.commit()
 
     return DayTickServiceResult(
@@ -304,5 +353,7 @@ def game_day_tick(db: Session, city_id: str) -> dict:
             "total_business_taxes": business_revenue_stats.get("data", {}).get("total_taxes", 0.0),
             "active_money_before": float(active_before),
             "active_money_after": float(active_after),
+            "money_growth_rate": float(snapshot.money_growth_rate),
+            "target_growth_rate": float(snapshot.target_growth_rate),
         },
     ).model_dump()

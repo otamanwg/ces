@@ -1,9 +1,9 @@
-from datetime import datetime
 from uuid import UUID
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
-from backend.app.models import Building, BuildingApplication, LandParcel
+from backend.app.models import Building, BuildingApplication, CityDistrict, LandParcel
 from backend.app.repositories.base import BaseRepository
 
 
@@ -23,16 +23,48 @@ class BuildingRepository(BaseRepository[Building]):
             self.db.query(Building)
             .options(
                 joinedload(Building.land_parcel),
-                joinedload(Building.linked_business),
-                joinedload(Building.blueprint),
+                joinedload(Building.district),
+                joinedload(Building.business),
+                joinedload(Building.business_blueprint),
             )
             .filter(Building.owner_player_id == player_id)
+            .order_by(Building.created_at.desc(), Building.name)
             .all()
         )
 
     def get_by_parcel(self, parcel_id: UUID) -> Building | None:
         """Отримати будівлю за ділянкою."""
         return self.db.query(Building).filter(Building.land_parcel_id == parcel_id).first()
+
+    def get_by_parcel_or_application(self, parcel_id: UUID, application_id: UUID) -> Building | None:
+        """Знайти будівлю, що вже використовує ділянку або заявку."""
+        return (
+            self.db.query(Building)
+            .filter(
+                or_(
+                    Building.land_parcel_id == parcel_id,
+                    Building.source_application_id == application_id,
+                )
+            )
+            .first()
+        )
+
+    def list_active_for_upkeep(self, city_id: UUID) -> list[Building]:
+        """Отримати активні будівлі з усіма даними для щоденного upkeep."""
+        return (
+            self.db.query(Building)
+            .options(
+                joinedload(Building.business_blueprint),
+                joinedload(Building.business),
+                joinedload(Building.owner),
+            )
+            .filter(
+                Building.city_id == city_id,
+                Building.status == "built",
+                Building.operating_status == "active",
+            )
+            .all()
+        )
 
     def get_active_in_city(self, city_id: UUID) -> list[Building]:
         """Отримати активні будівлі в місті."""
@@ -61,14 +93,16 @@ class BuildingRepository(BaseRepository[Building]):
     def create_from_application(self, application: BuildingApplication) -> Building:
         """Створити будівлю із заявки."""
         building = Building(
+            city_id=application.city_id,
+            district_id=application.district_id,
             land_parcel_id=application.land_parcel_id,
-            owner_player_id=application.player_id,
-            blueprint_id=application.business_blueprint_id,
+            source_application_id=application.id,
+            business_blueprint_id=application.business_blueprint_id,
+            owner_player_id=application.applicant_player_id,
             name=application.proposed_name,
-            building_type=application.building_type,
+            project_type=application.project_type,
             status="built",
             operating_status="inactive",
-            created_at=datetime.utcnow(),
         )
         self.db.add(building)
         self.db.commit()
@@ -80,10 +114,6 @@ class BuildingRepository(BaseRepository[Building]):
         building = self.get_by_id(building_id)
         if building:
             building.operating_status = status
-            if status == "active":
-                building.activated_at = datetime.utcnow()
-            elif status == "maintenance_due":
-                building.maintenance_since = datetime.utcnow()
             self.db.commit()
             return True
         return False
@@ -93,9 +123,10 @@ class BuildingRepository(BaseRepository[Building]):
         return (
             self.db.query(Building)
             .join(LandParcel)
+            .join(CityDistrict, LandParcel.district_id == CityDistrict.id)
             .filter(
                 LandParcel.city_id == city_id,
-                LandParcel.district_code == district_code,
+                CityDistrict.code == district_code,
             )
             .all()
         )
@@ -107,19 +138,14 @@ class BuildingRepository(BaseRepository[Building]):
             .join(LandParcel)
             .filter(
                 LandParcel.city_id == city_id,
-                Building.building_type == building_type,
+                Building.project_type == building_type,
             )
             .count()
         )
 
     def get_with_business(self, building_id: UUID) -> Building | None:
         """Отримати будівлю з пов'язаним бізнесом."""
-        return (
-            self.db.query(Building)
-            .options(joinedload(Building.linked_business))
-            .filter(Building.id == building_id)
-            .first()
-        )
+        return self.db.query(Building).options(joinedload(Building.business)).filter(Building.id == building_id).first()
 
 
 class BuildingApplicationRepository(BaseRepository[BuildingApplication]):
@@ -132,9 +158,18 @@ class BuildingApplicationRepository(BaseRepository[BuildingApplication]):
         """Отримати заявки гравця."""
         return (
             self.db.query(BuildingApplication)
-            .filter(BuildingApplication.player_id == player_id)
+            .filter(BuildingApplication.applicant_player_id == player_id)
             .order_by(BuildingApplication.created_at.desc())
             .all()
+        )
+
+    def get_by_id_for_update(self, application_id: UUID) -> BuildingApplication | None:
+        """Отримати заявку із блокуванням рядка."""
+        return (
+            self.db.query(BuildingApplication)
+            .filter(BuildingApplication.id == application_id)
+            .with_for_update()
+            .first()
         )
 
     def get_pending_in_city(self, city_id: UUID) -> list[BuildingApplication]:
@@ -154,7 +189,7 @@ class BuildingApplicationRepository(BaseRepository[BuildingApplication]):
         return (
             self.db.query(BuildingApplication)
             .filter(
-                BuildingApplication.player_id == player_id,
+                BuildingApplication.applicant_player_id == player_id,
                 BuildingApplication.status == "approved",
             )
             .all()
@@ -163,11 +198,10 @@ class BuildingApplicationRepository(BaseRepository[BuildingApplication]):
     def create_application(self, player_id: UUID, parcel_id: UUID, blueprint_id: UUID, **kwargs) -> BuildingApplication:
         """Створити будівельну заявку."""
         application = BuildingApplication(
-            player_id=player_id,
+            applicant_player_id=player_id,
             land_parcel_id=parcel_id,
             business_blueprint_id=blueprint_id,
             status="pending",
-            created_at=datetime.utcnow(),
             **kwargs,
         )
         self.db.add(application)
@@ -175,17 +209,11 @@ class BuildingApplicationRepository(BaseRepository[BuildingApplication]):
         self.db.refresh(application)
         return application
 
-    def update_status(self, application_id: UUID, status: str, review_notes: str = None) -> bool:
+    def update_status(self, application_id: UUID, status: str) -> bool:
         """Оновити статус заявки."""
         application = self.get_by_id(application_id)
         if application:
             application.status = status
-            if status == "approved":
-                application.approved_at = datetime.utcnow()
-            elif status == "revision_required":
-                application.revision_requested_at = datetime.utcnow()
-            if review_notes:
-                application.review_notes = review_notes
             self.db.commit()
             return True
         return False
@@ -195,7 +223,6 @@ class BuildingApplicationRepository(BaseRepository[BuildingApplication]):
         application = self.get_by_id(application_id)
         if application:
             application.status = "activated"
-            application.activated_at = datetime.utcnow()
             self.db.commit()
             return True
         return False
@@ -206,8 +233,8 @@ class BuildingApplicationRepository(BaseRepository[BuildingApplication]):
             self.db.query(BuildingApplication)
             .options(
                 joinedload(BuildingApplication.land_parcel),
-                joinedload(BuildingApplication.blueprint),
-                joinedload(BuildingApplication.player),
+                joinedload(BuildingApplication.business_blueprint),
+                joinedload(BuildingApplication.applicant),
             )
             .filter(BuildingApplication.id == application_id)
             .first()

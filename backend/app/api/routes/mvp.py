@@ -52,7 +52,7 @@ from backend.app.schemas.mvp import (
     WorkActionData,
 )
 from backend.app.schemas.response import api_error, api_success
-from backend.app.services.auth import get_authorized_player, new_player_token
+from backend.app.services.auth import get_authorized_player, new_player_token_pair
 from backend.app.services.avatar_profile import (
     build_avatar_catalog,
     create_player_avatar,
@@ -673,6 +673,7 @@ def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
     if not city:
         return api_error("Місто ще не ініціалізоване.")
 
+    player_token, player_token_hash = new_player_token_pair()
     player = Player(
         city_id=city.id,
         username=username,
@@ -682,7 +683,7 @@ def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
         hunger=0,
         tutorial_age_group=data.tutorial_age_group,
         education_level="High School",
-        auth_token=new_player_token(),
+        auth_token_hash=player_token_hash,
     )
     db.add(player)
     db.flush()
@@ -692,7 +693,7 @@ def register_player(data: PlayerRegister, db: Session = Depends(get_db)):
     db.refresh(player)
 
     snapshot = build_player_snapshot(db, player)
-    snapshot["auth_token"] = player.auth_token
+    snapshot["auth_token"] = player_token
     effects = build_goal_effects(db, player)
     return api_success(
         f"Ласкаво просимо, {username}. Ви прибули на автовокзал нового міста.",

@@ -2,6 +2,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session, joinedload
 
+from backend.app.core.tokens import hash_player_token
 from backend.app.models import Hostel, Player
 from backend.app.repositories.base import BaseRepository
 
@@ -13,7 +14,32 @@ class PlayerRepository(BaseRepository[Player]):
         super().__init__(db, Player)
 
     def get_by_auth_token(self, player_id: UUID, player_token: str) -> Player | None:
-        return self.db.query(Player).filter(Player.id == player_id, Player.auth_token == player_token).first()
+        token_hash = hash_player_token(player_token)
+        player = self.db.query(Player).filter(Player.id == player_id, Player.auth_token_hash == token_hash).first()
+        if player is not None:
+            return player
+
+        legacy_player = self.db.query(Player).filter(Player.id == player_id, Player.auth_token == player_token).first()
+        if legacy_player is not None:
+            self._migrate_legacy_token(legacy_player, token_hash)
+        return legacy_player
+
+    def get_by_token(self, player_token: str) -> Player | None:
+        token_hash = hash_player_token(player_token)
+        player = self.db.query(Player).filter(Player.auth_token_hash == token_hash).first()
+        if player is not None:
+            return player
+
+        legacy_player = self.db.query(Player).filter(Player.auth_token == player_token).first()
+        if legacy_player is not None:
+            self._migrate_legacy_token(legacy_player, token_hash)
+        return legacy_player
+
+    def _migrate_legacy_token(self, player: Player, token_hash: str) -> None:
+        player.auth_token_hash = token_hash
+        player.auth_token = None
+        self.db.commit()
+        self.db.refresh(player)
 
     def list_by_city(self, city_id: UUID) -> list[Player]:
         return self.db.query(Player).filter(Player.city_id == city_id).all()

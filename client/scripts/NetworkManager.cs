@@ -13,7 +13,7 @@ public partial class NetworkManager : Node
     private ClientWebSocket _webSocket;
     private CancellationTokenSource _cancellationTokenSource;
 
-    public void ConnectToCity(string cityId)
+    public void ConnectToCity(string cityId, string playerToken = "")
     {
         if (string.IsNullOrEmpty(cityId))
         {
@@ -21,7 +21,20 @@ public partial class NetworkManager : Node
             return;
         }
 
-        _ = ConnectAsync($"ws://127.0.0.1:8000/ws/city/{cityId}");
+        if (string.IsNullOrEmpty(playerToken))
+        {
+            GD.PrintErr("NetworkManager: playerToken порожній, WS не підключено.");
+            return;
+        }
+
+        string serverUrl = CityWebSocketEndpoint.BuildUrl(cityId, playerToken);
+        if (string.IsNullOrEmpty(serverUrl))
+        {
+            GD.PrintErr("NetworkManager: не вдалось сформувати WS URL.");
+            return;
+        }
+
+        _ = ConnectAsync(serverUrl);
     }
 
     private async Task ConnectAsync(string serverUrl)

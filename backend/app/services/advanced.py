@@ -6,12 +6,10 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.orm import Session
 
 from backend.app.models import (
-    BankLoan,
     Cartel,
-    City,
     InsurancePolicy,
-    LaborUnion,
 )
+from backend.app.repositories.advanced import BankLoanRepository, CartelRepository, LaborUnionRepository
 from backend.app.repositories.business import BusinessRepository
 from backend.app.repositories.city import CityRepository
 from backend.app.repositories.player import PlayerRepository
@@ -29,26 +27,26 @@ from backend.app.services.money import money
 def toggle_labor_union_strike(db: Session, business_id: str, union_name: str) -> dict:
     """Оголошення або завершення страйку профспілкою підприємства"""
     business_uuid = to_uuid(business_id)
-    union = db.query(LaborUnion).filter(LaborUnion.business_id == business_uuid).first()
+    union_repo = LaborUnionRepository(db)
+    union = union_repo.get_by_business(business_uuid)
     business = BusinessRepository(db).get_by_id(business_uuid)
     if not business:
         return {"success": False, "message": "Підприємство не знайдено"}
 
     if not union:
-        # Якщо профспілки немає, створюємо її
-        union = LaborUnion(business_id=business_uuid, name=union_name, strike_active=False)
-        db.add(union)
-        db.commit()
+        union = union_repo.create_union(business_uuid, union_name)
 
-    # Тоглимо стан страйку
-    union.strike_active = not union.strike_active
+    union_repo.toggle_strike(union.id)
+    union = union_repo.get_by_business(business_uuid)
 
-    if union.strike_active:
+    if union and union.strike_active:
         union.strike_ends_at = datetime.now(UTC) + timedelta(days=1)  # страйк на 1 день
         message = (
             f"✊ УВАГА! Робітники компанії '{business.name}' оголосили СТРАЙК! Робочі зміни заблоковано на 24 години."
         )
     else:
+        if union is None:
+            return {"success": False, "message": "Не вдалося оновити профспілку."}
         union.strike_ends_at = None
         message = f"🤝 Профспілка припинила страйк на '{business.name}'. Виробництво відновлено."
 
@@ -125,14 +123,11 @@ def process_daily_loan_installments_and_collectors(db: Session, player_id: str) 
     """Списання щоденних платежів за кредитом. При несплаті запускаються ШІ-Колектори!"""
     player_uuid = to_uuid(player_id)
     player = PlayerRepository(db).get_by_id(player_uuid)
-    loans = (
-        db.query(BankLoan)
-        .filter(
-            BankLoan.player_id == player_uuid,
-            BankLoan.status.in_(["active", "delinquent"]),
-        )
-        .all()
-    )
+    loans = [
+        loan
+        for loan in BankLoanRepository(db).get_active_for_player(player_uuid)
+        if loan.status in ["active", "delinquent"]
+    ]
 
     if not player:
         return {"success": False, "message": "Гравця не знайдено"}
@@ -223,7 +218,7 @@ def donate_to_lobby_fund(
             "message": "Недостатньо грошей для внеску в лобі-фонд!",
         }
 
-    cartel = db.query(Cartel).filter(Cartel.city_id == city_uuid, Cartel.industry_type == industry).first()
+    cartel = CartelRepository(db).get_by_city_and_industry(city_uuid, industry)
     if not cartel:
         cartel = Cartel(
             city_id=city_uuid,
@@ -257,7 +252,9 @@ def donate_to_lobby_fund(
     # на зниження податків для цієї індустрії на 2% Мером міста
     action_triggered = False
     if money(cartel.lobby_fund) >= money("5000.00"):
-        city = db.query(City).filter(City.id == city_uuid).first()
+        city = CityRepository(db).get_by_id(city_uuid)
+        if city is None:
+            return {"success": False, "message": "Місто не знайдено"}
         city.tax_rate_property = max(money("0.50"), money(city.tax_rate_property) - money("2.00"))
         debit(db, cartel, "lobby_fund", money("5000.00"))
         action_triggered = True

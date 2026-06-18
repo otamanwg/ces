@@ -1,8 +1,11 @@
+from pathlib import Path
+
+from alembic import command
+from alembic.config import Config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from backend.app.core.config import settings
-from backend.app.models import Base
 
 DATABASE_URL = settings.database_url
 
@@ -12,15 +15,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def init_db():
-    """Apply database migrations for local/dev startup."""
-    try:
-        from alembic import command
-        from alembic.config import Config
-
-        alembic_cfg = Config("alembic.ini")
-        command.upgrade(alembic_cfg, "head")
-    except ImportError:
-        Base.metadata.create_all(bind=engine)
+    """Apply Alembic migrations and fail fast when schema initialization is enabled."""
+    project_root = Path(__file__).resolve().parents[2]
+    alembic_cfg = Config(str(project_root / "alembic.ini"))
+    command.upgrade(alembic_cfg, "head")
 
 
 def get_db():

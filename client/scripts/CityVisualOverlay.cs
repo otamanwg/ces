@@ -116,8 +116,7 @@ public partial class CityVisualOverlay : Control
         DrawLine(new Vector2(0, street.Position.Y), new Vector2(size.X, street.Position.Y), new Color(0.70f, 0.72f, 0.66f, 0.72f), 7.0f, true);
         DrawStreetTraffic(size, street);
 
-        DrawString(font, new Vector2(22, 32), "Street focus: вокзал / комерційне ядро", HorizontalAlignment.Left, size.X - 44, 15, AsGodot(_palette.PrimaryText));
-        DrawString(font, new Vector2(22, 54), _model.HeadlineText, HorizontalAlignment.Left, size.X - 44, 13, AsGodot(_palette.SecondaryText));
+        DrawStreetHud(size, font);
 
         var buildings = _model.Buildings.Take(5).ToArray();
         if (buildings.Length == 0)
@@ -409,5 +408,71 @@ public partial class CityVisualOverlay : Control
                 _ => new Color(0.34f, 0.58f, 0.82f, 0.94f),
             },
         };
+    }
+
+    private void DrawStreetHud(Vector2 size, Font font)
+    {
+        float hudX = size.X > 760 ? 230.0f : 18.0f;
+        Rect2 hud = new(new Vector2(hudX, 18), new Vector2(Math.Min(620, size.X - hudX - 150), 86));
+        DrawRect(hud, new Color(0.03f, 0.05f, 0.06f, 0.42f), true);
+        DrawRect(hud, new Color(1.0f, 1.0f, 1.0f, 0.10f), false, 1.5f);
+
+        DrawString(
+            font,
+            hud.Position + new Vector2(18, 25),
+            "Вулиця: вокзал / комерційне ядро",
+            HorizontalAlignment.Left,
+            hud.Size.X - 36,
+            16,
+            AsGodot(_palette.PrimaryText)
+        );
+        DrawString(
+            font,
+            hud.Position + new Vector2(18, 48),
+            _model.HeadlineText,
+            HorizontalAlignment.Left,
+            hud.Size.X - 36,
+            13,
+            AsGodot(_palette.SecondaryText)
+        );
+
+        float chipY = hud.Position.Y + 60;
+        DrawHudChip(new Rect2(hud.Position + new Vector2(18, chipY - hud.Position.Y), new Vector2(112, 20)), "робота", TotalJobsText(), font, AsGodot(_palette.Success));
+        DrawHudChip(new Rect2(hud.Position + new Vector2(138, chipY - hud.Position.Y), new Vector2(122, 20)), "ризик", MaxCrimeText(), font, AsGodot(_palette.Warning));
+        DrawHudChip(new Rect2(hud.Position + new Vector2(268, chipY - hud.Position.Y), new Vector2(152, 20)), "будівлі", BuildingsText(), font, AsGodot(_palette.Accent));
+    }
+
+    private void DrawHudChip(Rect2 rect, string label, string value, Font font, Color accent)
+    {
+        DrawRect(rect, new Color(0.0f, 0.0f, 0.0f, 0.32f), true);
+        DrawRect(new Rect2(rect.Position, new Vector2(3, rect.Size.Y)), accent, true);
+        DrawString(font, rect.Position + new Vector2(9, 14), $"{label}: {value}", HorizontalAlignment.Left, rect.Size.X - 12, 11, new Color(0.96f, 0.96f, 0.92f, 0.90f));
+    }
+
+    private string TotalJobsText()
+    {
+        if (_model.Districts.Count == 0)
+        {
+            return "-";
+        }
+        return _model.Districts.Sum(district => district.JobSupply).ToString();
+    }
+
+    private string MaxCrimeText()
+    {
+        if (_model.Districts.Count == 0)
+        {
+            return "-";
+        }
+        return _model.Districts.Max(district => district.CrimeRisk).ToString();
+    }
+
+    private string BuildingsText()
+    {
+        if (_model.BuildingCount == 0)
+        {
+            return "старт";
+        }
+        return $"{_model.ActiveBuildingCount}/{_model.BuildingCount}";
     }
 }

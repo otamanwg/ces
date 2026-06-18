@@ -8,16 +8,16 @@ from decimal import Decimal
 import pytest
 from sqlalchemy.orm import Session
 
-from backend.app.database import SessionLocal
-from backend.app.models import Business, City, Hostel, Job, Player
-from backend.app.services.buildings import process_daily_building_upkeep
-from backend.app.services.daily_business_revenue import process_daily_business_revenue
-from backend.app.services.economy import (
+from app.database import SessionLocal
+from app.models import Business, City, Hostel, Job, Player
+from app.services.buildings import process_daily_building_upkeep
+from app.services.daily_business_revenue import process_daily_business_revenue
+from app.services.economy import (
     process_rent_payment,
     process_shift_work,
 )
-from backend.app.services.money import money
-from backend.app.services.needs import DAY_HUNGER_INCREASE, increase_hunger
+from app.services.money import money
+from app.services.needs import DAY_HUNGER_INCREASE, increase_hunger
 
 
 class TestEconomyBalance:

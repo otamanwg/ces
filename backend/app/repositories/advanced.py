@@ -1,10 +1,13 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from backend.app.models import (
     BankLoan,
+    Business,
+    Cartel,
     InsurancePolicy,
     LaborUnion,
     Player,
@@ -24,7 +27,7 @@ class InsuranceRepository(BaseRepository[InsurancePolicy]):
             self.db.query(InsurancePolicy)
             .filter(
                 InsurancePolicy.player_id == player_id,
-                InsurancePolicy.is_active,
+                InsurancePolicy.status == "active",
             )
             .first()
         )
@@ -43,8 +46,7 @@ class InsuranceRepository(BaseRepository[InsurancePolicy]):
             provider_business_id=provider_business_id,
             coverage_amount=coverage,
             daily_premium=premium,
-            is_active=True,
-            created_at=datetime.utcnow(),
+            status="active",
         )
         self.db.add(policy)
         self.db.commit()
@@ -55,8 +57,7 @@ class InsuranceRepository(BaseRepository[InsurancePolicy]):
         """Скасувати поліс."""
         policy = self.get_by_id(policy_id)
         if policy:
-            policy.is_active = False
-            policy.cancelled_at = datetime.utcnow()
+            policy.status = "expired"
             self.db.commit()
             return True
         return False
@@ -74,20 +75,21 @@ class BankLoanRepository(BaseRepository[BankLoan]):
             self.db.query(BankLoan)
             .filter(
                 BankLoan.player_id == player_id,
-                ~BankLoan.is_repaid,
+                BankLoan.status.in_(["active", "delinquent"]),
             )
             .all()
         )
 
     def create_loan(self, player_id: UUID, amount: int, interest_rate: float, term_days: int) -> BankLoan:
         """Створити кредит."""
+        principal = Decimal(str(amount))
+        remaining_debt = principal * (Decimal("1") + Decimal(str(interest_rate)))
         loan = BankLoan(
             player_id=player_id,
-            principal_amount=amount,
-            interest_rate=interest_rate,
-            term_days=term_days,
-            created_at=datetime.utcnow(),
-            due_date=datetime.utcnow() + timedelta(days=term_days),
+            principal_amount=principal,
+            remaining_debt=remaining_debt,
+            daily_payment=remaining_debt / max(term_days, 1),
+            status="active",
         )
         self.db.add(loan)
         self.db.commit()
@@ -98,8 +100,8 @@ class BankLoanRepository(BaseRepository[BankLoan]):
         """Позначити кредит як погашений."""
         loan = self.get_by_id(loan_id)
         if loan:
-            loan.is_repaid = True
-            loan.repaid_at = datetime.utcnow()
+            loan.remaining_debt = Decimal("0")
+            loan.status = "paid"
             self.db.commit()
             return True
         return False
@@ -111,8 +113,7 @@ class BankLoanRepository(BaseRepository[BankLoan]):
             .join(Player)
             .filter(
                 Player.city_id == city_id,
-                ~BankLoan.is_repaid,
-                BankLoan.due_date < datetime.utcnow(),
+                BankLoan.status == "delinquent",
             )
             .all()
         )
@@ -146,7 +147,7 @@ class LaborUnionRepository(BaseRepository[LaborUnion]):
         if union:
             union.strike_active = not union.strike_active
             if union.strike_active:
-                union.strike_ends_at = datetime.utcnow() + timedelta(days=1)
+                union.strike_ends_at = datetime.now(UTC) + timedelta(days=1)
             else:
                 union.strike_ends_at = None
             self.db.commit()
@@ -157,10 +158,27 @@ class LaborUnionRepository(BaseRepository[LaborUnion]):
         """Отримати активні страйки в місті."""
         return (
             self.db.query(LaborUnion)
-            .join(Player, LaborUnion.player_id == Player.id)
+            .join(Business, LaborUnion.business_id == Business.id)
             .filter(
-                Player.city_id == city_id,
+                Business.city_id == city_id,
                 LaborUnion.strike_active,
             )
             .all()
+        )
+
+
+class CartelRepository(BaseRepository[Cartel]):
+    """Репозиторій для картелів і лобістських фондів."""
+
+    def __init__(self, db: Session) -> None:
+        super().__init__(db, Cartel)
+
+    def get_by_city_and_industry(self, city_id: UUID, industry_type: str) -> Cartel | None:
+        return (
+            self.db.query(Cartel)
+            .filter(
+                Cartel.city_id == city_id,
+                Cartel.industry_type == industry_type,
+            )
+            .first()
         )
