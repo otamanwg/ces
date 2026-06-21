@@ -14,6 +14,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    Text,
     UniqueConstraint,
     func,
 )
@@ -230,6 +231,7 @@ class City(Base):
             name="fk_cities_mayor_player_id",
         )
     )
+    mayor_term_started_game_day: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Зв'язки ORM
     players: Mapped[list["Player"]] = relationship("Player", back_populates="city", foreign_keys="Player.city_id")
@@ -1228,3 +1230,118 @@ class AuctionBid(Base):
     )
     amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     placed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# 17. МОДЕЛІ ПОЛІТИЧНОЇ СИСТЕМИ (Phase G6)
+class CityOffice(Base):
+    """Посада у мерії: worker → department_head → deputy → mayor."""
+
+    __tablename__ = "city_offices"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    city_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
+    )
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    position: Mapped[str] = mapped_column(String(30), nullable=False)
+    department: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    hired_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MayorElection(Base):
+    """Вибори мера: відкрите голосування, мандат 6 місяців ігрового часу."""
+
+    __tablename__ = "mayor_elections"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    city_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
+    )
+    started_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
+    ends_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active/concluded
+    winner_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("players.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ElectionCandidate(Base):
+    """Кандидат у виборах мера."""
+
+    __tablename__ = "election_candidates"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    election_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("mayor_elections.id", ondelete="CASCADE"), nullable=False
+    )
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    platform_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    registered_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MayorVote(Base):
+    """Голос виборця (відкрите голосування)."""
+
+    __tablename__ = "mayor_votes"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    election_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("mayor_elections.id", ondelete="CASCADE"), nullable=False
+    )
+    voter_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    candidate_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("election_candidates.id", ondelete="CASCADE"), nullable=False
+    )
+    voted_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class VoteBribe(Base):
+    """Підкуп голосів: тіньовий фонд, анонімна пропозиція."""
+
+    __tablename__ = "vote_bribes"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    election_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("mayor_elections.id", ondelete="CASCADE"), nullable=False
+    )
+    briber_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    voter_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="offered")  # offered/accepted/rejected/reported
+    created_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PoliticalCorruptionLog(Base):
+    """Журнал політичної корупції (Phase G6). Окремо від frozen CorruptionLog."""
+
+    __tablename__ = "political_corruption_log"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    city_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
+    )
+    actor_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    action_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evidence_strength: Mapped[float] = mapped_column(Decimal(5, 2), default=0.00)
+    is_reported: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

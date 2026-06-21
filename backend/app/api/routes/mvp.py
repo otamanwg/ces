@@ -1383,6 +1383,313 @@ def fire_player_endpoint(
     return api_success(result["message"], {"job_id": job_id})
 
 
+# --- Phase G6: Political System ---
+
+
+@router.post("/city/offices/hire")
+def hire_office_endpoint(
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G6: найм гравця на посаду у мерію."""
+    from backend.app.services.political_service import hire_office_worker
+
+    city = db.query(City).first()
+    if not city:
+        return api_error("Місто не знайдене.")
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    position = data.get("position", "worker")
+    department = data.get("department")
+    game_day = data.get("game_day", 0)
+
+    result = hire_office_worker(db, city, player, position, department, game_day)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.get("/city/election")
+def get_election_endpoint(db: Session = Depends(get_db)):
+    """Phase G6: статус активних виборів мера."""
+    from backend.app.services.political_service import (
+        get_active_election,
+        get_election_results,
+    )
+
+    city = db.query(City).first()
+    if not city:
+        return api_error("Місто не знайдене.")
+
+    election = get_active_election(db, city.id)
+    if not election:
+        return api_success("Активних виборів немає.", {"election": None})
+
+    results = get_election_results(db, election)
+    return api_success(
+        "Активні вибори мера.",
+        {
+            "election": {
+                "id": str(election.id),
+                "started_at_game_day": election.started_at_game_day,
+                "ends_at_game_day": election.ends_at_game_day,
+                "status": election.status,
+            },
+            "candidates": results,
+        },
+    )
+
+
+@router.post("/city/election/start")
+def start_election_endpoint(
+    data: dict,
+    db: Session = Depends(get_db),
+):
+    """Phase G6: почати вибори мера."""
+    from backend.app.services.political_service import start_election
+
+    city = db.query(City).first()
+    if not city:
+        return api_error("Місто не знайдене.")
+
+    game_day = data.get("game_day", 0)
+    result = start_election(db, city, game_day)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/city/election/register")
+def register_candidate_endpoint(
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G6: реєстрація кандидата у виборах."""
+    from backend.app.services.political_service import get_active_election, register_candidate
+
+    city = db.query(City).first()
+    if not city:
+        return api_error("Місто не знайдене.")
+
+    election = get_active_election(db, city.id)
+    if not election:
+        return api_error("Немає активних виборів.")
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    platform = data.get("platform_text")
+    game_day = data.get("game_day", 0)
+
+    result = register_candidate(db, election, player, platform, game_day)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/city/election/vote")
+def cast_vote_endpoint(
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G6: гравець голосує за кандидата (відкрите голосування)."""
+    from backend.app.models import ElectionCandidate
+    from backend.app.services.political_service import cast_vote, get_active_election
+
+    city = db.query(City).first()
+    if not city:
+        return api_error("Місто не знайдене.")
+
+    election = get_active_election(db, city.id)
+    if not election:
+        return api_error("Немає активних виборів.")
+
+    voter_uuid = try_uuid(data.get("voter_id", ""))
+    if voter_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    voter = db.query(Player).filter(Player.id == voter_uuid).first()
+    if not voter:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    candidate_uuid = try_uuid(data.get("candidate_id", ""))
+    if candidate_uuid is None:
+        return api_error("Невірний ідентифікатор кандидата.")
+    candidate = db.query(ElectionCandidate).filter(ElectionCandidate.id == candidate_uuid).first()
+    if not candidate:
+        return api_error("Кандидат не знайдено.")
+
+    game_day = data.get("game_day", 0)
+    result = cast_vote(db, election, voter, candidate, game_day)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/city/election/conclude")
+def conclude_election_endpoint(
+    data: dict,
+    db: Session = Depends(get_db),
+):
+    """Phase G6: підбити підсумки виборів."""
+    from backend.app.services.political_service import conclude_election, get_active_election
+
+    city = db.query(City).first()
+    if not city:
+        return api_error("Місто не знайдене.")
+
+    election = get_active_election(db, city.id)
+    if not election:
+        return api_error("Немає активних виборів.")
+
+    game_day = data.get("game_day", 0)
+    result = conclude_election(db, election, game_day)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/city/election/bribe")
+def offer_bribe_endpoint(
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G6: підкуп голосів (тиньовий фонд)."""
+    from backend.app.services.political_service import get_active_election, offer_bribe
+
+    city = db.query(City).first()
+    if not city:
+        return api_error("Місто не знайдене.")
+
+    election = get_active_election(db, city.id)
+    if not election:
+        return api_error("Немає активних виборів.")
+
+    briber_uuid = try_uuid(data.get("briber_id", ""))
+    if briber_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    briber = db.query(Player).filter(Player.id == briber_uuid).first()
+    if not briber:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    voter_uuid = try_uuid(data.get("voter_id", ""))
+    if voter_uuid is None:
+        return api_error("Невірний ідентифікатор виборця.")
+    voter = db.query(Player).filter(Player.id == voter_uuid).first()
+    if not voter:
+        return api_error("Виборець не знайдено.")
+
+    amount = Decimal(str(data.get("amount", 0)))
+    game_day = data.get("game_day", 0)
+
+    result = offer_bribe(db, election, briber, voter, amount, game_day)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/city/election/bribe/{bribe_id}/respond")
+def respond_bribe_endpoint(
+    bribe_id: str,
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G6: виборець відповідає на хабар."""
+    from backend.app.models import VoteBribe
+    from backend.app.services.political_service import respond_to_bribe
+
+    bribe_uuid = try_uuid(bribe_id)
+    if bribe_uuid is None:
+        return api_error("Невірний ідентифікатор хабара.")
+    bribe = db.query(VoteBribe).filter(VoteBribe.id == bribe_uuid).first()
+    if not bribe:
+        return api_error("Хабар не знайдено.")
+
+    voter_uuid = try_uuid(data.get("voter_id", ""))
+    if voter_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    voter = db.query(Player).filter(Player.id == voter_uuid).first()
+    if not voter:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    accept = bool(data.get("accept", False))
+    game_day = data.get("game_day", 0)
+
+    result = respond_to_bribe(db, bribe, voter, accept, game_day)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/city/no-confidence")
+def no_confidence_endpoint(
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G6: вотум недовіри меру → дострокові вибори."""
+    from backend.app.services.political_service import vote_of_no_confidence
+
+    city = db.query(City).first()
+    if not city:
+        return api_error("Місто не знайдене.")
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    game_day = data.get("game_day", 0)
+    result = vote_of_no_confidence(db, city, player, game_day)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/city/ai-mayor-invest")
+def ai_mayor_invest_endpoint(
+    data: dict,
+    db: Session = Depends(get_db),
+):
+    """Phase G6: AI-мер інвестує з treasury у найгірший район."""
+    from backend.app.services.political_service import ai_mayor_invest
+
+    city = db.query(City).first()
+    if not city:
+        return api_error("Місто не знайдене.")
+
+    game_day = data.get("game_day", 0)
+    result = ai_mayor_invest(db, city, game_day)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
 # --- Phase G5: Bank as Business ---
 
 

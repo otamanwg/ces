@@ -106,6 +106,9 @@ check-vacancies:
 check-bank:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 bank
 
+check-political:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 political
+
 check-prod:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 prod-fast
 

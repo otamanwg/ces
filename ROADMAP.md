@@ -142,13 +142,14 @@
 5. [x] API: /banks/{id}/deposit, /banks/deposits/{id}/withdraw, /banks/{id}/loan, /banks/loans/{id}/repay, /auctions/active, /auctions/{id}/bid.
 6. [x] Тести: 23 passed (deposits, loans, interest, auctions, bidding, closing, API).
 
-### Phase G6 — Political System
+### Phase G6 — Political System (DONE)
 
-1. [ ] Ієрархія посад у мерії (працівник → начальник відділу → заступник → мер). Робота в мерії 3 місяці — вимога для балотування.
-2. [ ] Вибори мера: вимоги (репутація, економічна + юридична освіта, робота в мерії 3 міс), відкрите голосування, мандат 6 місяців, вотум недовіри.
-3. [ ] Підкуп голосів: тіньовий фонд, анонімна пропозиція виборцю, виборець може обдурити або повідомити в поліцію, `corruption_log` з evidence_strength.
-4. [ ] AI-мер: інвестує з treasury там, де метрики найгірші.
-5. [ ] Тести.
+1. [x] Ієрархія посад у мерії (worker → department_head → deputy → mayor). Робота в мерії 90 днів — вимога для балотування.
+2. [x] Вибори мера: вимоги (репутація ≥50, освіта ≥College, 90 днів у мерії), відкрите голосування, мандат 180 днів, вотум недовіри.
+3. [x] Підкуп голосів: тіньовий фонд, анонімна пропозиція, виборець може прийняти/відхилити/повідомити (30% шанс), political_corruption_log з evidence_strength.
+4. [x] AI-мер: інвестує з treasury у район з найгіршим desirability.
+5. [x] API: /city/offices/hire, /city/election (GET/start/register/vote/conclude), /city/election/bribe, /city/no-confidence, /city/ai-mayor-invest.
+6. [x] Тести: 25 passed (office hierarchy, candidacy, elections, voting, no-confidence, bribery, AI mayor, API).
 
 ### Phase G7 — 3D Avatar and Locations (Godot)
 
@@ -230,7 +231,7 @@
 - Phase G3 — Utility Services: 100% (DONE)
 - Phase G4 — Vacancies and Hiring: 100% (DONE)
 - Phase G5 — Bank as Business: 100% (DONE)
-- Phase G6 — Political System: 0%
+- Phase G6 — Political System: 100% (DONE)
 - Phase G7 — 3D Avatar and Locations: 0%
 - Phase G8 — Prison/Police/Press/Court/Lawyer: 0%
 - Phase G9 — Casino/Atelier/Shadow Niches: 0%
