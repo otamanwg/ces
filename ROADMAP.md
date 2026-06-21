@@ -202,7 +202,7 @@
 
 ## Open Debt Register
 
-- `CityDashboardController.cs` зменшено до 535 рядків; presentation та API orchestration ізольовані у власних partial-ах.
+- `CityDashboardController.cs` зменшено до 502 рядків; presentation та API orchestration ізольовані у власних partial-ах.
 - API response parser розрізняє valid/empty/malformed payload і не залишає UI action у pending-стані.
 - Pytest cache працює через ignored `.cache/pytest`; повний gate проходить без warnings.
 - `check.ps1` запускає headless Godot runtime smoke для API dispatch recovery.
@@ -214,7 +214,10 @@
 - Player auth tokens зберігаються hash-first; legacy plaintext записи backfill/cleanup через migration і fallback lookup.
 - Production backup/restore drill із sentinel data/row-count validation, external dump validation mode, rollout preflight, rollback strategy, baseline secrets guardrails, Docker secrets / `_FILE` contract і release metadata є.
 - Production expansion заморожений до нового рішення; reverse proxy/TLS staging dry-run чекатиме вибору домену або хоста.
-- Наступний активний debt: Godot playability audit і client/gameplay-first slice.
+- Наступний активний debt: Sprint 60 items 37-40 (клієнтський каркас — dashboard HUD, onboarding flow, visible city layer, business guidance).
+- Audit cleanup завершено (commit `a7e0573`): missing db.commit() в /shadow/fraud-offer, atelier endpoints wired, httpx2 видалено, dotnet-format hook fixed, empty dirs cleaned.
+- Test refactor завершено (commit `0cfba61`): shared conftest.py fixtures, named STARTER_*_COUNT constants, wire police refuse_bribe/confiscate_business + press accept_advertising, module-level imports в mvp.py, frozen models docs, confiscate_business bugfix.
+- Observability metrics fix: `ces_http_requests_total` / `ces_http_request_duration_seconds` перенесено з `observability.py` в `metrics.py` — `/metrics` endpoint тепер експортує кастомні метрики без залежності від app startup.
 - G6-G10 day tick integration завершено: police auto-patrol, press investigation tick, shadow business income + discovery + fraud offers + monthly criminal_rep decay, education daily energy/scholarship + auto-completion. `phase_g6_to_g10_tick.py` module, defensive (no-op if no records). 10 integration tests, `just check-g-integration` profile.
 - Post-MVP gameplay design завершено (Round 1-14, `GAMEPLAY_CORE_MODEL.md` розділи 13-29). Витягнуто у Phase G1-G12 нижче. Активна фаза: G1 (Dynamic District Metrics).
 - Test workflow оптимізований через `scripts/check_targeted.ps1` і `just check-*`; це default dev loop. Full gate лишається фінальною перевіркою, а не основним способом ітерації.
@@ -236,16 +239,16 @@
 - Phase G6 — Political System: 100% (DONE)
 - Phase G7 — 3D Avatar and Locations: 100% (DONE)
 - Phase G8 — Prison/Police/Press/Court/Lawyer: 100% (DONE, backend)
-- Phase G9 — Casino/Atelier/Shadow Niches: 0%
-- Phase G10 — Education Tree/Exams/Licenses: 0%
+- Phase G9 — Casino/Atelier/Shadow Niches: 100% (DONE, backend)
+- Phase G10 — Education Tree/Exams/Licenses: 100% (DONE, backend)
 - Phase G11 — 3D Visual Layers: 0%
 - Phase G12 — Poker Engine: 0%
 
 ## Verified Now
 
-- Backend tests: `155 passed / 0 failed`.
+- Backend tests: `393 passed / 0 failed`.
 - Client logic tests: passed; Godot C# build: passed, 0 warnings/errors.
-- Controller split: main controller — 535 рядків; API dispatch, presentation, guided actions і feature routing рознесені по partial-ах.
+- Controller split: main controller — 502 рядки; API dispatch, presentation, guided actions і feature routing рознесені по partial-ах.
 - Ruff lint/format: passed; pyright: `0 errors`.
 - API smoke: повний MVP loop passed; Godot MCP dashboard smoke: `0 errors`.
 - Economy gate: 30 production days, solvency/needs/ledger/business/upkeep/inflation acceptance passed.
@@ -281,7 +284,7 @@
 - sports, cartels, unions, insurance, advanced routes.
 - Shadow economy — розморожено як частину Post-MVP Gameplay Phases (G8-G9: corruption, prison, shadow niches).
 - Нові системи не брати, поки current queue не закрита і 5-minute loop не відчувається стабільним.
-- Post-MVP Gameplay Phases (G1-G12) — активна черга після Sprint 60 client polish (items 37-40).
+- Post-MVP Gameplay Phases: G1-G10 завершено (backend); G11-G12 (3D visual layers, poker engine) — optional, post-MVP. Активна черга: Sprint 60 client polish (items 37-40).
 
 ## Reference Inputs
 

@@ -6,23 +6,12 @@ from time import perf_counter
 from uuid import uuid4
 
 from fastapi import Request
-from prometheus_client import Counter, Histogram
 
+from backend.app.api.metrics import HTTP_REQUEST_DURATION, HTTP_REQUESTS
 from backend.app.core.config import settings
 
 request_id_context: ContextVar[str] = ContextVar("request_id", default="-")
 logger = logging.getLogger("CityHTTP")
-
-HTTP_REQUESTS = Counter(
-    "ces_http_requests_total",
-    "HTTP requests handled by the backend.",
-    ("method", "path", "status"),
-)
-HTTP_REQUEST_DURATION = Histogram(
-    "ces_http_request_duration_seconds",
-    "HTTP request duration in seconds.",
-    ("method", "path"),
-)
 
 _RESERVED_LOG_RECORD_KEYS = {
     "args",
