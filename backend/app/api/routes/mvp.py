@@ -23,6 +23,7 @@ from backend.app.models import (
     BuildingApplication,
     Business,
     BusinessBlueprint,
+    CasinoGame,
     City,
     CityDistrict,
     CityOffice,
@@ -254,7 +255,10 @@ from backend.app.services.shadow_service import (
     money_laundering_service,
     offer_fraud,
     open_shadow_business,
+    refuse_fraud,
     shadow_business_income,
+    shadow_market_buy,
+    shadow_market_sell,
 )
 from backend.app.services.sports import (
     sign_athlete_contract,
@@ -2022,6 +2026,154 @@ def shadow_market_endpoint(player_id: str, db: Session = Depends(get_db)):
                 {"type": "contraband_electronics", "price_modifier": 0.6},
                 {"type": "stolen_goods", "price_modifier": 0.5},
                 {"type": "fake_medicine", "price_modifier": 0.4},
+            ],
+        },
+    )
+
+
+@router.post("/shadow/market/buy")
+def shadow_market_buy_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: купівля контрабанди на тіньовому ринку."""
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    item_type = data.get("item_type", "")
+    quantity = int(data.get("quantity", 1))
+    result = shadow_market_buy(db, player, item_type, quantity)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/shadow/market/sell")
+def shadow_market_sell_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: продаж контрабанди на тіньовому ринку."""
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    item_type = data.get("item_type", "")
+    quantity = int(data.get("quantity", 1))
+    result = shadow_market_sell(db, player, item_type, quantity)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/shadow/fraud-refuse")
+def shadow_fraud_refuse_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: відмова від шахрайської схеми (чесна поведінка)."""
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    result = refuse_fraud(db, player)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.get("/player/{player_id}/shadow-businesses")
+def player_shadow_businesses_endpoint(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G9: тіньові бізнеси гравця для клієнтського Shadow panel."""
+    player = require_player(db, player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    businesses = (
+        db.query(ShadowBusiness)
+        .filter(ShadowBusiness.owner_id == player.id)
+        .order_by(ShadowBusiness.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    return api_success(
+        "Тіньові бізнеси гравця.",
+        {
+            "criminal_rep": float(player.criminal_rep),
+            "businesses": [
+                {
+                    "id": str(biz.id),
+                    "type": biz.type,
+                    "district_id": str(biz.district_id),
+                    "cash_balance": float(biz.cash_balance),
+                    "is_discovered": biz.is_discovered,
+                    "created_at": biz.created_at.isoformat() if biz.created_at else None,
+                }
+                for biz in businesses
+            ],
+        },
+    )
+
+
+@router.get("/player/{player_id}/casino-games")
+def player_casino_games_endpoint(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G9: покерні ігри гравця (як власника казино) для клієнтського Casino panel."""
+    player = require_player(db, player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    # Find casino businesses owned by player
+    casinos = (
+        db.query(Business)
+        .filter(
+            Business.owner_player_id == player.id,
+            Business.type == "casino",
+            Business.status == "active",
+        )
+        .all()
+    )
+    casino_ids = [c.id for c in casinos]
+
+    games = []
+    if casino_ids:
+        games = (
+            db.query(CasinoGame)
+            .filter(CasinoGame.casino_business_id.in_(casino_ids))
+            .order_by(CasinoGame.created_at.desc())
+            .limit(20)
+            .all()
+        )
+
+    return api_success(
+        "Казино ігри гравця.",
+        {
+            "casinos": [
+                {
+                    "id": str(c.id),
+                    "name": c.name,
+                    "cash_balance": float(c.cash_balance),
+                    "daily_revenue": float(c.daily_revenue),
+                }
+                for c in casinos
+            ],
+            "games": [
+                {
+                    "id": str(game.id),
+                    "casino_business_id": str(game.casino_business_id),
+                    "game_type": game.game_type,
+                    "status": game.status,
+                    "pot": float(game.pot),
+                    "rake": float(game.rake),
+                    "created_at": game.created_at.isoformat() if game.created_at else None,
+                }
+                for game in games
             ],
         },
     )
