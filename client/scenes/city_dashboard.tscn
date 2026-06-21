@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://c0gtwynhiqsc8"]
+[gd_scene load_steps=13 format=3 uid="uid://c0gtwynhiqsc8"]
 
 [ext_resource type="Script" path="res://scripts/CityDashboardController.cs" id="1"]
 [ext_resource type="Script" path="res://scripts/ExamPanelController.cs" id="2"]
@@ -10,6 +10,8 @@
 [ext_resource type="Script" path="res://scripts/BankPanelController.cs" id="8_bank"]
 [ext_resource type="Script" path="res://scripts/PolicePanelController.cs" id="9_police"]
 [ext_resource type="Script" path="res://scripts/CourtPanelController.cs" id="10_court"]
+[ext_resource type="Script" path="res://scripts/PoliticalPanelController.cs" id="11_political"]
+[ext_resource type="Script" path="res://scripts/PressPanelController.cs" id="12_press"]
 
 [node name="CityDashboard" type="Control"]
 layout_mode = 3
@@ -751,6 +753,22 @@ size_flags_horizontal = 3
 text = "Суд"
 text_overrun_behavior = 3
 
+[node name="PoliticalButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Політика"
+text_overrun_behavior = 3
+
+[node name="PressButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Преса"
+text_overrun_behavior = 3
+
 [node name="PoliceRecoveryButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
 visible = false
@@ -1280,6 +1298,232 @@ disabled = true
 text = "Грати"
 
 [node name="CourtCloseButton" type="Button" parent="CourtOverlay/CourtMargin/CourtVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Закрити"
+
+[node name="PoliticalOverlay" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 25
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("11_political")
+
+[node name="PoliticalMargin" type="MarginContainer" parent="PoliticalOverlay"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="PoliticalVBox" type="VBoxContainer" parent="PoliticalOverlay/PoliticalMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PoliticalTitleLabel" type="Label" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Політика"
+
+[node name="PoliticalDescriptionLabel" type="Label" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Мера немає"
+
+[node name="PoliticalScroll" type="ScrollContainer" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PoliticalContent" type="VBoxContainer" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox/PoliticalScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="OfficeSection" type="Label" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox/PoliticalScroll/PoliticalContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.56, 0.9, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Посада у мерії"
+
+[node name="PoliticalOfficeContainer" type="VBoxContainer" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox/PoliticalScroll/PoliticalContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ElectionSection" type="Label" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox/PoliticalScroll/PoliticalContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.6, 0.36, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Вибори"
+
+[node name="PoliticalElectionContainer" type="VBoxContainer" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox/PoliticalScroll/PoliticalContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CandidatesSection" type="Label" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox/PoliticalScroll/PoliticalContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.9, 0.56, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Кандидати"
+
+[node name="PoliticalCandidatesContainer" type="VBoxContainer" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox/PoliticalScroll/PoliticalContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PoliticalCandidateOption" type="OptionButton" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PoliticalActions" type="HBoxContainer" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PoliticalHireOfficeButton" type="Button" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox/PoliticalActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Найнятися в мерію"
+
+[node name="PoliticalStartElectionButton" type="Button" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox/PoliticalActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Почати вибори"
+
+[node name="PoliticalRegisterCandidateButton" type="Button" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox/PoliticalActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Зареєструватися"
+
+[node name="PoliticalCloseButton" type="Button" parent="PoliticalOverlay/PoliticalMargin/PoliticalVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Закрити"
+
+[node name="PressOverlay" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 25
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("12_press")
+
+[node name="PressMargin" type="MarginContainer" parent="PressOverlay"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="PressVBox" type="VBoxContainer" parent="PressOverlay/PressMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PressTitleLabel" type="Label" parent="PressOverlay/PressMargin/PressVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Преса"
+
+[node name="PressDescriptionLabel" type="Label" parent="PressOverlay/PressMargin/PressVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Активних розслідувань немає"
+
+[node name="PressScroll" type="ScrollContainer" parent="PressOverlay/PressMargin/PressVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PressContent" type="VBoxContainer" parent="PressOverlay/PressMargin/PressVBox/PressScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="InvestigationsSection" type="Label" parent="PressOverlay/PressMargin/PressVBox/PressScroll/PressContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.56, 0.9, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Розслідування"
+
+[node name="PressInvestigationsContainer" type="VBoxContainer" parent="PressOverlay/PressMargin/PressVBox/PressScroll/PressContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PressInvestigationOption" type="OptionButton" parent="PressOverlay/PressMargin/PressVBox/PressScroll/PressContent"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="BlackmailsSection" type="Label" parent="PressOverlay/PressMargin/PressVBox/PressScroll/PressContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.36, 0.36, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Шантажі"
+
+[node name="PressBlackmailsContainer" type="VBoxContainer" parent="PressOverlay/PressMargin/PressVBox/PressScroll/PressContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PressBlackmailOption" type="OptionButton" parent="PressOverlay/PressMargin/PressVBox/PressScroll/PressContent"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PressActions" type="HBoxContainer" parent="PressOverlay/PressMargin/PressVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PressInvestigateButton" type="Button" parent="PressOverlay/PressMargin/PressVBox/PressActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Розслідування"
+
+[node name="PressPublishButton" type="Button" parent="PressOverlay/PressMargin/PressVBox/PressActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Опублікувати"
+
+[node name="PressBlackmailButton" type="Button" parent="PressOverlay/PressMargin/PressVBox/PressActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Шантажувати"
+
+[node name="PressBlackmailActions" type="HBoxContainer" parent="PressOverlay/PressMargin/PressVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PressAcceptBlackmailButton" type="Button" parent="PressOverlay/PressMargin/PressVBox/PressBlackmailActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Прийняти шантаж"
+
+[node name="PressRefuseBlackmailButton" type="Button" parent="PressOverlay/PressMargin/PressVBox/PressBlackmailActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Відхилити"
+
+[node name="PressReportBlackmailButton" type="Button" parent="PressOverlay/PressMargin/PressVBox/PressBlackmailActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Повідомити поліцію"
+
+[node name="PressCloseButton" type="Button" parent="PressOverlay/PressMargin/PressVBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Закрити"

@@ -948,4 +948,49 @@ AssertEqual("frozen", courtModel.Sentence!.BusinessImpact, "Sentence business im
 var noSentenceModel = DashboardCourtModel.FromJson(null, noSentenceJson);
 Assert(!noSentenceModel.IsImprisoned, "No sentence not imprisoned");
 
+// DashboardPoliticalModel — Sprint 61 political panel data parsing.
+var officeJson = JsonNode.Parse("""
+{"office": {"id": "off-1", "position": "worker", "department": "economy", "hired_at_game_day": 0, "is_active": true}, "is_mayor": false, "mayor_name": "BossHogg", "mayor_term_started_game_day": 10}
+""")!;
+var noOfficeJson = JsonNode.Parse("""{"office": null, "is_mayor": false, "mayor_name": null, "mayor_term_started_game_day": null}""")!;
+var electionJson = JsonNode.Parse("""
+{"election": {"id": "el-1", "started_at_game_day": 100, "ends_at_game_day": 107, "status": "active"}, "candidates": [{"candidate_id": "c-1", "player_id": "p-1", "player_name": "Alice", "votes": 5, "platform": null}]}
+""")!;
+var noElectionJson = JsonNode.Parse("""{"election": null, "candidates": []}""")!;
+var eligibleJson = JsonNode.Parse("""{"eligible": true, "has_economic": true, "has_legal": true, "has_practice": true, "message": "ok"}""")!;
+var politicalModel = DashboardPoliticalModel.FromJson(officeJson, electionJson, eligibleJson);
+Assert(politicalModel.HasOffice, "Has office flag");
+Assert(!politicalModel.IsMayor, "Not mayor flag");
+AssertEqual("BossHogg", politicalModel.MayorName, "Mayor name");
+Assert(politicalModel.HasActiveElection, "Has active election");
+AssertEqual(1, politicalModel.Candidates.Count, "One candidate");
+AssertEqual("Alice", politicalModel.Candidates[0].PlayerName, "Candidate name");
+AssertEqual(5, politicalModel.Candidates[0].Votes, "Candidate votes");
+Assert(politicalModel.MayorEligible, "Mayor eligible");
+AssertEqual("Працівник", politicalModel.Office!.PositionLabel, "Worker position label");
+var noOfficeModel = DashboardPoliticalModel.FromJson(noOfficeJson, noElectionJson, null);
+Assert(!noOfficeModel.HasOffice, "No office flag");
+Assert(!noOfficeModel.HasActiveElection, "No active election");
+
+// DashboardPressModel — Sprint 61 press panel data parsing.
+var investigationsJson = JsonNode.Parse("""
+{"investigations": [{"id": "inv-1", "target_player_id": "p-2", "incident_type": "corruption", "press_evidence": 0.8, "is_published": false, "article_title": null, "scale": "local", "happiness_impact": 0, "reputation_impact": 0, "created_at": "2024-01-01T00:00:00Z"}]}
+""")!;
+var blackmailsJson = JsonNode.Parse("""
+{"blackmails": [{"id": "bm-1", "journalist_id": "p-3", "amount_demanded": 500.0, "status": "pending", "created_at": "2024-01-01T00:00:00Z", "resolved_at": null}]}
+""")!;
+var pressModel = DashboardPressModel.FromJson(investigationsJson, blackmailsJson);
+Assert(pressModel.HasInvestigations, "Has investigations flag");
+Assert(pressModel.HasBlackmails, "Has blackmails flag");
+Assert(pressModel.HasPendingBlackmails, "Has pending blackmails flag");
+AssertEqual(1, pressModel.Investigations.Count, "One investigation");
+Assert(pressModel.Investigations[0].CanPublish, "Investigation can publish (evidence >= 0.7)");
+Assert(pressModel.Investigations[0].CanBlackmail, "Investigation can blackmail");
+AssertEqual(1, pressModel.Blackmails.Count, "One blackmail");
+AssertEqual("Очікує", pressModel.Blackmails[0].StatusLabel, "Pending blackmail label");
+AssertEqual(500.0, pressModel.Blackmails[0].AmountDemanded, "Blackmail amount");
+var emptyPressModel = DashboardPressModel.FromJson(null, null);
+Assert(!emptyPressModel.HasInvestigations, "No investigations flag");
+Assert(!emptyPressModel.HasBlackmails, "No blackmails flag");
+
 Console.WriteLine("Client logic tests passed.");

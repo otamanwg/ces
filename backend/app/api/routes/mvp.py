@@ -25,6 +25,7 @@ from backend.app.models import (
     BusinessBlueprint,
     City,
     CityDistrict,
+    CityOffice,
     CorruptionLog,
     CourtCase,
     Education,
@@ -2875,6 +2876,134 @@ def ai_mayor_invest_endpoint(
         return api_error(result["message"])
     db.commit()
     return api_success(result["message"], result)
+
+
+@router.get("/player/{player_id}/city-office")
+def player_city_office_endpoint(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G6: активна посада гравця у мерії для клієнтського Political panel."""
+    player = require_player(db, player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    city = db.query(City).first()
+    office = (
+        (
+            db.query(CityOffice)
+            .filter(
+                CityOffice.player_id == player.id,
+                CityOffice.city_id == city.id if city else None,
+                CityOffice.is_active.is_(True),
+            )
+            .order_by(CityOffice.created_at.desc())
+            .first()
+        )
+        if city
+        else None
+    )
+
+    is_mayor = city is not None and city.mayor_player_id == player.id
+    mayor_name = None
+    if city and city.mayor_player_id:
+        mayor = db.query(Player).filter(Player.id == city.mayor_player_id).first()
+        mayor_name = mayor.username if mayor else None
+
+    return api_success(
+        "Статус посади у мерії.",
+        {
+            "office": {
+                "id": str(office.id),
+                "position": office.position,
+                "department": office.department,
+                "hired_at_game_day": office.hired_at_game_day,
+                "is_active": office.is_active,
+            }
+            if office
+            else None,
+            "is_mayor": is_mayor,
+            "mayor_name": mayor_name,
+            "mayor_term_started_game_day": city.mayor_term_started_game_day if city else None,
+        },
+    )
+
+
+@router.get("/player/{player_id}/press-investigations")
+def player_press_investigations_endpoint(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G8: прес-розслідування гравця (як журналіста) для клієнтського Press panel."""
+    player = require_player(db, player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    investigations = (
+        db.query(PressInvestigation)
+        .filter(PressInvestigation.journalist_id == player.id)
+        .order_by(PressInvestigation.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    return api_success(
+        "Прес-розслідування журналіста.",
+        {
+            "investigations": [
+                {
+                    "id": str(inv.id),
+                    "target_player_id": str(inv.target_player_id),
+                    "incident_type": inv.incident_type,
+                    "press_evidence": inv.press_evidence,
+                    "is_published": inv.is_published,
+                    "article_title": inv.article_title,
+                    "scale": inv.scale,
+                    "happiness_impact": inv.happiness_impact,
+                    "reputation_impact": inv.reputation_impact,
+                    "created_at": inv.created_at.isoformat() if inv.created_at else None,
+                }
+                for inv in investigations
+            ]
+        },
+    )
+
+
+@router.get("/player/{player_id}/press-blackmails")
+def player_press_blackmails_endpoint(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G8: шантажі гравця (як цілі) для клієнтського Press panel."""
+    player = require_player(db, player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    blackmails = (
+        db.query(PressBlackmail)
+        .filter(PressBlackmail.target_id == player.id)
+        .order_by(PressBlackmail.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    return api_success(
+        "Шантажі проти гравця.",
+        {
+            "blackmails": [
+                {
+                    "id": str(bm.id),
+                    "journalist_id": str(bm.journalist_id),
+                    "amount_demanded": float(bm.amount_demanded),
+                    "status": bm.status,
+                    "created_at": bm.created_at.isoformat() if bm.created_at else None,
+                    "resolved_at": bm.resolved_at.isoformat() if bm.resolved_at else None,
+                }
+                for bm in blackmails
+            ]
+        },
+    )
 
 
 # --- Phase G5: Bank as Business ---

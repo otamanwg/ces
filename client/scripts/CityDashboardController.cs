@@ -35,6 +35,8 @@ public partial class CityDashboardController : Control
     private BankPanelController _bankPanel;
     private PolicePanelController _policePanel;
     private CourtPanelController _courtPanel;
+    private PoliticalPanelController _politicalPanel;
+    private PressPanelController _pressPanel;
     private CityVisualOverlay _cityVisualOverlay;
     private Button _applyJobButton;
     private Button _workButton;
@@ -51,6 +53,8 @@ public partial class CityDashboardController : Control
     private Button _bankButton;
     private Button _policeButton;
     private Button _courtButton;
+    private Button _politicalButton;
+    private Button _pressButton;
     private Control _leftRail;
     private Control _centerScroll;
     private Control _actionRail;
@@ -166,6 +170,14 @@ public partial class CityDashboardController : Control
         {
             _courtButton.Pressed += OnCourtButtonPressed;
         }
+        if (_politicalButton != null)
+        {
+            _politicalButton.Pressed += OnPoliticalButtonPressed;
+        }
+        if (_pressButton != null)
+        {
+            _pressButton.Pressed += OnPressButtonPressed;
+        }
         if (_onboardingPoliceButton != null)
         {
             _onboardingPoliceButton.Pressed += OnOnboardingPoliceButtonPressed;
@@ -220,6 +232,8 @@ public partial class CityDashboardController : Control
         _bankPanel = GetNodeOrNull<BankPanelController>("BankOverlay");
         _policePanel = GetNodeOrNull<PolicePanelController>("PoliceOverlay");
         _courtPanel = GetNodeOrNull<CourtPanelController>("CourtOverlay");
+        _politicalPanel = GetNodeOrNull<PoliticalPanelController>("PoliticalOverlay");
+        _pressPanel = GetNodeOrNull<PressPanelController>("PressOverlay");
         _cityVisualOverlay?.SetStyleCode(_session?.VisualStyleCode);
         ConfigureOnboardingPortraitMaterial();
         ConfigureCharacterCreationVisual();
@@ -276,6 +290,23 @@ public partial class CityDashboardController : Control
             _courtPanel.PokerRequested += OnCourtPokerRequested;
             _courtPanel.SocializeRequested += OnCourtSocializeRequested;
             _courtPanel.Closed += () => SetStatus("Судову панель закрито.");
+        }
+
+        if (_politicalPanel != null)
+        {
+            _politicalPanel.HireOfficeRequested += OnHireOfficeRequested;
+            _politicalPanel.RegisterCandidateRequested += OnRegisterCandidateRequested;
+            _politicalPanel.StartElectionRequested += OnStartElectionRequested;
+            _politicalPanel.Closed += () => SetStatus("Політичну панель закрито.");
+        }
+
+        if (_pressPanel != null)
+        {
+            _pressPanel.InvestigateRequested += OnInvestigateRequested;
+            _pressPanel.PublishRequested += OnPublishRequested;
+            _pressPanel.BlackmailRequested += OnBlackmailRequested;
+            _pressPanel.BlackmailRespondRequested += OnBlackmailRespondRequested;
+            _pressPanel.Closed += () => SetStatus("Прес-панель закрито.");
         }
 
         if (EnergyBar != null)
@@ -367,6 +398,8 @@ public partial class CityDashboardController : Control
         _bankButton ??= GetNodeOrNull<Button>("%BankButton");
         _policeButton ??= GetNodeOrNull<Button>("%PoliceButton");
         _courtButton ??= GetNodeOrNull<Button>("%CourtButton");
+        _politicalButton ??= GetNodeOrNull<Button>("%PoliticalButton");
+        _pressButton ??= GetNodeOrNull<Button>("%PressButton");
         _onboardingOverlay ??= GetNodeOrNull<Control>("%OnboardingOverlay");
         _onboardingBackdrop ??= GetNodeOrNull<TextureRect>("%OnboardingBackdrop");
         _onboardingPortrait ??= GetNodeOrNull<TextureRect>("%OnboardingPortrait");
