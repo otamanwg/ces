@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://c0gtwynhiqsc8"]
+[gd_scene load_steps=9 format=3 uid="uid://c0gtwynhiqsc8"]
 
 [ext_resource type="Script" path="res://scripts/CityDashboardController.cs" id="1"]
 [ext_resource type="Script" path="res://scripts/ExamPanelController.cs" id="2"]
@@ -6,6 +6,8 @@
 [ext_resource type="Script" path="res://scripts/CityVisualOverlay.cs" id="3_juvko"]
 [ext_resource type="Texture2D" uid="uid://03ukqeywx1l5" path="res://assets/visual/core/arrival_bus_station_core_v2.png" id="5_7m5xk"]
 [ext_resource type="Script" path="res://scripts/CharacterAvatarPreview.cs" id="6_afu1s"]
+[ext_resource type="Script" path="res://scripts/EducationPanelController.cs" id="7_edu"]
+[ext_resource type="Script" path="res://scripts/BankPanelController.cs" id="8_bank"]
 
 [node name="CityDashboard" type="Control"]
 layout_mode = 3
@@ -715,6 +717,22 @@ size_flags_horizontal = 3
 text = "Оновити"
 text_overrun_behavior = 3
 
+[node name="EducationButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Освіта"
+text_overrun_behavior = 3
+
+[node name="BankButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Банк"
+text_overrun_behavior = 3
+
 [node name="PoliceRecoveryButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
 visible = false
@@ -784,6 +802,260 @@ size_flags_horizontal = 3
 text = "Здати іспит"
 
 [node name="CloseExamButton" type="Button" parent="ExamOverlay/ExamMargin/ExamVBox/ExamButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Закрити"
+
+[node name="EducationOverlay" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 25
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("7_edu")
+
+[node name="EducationMargin" type="MarginContainer" parent="EducationOverlay"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="EducationVBox" type="VBoxContainer" parent="EducationOverlay/EducationMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="EducationTitleLabel" type="Label" parent="EducationOverlay/EducationMargin/EducationVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Освіта"
+
+[node name="EducationDescriptionLabel" type="Label" parent="EducationOverlay/EducationMargin/EducationVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Активних: 0 | Завершено: 0"
+
+[node name="EducationScroll" type="ScrollContainer" parent="EducationOverlay/EducationMargin/EducationVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="EducationContent" type="VBoxContainer" parent="EducationOverlay/EducationMargin/EducationVBox/EducationScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="CoursesSection" type="Label" parent="EducationOverlay/EducationMargin/EducationVBox/EducationScroll/EducationContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.56, 0.9, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Каталог курсів"
+
+[node name="EducationCoursesContainer" type="VBoxContainer" parent="EducationOverlay/EducationMargin/EducationVBox/EducationScroll/EducationContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ActiveSection" type="Label" parent="EducationOverlay/EducationMargin/EducationVBox/EducationScroll/EducationContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.9, 0.45, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Активні курси"
+
+[node name="EducationActiveContainer" type="VBoxContainer" parent="EducationOverlay/EducationMargin/EducationVBox/EducationScroll/EducationContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CompletedSection" type="Label" parent="EducationOverlay/EducationMargin/EducationVBox/EducationScroll/EducationContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.94, 0.76, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Завершені курси"
+
+[node name="EducationCompletedContainer" type="VBoxContainer" parent="EducationOverlay/EducationMargin/EducationVBox/EducationScroll/EducationContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EnrollBox" type="HBoxContainer" parent="EducationOverlay/EducationMargin/EducationVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CourseLabel" type="Label" parent="EducationOverlay/EducationMargin/EducationVBox/EnrollBox"]
+layout_mode = 2
+text = "Курс:"
+
+[node name="EducationCourseOption" type="OptionButton" parent="EducationOverlay/EducationMargin/EducationVBox/EnrollBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ModeLabel" type="Label" parent="EducationOverlay/EducationMargin/EducationVBox/EnrollBox"]
+layout_mode = 2
+text = "Режим:"
+
+[node name="EducationModeOption" type="OptionButton" parent="EducationOverlay/EducationMargin/EducationVBox/EnrollBox"]
+unique_name_in_owner = true
+layout_mode = 2
+item_count = 2
+popup/item_0/text = "Очно"
+popup/item_0/id = 0
+popup/item_1/text = "Заочно"
+popup/item_1/id = 1
+
+[node name="EducationEnrollButton" type="Button" parent="EducationOverlay/EducationMargin/EducationVBox/EnrollBox"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Записатися"
+
+[node name="EducationCloseButton" type="Button" parent="EducationOverlay/EducationMargin/EducationVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Закрити"
+
+[node name="BankOverlay" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 25
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("8_bank")
+
+[node name="BankMargin" type="MarginContainer" parent="BankOverlay"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="BankVBox" type="VBoxContainer" parent="BankOverlay/BankMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BankTitleLabel" type="Label" parent="BankOverlay/BankMargin/BankVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Банк"
+
+[node name="BankDescriptionLabel" type="Label" parent="BankOverlay/BankMargin/BankVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Банків: 0 | Депозитів: 0 | Кредитів: 0 | Аукціонів: 0"
+
+[node name="BankScroll" type="ScrollContainer" parent="BankOverlay/BankMargin/BankVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BankContent" type="VBoxContainer" parent="BankOverlay/BankMargin/BankVBox/BankScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="BanksSection" type="Label" parent="BankOverlay/BankMargin/BankVBox/BankScroll/BankContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.56, 0.9, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Банки міста"
+
+[node name="BankBanksContainer" type="VBoxContainer" parent="BankOverlay/BankMargin/BankVBox/BankScroll/BankContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="DepositsSection" type="Label" parent="BankOverlay/BankMargin/BankVBox/BankScroll/BankContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.9, 0.45, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Мої депозити"
+
+[node name="BankDepositsContainer" type="VBoxContainer" parent="BankOverlay/BankMargin/BankVBox/BankScroll/BankContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LoansSection" type="Label" parent="BankOverlay/BankMargin/BankVBox/BankScroll/BankContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.6, 0.36, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Мої кредити"
+
+[node name="BankLoansContainer" type="VBoxContainer" parent="BankOverlay/BankMargin/BankVBox/BankScroll/BankContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="AuctionsSection" type="Label" parent="BankOverlay/BankMargin/BankVBox/BankScroll/BankContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.36, 0.9, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Аукціони банкрутів"
+
+[node name="BankAuctionsContainer" type="VBoxContainer" parent="BankOverlay/BankMargin/BankVBox/BankScroll/BankContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ActionBox" type="HBoxContainer" parent="BankOverlay/BankMargin/BankVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BankLabel" type="Label" parent="BankOverlay/BankMargin/BankVBox/ActionBox"]
+layout_mode = 2
+text = "Банк:"
+
+[node name="BankBankOption" type="OptionButton" parent="BankOverlay/BankMargin/BankVBox/ActionBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DepositLabel" type="Label" parent="BankOverlay/BankMargin/BankVBox/ActionBox"]
+layout_mode = 2
+text = "Депозит:"
+
+[node name="BankDepositAmount" type="SpinBox" parent="BankOverlay/BankMargin/BankVBox/ActionBox"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 100.0
+max_value = 50000.0
+step = 100.0
+value = 1000.0
+
+[node name="BankDepositButton" type="Button" parent="BankOverlay/BankMargin/BankVBox/ActionBox"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Внести"
+
+[node name="LoanLabel" type="Label" parent="BankOverlay/BankMargin/BankVBox/ActionBox"]
+layout_mode = 2
+text = "Кредит:"
+
+[node name="BankLoanAmount" type="SpinBox" parent="BankOverlay/BankMargin/BankVBox/ActionBox"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 100.0
+max_value = 50000.0
+step = 100.0
+value = 5000.0
+
+[node name="BankLoanButton" type="Button" parent="BankOverlay/BankMargin/BankVBox/ActionBox"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Взяти кредит"
+
+[node name="BankCloseButton" type="Button" parent="BankOverlay/BankMargin/BankVBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Закрити"

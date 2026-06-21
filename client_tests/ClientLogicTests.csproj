@@ -13,6 +13,8 @@
     <Compile Include="..\client\scripts\DashboardBuildCatalog.cs" Link="DashboardBuildCatalog.cs" />
     <Compile Include="..\client\scripts\DashboardBuildingPortfolio.cs" Link="DashboardBuildingPortfolio.cs" />
     <Compile Include="..\client\scripts\DashboardCityVisualModel.cs" Link="DashboardCityVisualModel.cs" />
+    <Compile Include="..\client\scripts\DashboardEducationModel.cs" Link="DashboardEducationModel.cs" />
+    <Compile Include="..\client\scripts\DashboardBankModel.cs" Link="DashboardBankModel.cs" />
     <Compile Include="..\client\scripts\DashboardVisualAnimation.cs" Link="DashboardVisualAnimation.cs" />
     <Compile Include="..\client\scripts\DashboardVisualPalette.cs" Link="DashboardVisualPalette.cs" />
     <Compile Include="..\client\scripts\DashboardVisualStylePack.cs" Link="DashboardVisualStylePack.cs" />

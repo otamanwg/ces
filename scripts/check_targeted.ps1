@@ -222,6 +222,7 @@ switch ($Profile) {
         Invoke-PythonStatic
         Invoke-Pytest @(
             "backend\tests\test_bank_service.py",
+            "backend\tests\test_bank_query_api.py",
             "backend\tests\test_utility_service.py"
         )
     }
