@@ -44,6 +44,7 @@ class CityTreasuryServiceSnapshot(BaseModel):
 
 class DayTickCityServiceSnapshot(CityTreasuryServiceSnapshot):
     id: str
+    game_day: int
     inflation_rate: float
 
 
@@ -55,8 +56,17 @@ class DayTickStatsServiceSnapshot(BaseModel):
     building_upkeep_charged: float
     buildings_upkeep_charged: int
     buildings_upkeep_failed: int
+    businesses_processed: int
+    businesses_successful: int
+    businesses_failed: int
+    businesses_bankrupted: int
+    total_business_revenue: float
+    total_business_expenses: float
+    total_business_taxes: float
     active_money_before: float
     active_money_after: float
+    money_growth_rate: float
+    target_growth_rate: float
 
 
 class BusinessPurchaseServiceResult(BaseModel):

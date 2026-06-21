@@ -28,5 +28,8 @@
     <Compile Include="..\client\scripts\DashboardArrivalStory.cs" Link="DashboardArrivalStory.cs" />
     <Compile Include="..\client\scripts\DashboardOnboardingState.cs" Link="DashboardOnboardingState.cs" />
     <Compile Include="..\client\scripts\DashboardPlayerSnapshot.cs" Link="DashboardPlayerSnapshot.cs" />
+    <Compile Include="..\client\scripts\DashboardPlayerActionEndpoint.cs" Link="DashboardPlayerActionEndpoint.cs" />
+    <Compile Include="..\client\scripts\DashboardApiResponseParser.cs" Link="DashboardApiResponseParser.cs" />
+    <Compile Include="..\client\scripts\CityWebSocketEndpoint.cs" Link="CityWebSocketEndpoint.cs" />
   </ItemGroup>
 </Project>

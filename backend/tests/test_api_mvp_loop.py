@@ -4,6 +4,7 @@ from decimal import Decimal
 import pytest
 from fastapi.testclient import TestClient
 
+from backend.app.core.tokens import hash_player_token
 from backend.app.database import get_db
 from backend.app.models import IdempotencyRecord, Player, TransactionModelLog
 from backend.app.schemas.mvp import (
@@ -97,6 +98,9 @@ def test_full_mvp_api_loop(client):
     player_id = register_body["data"]["id"]
     player_token = register_body["data"]["auth_token"]
     auth_headers = {"X-Player-Token": player_token}
+    registered_player = db.query(Player).filter(Player.id == player_id).one()
+    assert registered_player.auth_token is None
+    assert registered_player.auth_token_hash == hash_player_token(player_token)
     starting_balance = register_body["data"]["balance"]
     assert 300 <= starting_balance <= 400
     assert register_body["data"]["actions"]["can_take_exam"] is False
@@ -111,6 +115,11 @@ def test_full_mvp_api_loop(client):
     assert unauth_player.status_code == 200
     assert unauth_player.json()["success"] is False
     assert unauth_player.json()["message"] == INVALID_PLAYER_SESSION_MESSAGE
+
+    authorized_player = test_client.get(f"/api/player/{player_id}", headers=auth_headers)
+    assert authorized_player.status_code == 200
+    assert authorized_player.json()["success"] is True
+    assert "auth_token" not in authorized_player.json()["data"]
 
     vacancies_res = test_client.get("/api/jobs/vacancies")
     assert vacancies_res.status_code == 200

@@ -1,0 +1,52 @@
+services:
+  # PostgreSQL для development
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: city
+      POSTGRES_PASSWORD: city_dev_password
+      POSTGRES_DB: city_game
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+      # Для development - монтуємо логи
+      - ./logs/postgres:/var/log/postgresql
+
+  # Redis для development
+  redis:
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    # Без пароля для development
+    volumes:
+      - redis_data_dev:/data
+
+  # Backend для development
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      CITY_DATABASE_URL: postgresql+psycopg2://city:city_dev_password@postgres:5432/city_game
+      
+      # Redis (без пароля для dev)
+      REDIS_URL: redis://redis:6379/0
+      
+      CITY_CORS_ORIGINS: http://localhost:3000,http://localhost:8000
+      CITY_DEBUG: "true"
+      
+    ports:
+      - "8000:8000"
+    volumes:
+      # Монтуємо код для hot-reload
+      - ./backend:/app/backend
+      - ./database/college_exams_manager.json:/app/database/college_exams_manager.json:ro
+    # Для debugging
+    stdin_open: true
+    tty: true
+    command: python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data_dev:
+  redis_data_dev:

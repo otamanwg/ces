@@ -163,7 +163,8 @@ def invest_in_startup(db: Session, investor_id: str, startup_id: str, amount: fl
 
     # Перевірка ліміту фінансування для етапу
     stage_config = STARTUP_STAGES[startup.startup_stage]
-    if startup.startup_funding + investment_amount > stage_config["max_funding"]:
+    current_funding = money(startup.startup_funding)
+    if current_funding + investment_amount > stage_config["max_funding"]:
         return {"success": False, "message": f"Перевищено ліміть фінансування для етапу {stage_config['name']}"}
 
     # Виконання інвестиції
@@ -175,7 +176,7 @@ def invest_in_startup(db: Session, investor_id: str, startup_id: str, amount: fl
         startup.startup_investors = {}
 
     startup.startup_investors[str(investor_uuid)] = float(investment_amount)
-    startup.startup_funding += investment_amount
+    startup.startup_funding = current_funding + investment_amount
 
     # Оновлення шансу успіху
     base_chance = STARTUP_STAGES[startup.startup_stage]["success_chance"]

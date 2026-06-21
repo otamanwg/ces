@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from backend.app.models import Business, City
+from backend.app.models import City
 from backend.app.repositories.business import BusinessRepository
 from backend.app.repositories.player import PlayerRepository
 from backend.app.schemas.mvp import CityNewsItem
@@ -23,16 +23,7 @@ def _limit_news(news: list[dict], max_items: int) -> list[dict]:
 
 
 def build_city_news(db: Session, city: City, max_items: int = 4) -> list[dict]:
-    buyable_count = (
-        db.query(Business)
-        .filter(
-            Business.city_id == city.id,
-            Business.owner_player_id.is_(None),
-            Business.type.in_(["shop", "factory", "private_hostel"]),
-            Business.status == "active",
-        )
-        .count()
-    )
+    buyable_count = BusinessRepository(db).count_buyable_in_city(city.id)
     owned_count = BusinessRepository(db).count_owned_in_city(city.id)
     hungry_count = PlayerRepository(db).count_hungry_in_city(city.id)
     homeless_count = PlayerRepository(db).count_homeless_in_city(city.id)

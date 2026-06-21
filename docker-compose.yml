@@ -1,4 +1,5 @@
 services:
+  # PostgreSQL база даних
   postgres:
     image: postgres:16
     container_name: city-economic-simulator-postgres
@@ -17,6 +18,64 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - ces_network
 
+  # Redis для кешування та presence
+  redis:
+    image: redis:7-alpine
+    container_name: ces_redis
+    command: redis-server --appendonly yes --requirepass redis_password
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ces_network
+
+  # Backend застосунок
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: ces_backend
+    environment:
+      # База даних
+      CITY_DATABASE_URL: postgresql+psycopg2://city:city_dev_password@postgres:5432/city_game
+
+      # Redis
+      REDIS_URL: redis://:redis_password@redis:6379/0
+
+      # Інші налаштування
+      CITY_CORS_ORIGINS: ${CITY_CORS_ORIGINS:-http://localhost:3000}
+      CITY_DEBUG: "false"
+
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - ces_network
 volumes:
   postgres_data:
+  redis_data:
+
+networks:
+  ces_network:
+    driver: bridge

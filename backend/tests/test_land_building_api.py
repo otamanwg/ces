@@ -25,11 +25,17 @@ from backend.app.schemas.mvp import (
     LandParcelsData,
     LandPurchaseActionData,
 )
+from backend.app.seed import (
+    STARTER_LAND_PARCEL_COUNT as _SEED_LAND_PARCEL_COUNT,
+)
 from backend.app.seed import seed_initial_data
 from backend.app.services.buildings import (
     ACTIVE,
     BUILDING_REPAIR_PURPOSE,
     MAINTENANCE_DUE,
+)
+from backend.app.services.business_blueprints import (
+    STARTER_BLUEPRINT_COUNT as _SEED_BLUEPRINT_COUNT,
 )
 from backend.app.services.land import OWNED
 from backend.app.services.messages import INVALID_PLAYER_SESSION_MESSAGE
@@ -87,7 +93,7 @@ def test_land_parcels_endpoint_returns_seeded_city_land(client):
     assert body["success"] is True
     data = LandParcelsData.model_validate(body["data"])
     parcels = [parcel.model_dump() for parcel in data.parcels]
-    assert len(parcels) == 6
+    assert len(parcels) == _SEED_LAND_PARCEL_COUNT
     assert parcels[0]["code"] == "bus_station_kiosk_lot"
     assert parcels[0]["district_code"] == "bus_station"
     assert parcels[0]["current_price"] == 200.0
@@ -105,7 +111,9 @@ def test_business_blueprints_endpoint_returns_starter_catalog(client):
     assert body["success"] is True
     data = BusinessBlueprintsData.model_validate(body["data"])
     blueprints = {blueprint.code: blueprint for blueprint in data.blueprints}
-    assert len(blueprints) == 7
+    assert (
+        len(blueprints) == _SEED_BLUEPRINT_COUNT
+    )  # 7 starter + 3 utility (G3) + 1 bank (G5) + 3 G9 (casino, atelier, media_outlet)
     assert blueprints["station_kiosk"].project_type == "commercial"
     assert blueprints["station_kiosk"].business_type == "shop"
     assert blueprints["station_kiosk"].metric_effects["expected_jobs"] == 2

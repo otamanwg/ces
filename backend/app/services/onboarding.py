@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.models import Player, PlayerOnboarding, PoliceRecord
 from backend.app.repositories.hostel import HostelRepository
+from backend.app.repositories.onboarding import OnboardingRepository
 from backend.app.services.ledger import credit, log_transaction
 from backend.app.services.money import money
 
@@ -44,7 +45,7 @@ def create_player_onboarding(db: Session, player: Player) -> PlayerOnboarding:
 def get_player_onboarding(db: Session, player: Player) -> PlayerOnboarding | None:
     if player.onboarding is not None:
         return player.onboarding
-    return db.query(PlayerOnboarding).filter(PlayerOnboarding.player_id == player.id).first()
+    return OnboardingRepository(db).get_by_player_id(player.id)
 
 
 def is_onboarding_complete(db: Session, player: Player) -> bool:

@@ -5,6 +5,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from backend.app.models import BusinessBlueprint, LandParcel
+from backend.app.repositories.business_blueprints import BusinessBlueprintRepository
 from backend.app.services.money import money
 
 
@@ -276,15 +277,272 @@ STARTER_BUSINESS_BLUEPRINTS: tuple[StarterBusinessBlueprint, ...] = (
             "Потенційно прибуткова, але швидко створює міські проблеми без інфраструктури.",
         ),
     ),
+    # --- Phase G3: Utility services ---
+    StarterBusinessBlueprint(
+        code="power_plant",
+        name="Електростанція",
+        category="utility",
+        business_type="utility_power",
+        project_type="industrial",
+        description="Міська електростанція: забезпечує райони електроенергією. Комунальні платежі — основний дохід.",
+        difficulty="hard",
+        allowed_land_types=("in_city", "out_of_city"),
+        allowed_zoning_types=("industrial",),
+        min_area_hectares=Decimal("1.00"),
+        construction_cost=Decimal("5000.00"),
+        opening_fee=Decimal("500.00"),
+        recommended_cash_reserve=Decimal("2000.00"),
+        daily_profit_min=Decimal("50.00"),
+        daily_profit_max=Decimal("120.00"),
+        upkeep_daily=Decimal("30.00"),
+        risk_level=3,
+        risks=("Високі експлуатаційні витрати.", "Банкрутство → контракт з сусіднім містом за завищеними цінами."),
+        metric_effects={
+            "expected_jobs": 5,
+            "traffic_load": 8,
+            "service_load": 0,
+            "medical_load": 0,
+            "public_benefit": 30,
+        },
+        visual_archetype="power_plant",
+        style_tags=("industrial", "utility", "critical_infrastructure"),
+        player_hints=(
+            "Критична інфраструктура: без електрики місто живе 1 день, потім екстрений контракт.",
+            "Дохід від комунальних платежів усіх бізнесів міста.",
+        ),
+    ),
+    StarterBusinessBlueprint(
+        code="water_works",
+        name="Водоканал",
+        category="utility",
+        business_type="utility_water",
+        project_type="industrial",
+        description="Міський водоканал: забезпечує райони водопостачанням і водовідведенням.",
+        difficulty="hard",
+        allowed_land_types=("in_city", "out_of_city"),
+        allowed_zoning_types=("industrial",),
+        min_area_hectares=Decimal("0.80"),
+        construction_cost=Decimal("3500.00"),
+        opening_fee=Decimal("350.00"),
+        recommended_cash_reserve=Decimal("1500.00"),
+        daily_profit_min=Decimal("40.00"),
+        daily_profit_max=Decimal("90.00"),
+        upkeep_daily=Decimal("20.00"),
+        risk_level=3,
+        risks=("Високі експлуатаційні витрати.", "Банкрутство → екстрений контракт."),
+        metric_effects={
+            "expected_jobs": 4,
+            "traffic_load": 5,
+            "service_load": 0,
+            "medical_load": 0,
+            "public_benefit": 25,
+        },
+        visual_archetype="water_works",
+        style_tags=("industrial", "utility", "critical_infrastructure"),
+        player_hints=(
+            "Критична інфраструктура: без води райони швидко деградують.",
+            "Дохід від комунальних платежів.",
+        ),
+    ),
+    StarterBusinessBlueprint(
+        code="waste_plant",
+        name="Сміттєпереробний завод",
+        category="utility",
+        business_type="utility_waste",
+        project_type="industrial",
+        description="Завод переробки відходів: утримує waste_management районів. Без нього сміття накопичується.",
+        difficulty="hard",
+        allowed_land_types=("in_city", "out_of_city"),
+        allowed_zoning_types=("industrial",),
+        min_area_hectares=Decimal("0.60"),
+        construction_cost=Decimal("2500.00"),
+        opening_fee=Decimal("250.00"),
+        recommended_cash_reserve=Decimal("1000.00"),
+        daily_profit_min=Decimal("30.00"),
+        daily_profit_max=Decimal("70.00"),
+        upkeep_daily=Decimal("15.00"),
+        risk_level=2,
+        risks=("Банкрутство → сміття накопичується, happiness падає.", "Екстрений контракт з сусіднім містом."),
+        metric_effects={
+            "expected_jobs": 3,
+            "traffic_load": 6,
+            "service_load": 0,
+            "medical_load": 0,
+            "public_benefit": 20,
+        },
+        visual_archetype="waste_plant",
+        style_tags=("industrial", "utility", "sanitation"),
+        player_hints=(
+            "Без сміттєзаводу waste_management падає, happiness знижується.",
+            "Дохід від комунальних платежів.",
+        ),
+    ),
+    # --- Phase G5: Bank ---
+    StarterBusinessBlueprint(
+        code="bank",
+        name="Банк",
+        category="finance",
+        business_type="bank",
+        project_type="commercial",
+        description="Банк: приймає депозити, видає кредити, оперує з власного cash_balance.",
+        difficulty="hard",
+        allowed_land_types=("in_city",),
+        allowed_zoning_types=("commercial",),
+        min_area_hectares=Decimal("0.30"),
+        construction_cost=Decimal("8000.00"),
+        opening_fee=Decimal("800.00"),
+        recommended_cash_reserve=Decimal("20000.00"),
+        daily_profit_min=Decimal("20.00"),
+        daily_profit_max=Decimal("80.00"),
+        upkeep_daily=Decimal("25.00"),
+        risk_level=4,
+        risks=(
+            "Банк-рун: якщо вкладники знімають одночасно — банкрот.",
+            "Дефолт позичальників → втрата principal.",
+            "Відмова у кредитах при високому criminal_rep (Phase H).",
+        ),
+        metric_effects={
+            "expected_jobs": 3,
+            "traffic_load": 10,
+            "service_load": 0,
+            "medical_load": 0,
+            "public_benefit": 15,
+        },
+        visual_archetype="bank",
+        style_tags=("commercial", "finance", "high_value"),
+        player_hints=(
+            "Банк оперує з власного cash_balance — потрібен великий резерв.",
+            "Дохід: різниця між ставкою за кредитами і ставкою за депозитами.",
+            "Банкрутство бізнесу → аукціон (24 години реального часу).",
+        ),
+    ),
+    # --- Phase G9: Casino ---
+    StarterBusinessBlueprint(
+        code="casino",
+        name="Казино",
+        category="gambling",
+        business_type="casino",
+        project_type="commercial",
+        description="Казино: блекджек, рулетка, покер. Дохід з rake та house edge. Ліцензія від мера, податок 25%.",
+        difficulty="hard",
+        allowed_land_types=("in_city",),
+        allowed_zoning_types=("commercial",),
+        min_area_hectares=Decimal("0.40"),
+        construction_cost=Decimal("15000.00"),
+        opening_fee=Decimal("1500.00"),
+        recommended_cash_reserve=Decimal("30000.00"),
+        daily_profit_min=Decimal("30.00"),
+        daily_profit_max=Decimal("120.00"),
+        upkeep_daily=Decimal("40.00"),
+        risk_level=5,
+        risks=(
+            "Ліцензія може бути відкликана мером.",
+            "Перевірка поліції (підозра на відмивання).",
+            "Преса — скандал при зв'язках з криміналом.",
+        ),
+        metric_effects={
+            "expected_jobs": 5,
+            "traffic_load": 20,
+            "service_load": 0,
+            "medical_load": 0,
+            "public_benefit": 5,
+        },
+        visual_archetype="casino",
+        style_tags=("commercial", "entertainment", "high_value"),
+        player_hints=(
+            "Дохід: rake (5-10% з покеру) + house edge (блекджек ~1-2%, рулетка ~5%).",
+            "Податок 25% на дохід (вищий за звичайний бізнес).",
+            "Ліцензійний збір щомісяця йде мерії.",
+        ),
+    ),
+    # --- Phase G9: Atelier ---
+    StarterBusinessBlueprint(
+        code="atelier",
+        name="Ательє",
+        category="fashion",
+        business_type="atelier",
+        project_type="commercial",
+        description="Ательє: створення скінів (JSON-конфіг), продаж (унікальні/масові), аукціон скінів.",
+        difficulty="medium",
+        allowed_land_types=("in_city",),
+        allowed_zoning_types=("commercial",),
+        min_area_hectares=Decimal("0.20"),
+        construction_cost=Decimal("6000.00"),
+        opening_fee=Decimal("600.00"),
+        recommended_cash_reserve=Decimal("8000.00"),
+        daily_profit_min=Decimal("15.00"),
+        daily_profit_max=Decimal("60.00"),
+        upkeep_daily=Decimal("15.00"),
+        risk_level=2,
+        risks=(
+            "Мода змінюється — попит на скіни коливається.",
+            "Конкуренція з іншими ательє.",
+        ),
+        metric_effects={
+            "expected_jobs": 2,
+            "traffic_load": 5,
+            "service_load": 0,
+            "medical_load": 0,
+            "public_benefit": 10,
+        },
+        visual_archetype="atelier",
+        style_tags=("commercial", "fashion", "creative"),
+        player_hints=(
+            "Скін — JSON-конфіг (зачіска, кольори, костюм).",
+            "Унікальні скіни — дорогі, статусні. Масові — дешеві, доступні.",
+            "Репутація дизайнера росте від популярних скінів.",
+        ),
+    ),
+    # --- Phase G8: Media Outlet (Press) ---
+    StarterBusinessBlueprint(
+        code="media_outlet",
+        name="Медіа-контора",
+        category="media",
+        business_type="media_outlet",
+        project_type="commercial",
+        description="Преса: журналісти, розслідування, публікація, реклама, шантаж (тіньова механіка).",
+        difficulty="medium",
+        allowed_land_types=("in_city",),
+        allowed_zoning_types=("commercial",),
+        min_area_hectares=Decimal("0.15"),
+        construction_cost=Decimal("4000.00"),
+        opening_fee=Decimal("400.00"),
+        recommended_cash_reserve=Decimal("5000.00"),
+        daily_profit_min=Decimal("10.00"),
+        daily_profit_max=Decimal("50.00"),
+        upkeep_daily=Decimal("10.00"),
+        risk_level=3,
+        risks=(
+            "Шантаж — злочин (повідомлення в поліцію → corruption_log).",
+            "Сенсаційні статті → скандали, політичні наслідки.",
+        ),
+        metric_effects={
+            "expected_jobs": 2,
+            "traffic_load": 5,
+            "service_load": 0,
+            "medical_load": 0,
+            "public_benefit": 10,
+        },
+        visual_archetype="media",
+        style_tags=("commercial", "media", "creative"),
+        player_hints=(
+            "Дохід: реклама + підписки + шантаж (тіньова).",
+            "Розслідування накопичує press_evidence → публікація або шантаж.",
+            "Шантаж НЕ впливає на репутацію журналіста.",
+        ),
+    ),
 )
 
 
+STARTER_BLUEPRINT_COUNT = len(STARTER_BUSINESS_BLUEPRINTS)
+
+
 def ensure_business_blueprints(db: Session) -> None:
-    existing_by_code = {blueprint.code: blueprint for blueprint in db.query(BusinessBlueprint).all()}
+    blueprint_repo = BusinessBlueprintRepository(db)
 
     for starter in STARTER_BUSINESS_BLUEPRINTS:
         data = _starter_to_model_data(starter)
-        existing = existing_by_code.get(starter.code)
+        existing = blueprint_repo.get_by_code(starter.code)
         if existing:
             for key, value in data.items():
                 setattr(existing, key, value)
@@ -293,24 +551,14 @@ def ensure_business_blueprints(db: Session) -> None:
 
 
 def get_active_business_blueprints(db: Session) -> list[BusinessBlueprint]:
-    return (
-        db.query(BusinessBlueprint)
-        .filter(BusinessBlueprint.is_active.is_(True))
-        .order_by(
-            BusinessBlueprint.risk_level,
-            BusinessBlueprint.category,
-            BusinessBlueprint.name,
-        )
-        .all()
-    )
+    return BusinessBlueprintRepository(db).get_all_active()
 
 
 def get_business_blueprint(db: Session, blueprint_id: UUID) -> BusinessBlueprint | None:
-    return (
-        db.query(BusinessBlueprint)
-        .filter(BusinessBlueprint.id == blueprint_id, BusinessBlueprint.is_active.is_(True))
-        .first()
-    )
+    blueprint = BusinessBlueprintRepository(db).get_by_id(blueprint_id)
+    if blueprint and blueprint.is_active:
+        return blueprint
+    return None
 
 
 def validate_blueprint_for_parcel(blueprint: BusinessBlueprint, parcel: LandParcel) -> str | None:

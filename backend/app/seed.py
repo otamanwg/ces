@@ -8,6 +8,12 @@ from backend.app.services.land import ensure_starter_land_parcels
 
 logger = logging.getLogger("CityServer")
 
+# Seed data counts — used by tests to avoid fragile hardcoded assertions.
+STARTER_JOB_COUNT = 3
+STARTER_HOSTEL_COUNT = 5
+STARTER_DISTRICT_COUNT = 6
+STARTER_LAND_PARCEL_COUNT = 6
+
 
 def seed_initial_data(db: Session) -> None:
     """Create the neutral MVP city and starter gameplay data when DB is empty."""
@@ -38,6 +44,8 @@ def seed_initial_data(db: Session) -> None:
         type="utility_housing",
         owner_player_id=None,
         cash_balance=20000.00,
+        utility_service_type="housing",
+        service_capacity=100,
     )
     voda = Business(
         city_id=city.id,
@@ -45,6 +53,8 @@ def seed_initial_data(db: Session) -> None:
         type="utility_water",
         owner_player_id=None,
         cash_balance=15000.00,
+        utility_service_type="water",
+        service_capacity=100,
     )
     coffee_shop = Business(
         city_id=city.id,

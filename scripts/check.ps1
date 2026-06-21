@@ -30,6 +30,20 @@ Write-Host "== Alembic upgrade =="
 & $python -m alembic upgrade head
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+Write-Host "== Python lint and format check =="
+& $python -m ruff check backend\app backend\main.py
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+& $python -m ruff format --check backend\app backend\main.py
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+Write-Host "== Python typecheck =="
+& $python -m pyright backend\app backend\main.py
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+Write-Host "== Secret scan =="
+& $python scripts\check_secrets.py
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 Write-Host "== Backend tests =="
 & $python -m pytest backend\tests -q
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -46,6 +60,10 @@ if (-not $SkipClient) {
 
     Write-Host "== Client build =="
     & $dotnet build client\city_economic_simulator.csproj -c Debug -v minimal
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+    Write-Host "== Client API dispatch runtime smoke =="
+    & "$root\scripts\pwsh7.ps1" -NoProfile -File "$root\scripts\smoke_client_api_dispatch.ps1" -SkipBuild
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 

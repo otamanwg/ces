@@ -3,6 +3,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from backend.app.models import Hostel, Job, Player
+from backend.app.repositories.hostel import HostelRepository
 from backend.app.repositories.player import PlayerRepository
 from backend.app.schemas.mvp import PlayerActionsData, PlayerSnapshotData
 from backend.app.services.avatar_profile import build_avatar_snapshot
@@ -62,7 +63,7 @@ def build_player_actions(db: Session, player: Player, job: Job | None, hostel: H
 
 def build_player_snapshot(db: Session, player: Player) -> dict:
     job = get_active_job(db, player.id)
-    hostel = db.query(Hostel).filter(Hostel.tenant_player_id == player.id).first()
+    hostel = HostelRepository(db).get_by_tenant(player.id)
     actions = build_player_actions(db, player, job, hostel)
     owned_businesses = get_owned_businesses(db, player.id)
     athlete_contract = player.athlete_contract

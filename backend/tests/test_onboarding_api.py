@@ -4,7 +4,9 @@ from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import sessionmaker
 
+from backend.app.core.tokens import hash_player_token
 from backend.app.database import get_db
 from backend.app.models import (
     City,
@@ -312,3 +314,15 @@ def test_legacy_player_without_onboarding_is_treated_as_completed(client):
     ).json()
     assert status["success"] is True
     assert status["data"]["onboarding"]["completed"] is True
+    db.refresh(player)
+    assert player.auth_token is None
+    assert player.auth_token_hash == hash_player_token("legacy-token")
+    bind = db.get_bind()
+
+    fresh_db = sessionmaker(autocommit=False, autoflush=False, bind=bind)()
+    try:
+        persisted_player = fresh_db.query(Player).filter(Player.id == player.id).one()
+        assert persisted_player.auth_token is None
+        assert persisted_player.auth_token_hash == hash_player_token("legacy-token")
+    finally:
+        fresh_db.close()

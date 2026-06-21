@@ -88,6 +88,19 @@ var history = new DashboardEventHistory();
 
 AssertEqual(false, history.Add(""), "Empty messages are ignored");
 AssertEqual(false, history.Add("   "), "Whitespace messages are ignored");
+
+AssertEqual(
+	"ws://127.0.0.1:8000/ws/city/city-1?token=token-1",
+	CityWebSocketEndpoint.BuildUrl("city-1", "token-1"),
+	"WebSocket URL includes player token"
+);
+AssertEqual(
+	"wss://game.example/ws/city/city%20id?token=a%2Bb%2Fc%3D",
+	CityWebSocketEndpoint.BuildUrl("city id", "a+b/c=", "wss://game.example/"),
+	"WebSocket URL encodes city and token"
+);
+AssertEqual("", CityWebSocketEndpoint.BuildUrl("", "token-1"), "Missing city id blocks websocket URL");
+AssertEqual("", CityWebSocketEndpoint.BuildUrl("city-1", ""), "Missing token blocks websocket URL");
 AssertEqual(true, history.Add("Registered"), "First event is accepted");
 AssertEqual(false, history.Add("Registered"), "Consecutive duplicate is ignored");
 AssertSequence(new[] { "Registered" }, history.Events.ToArray(), "Duplicate does not change history");
@@ -747,5 +760,69 @@ AssertEqual("land-2", applicationPlan.Land.Id, "Application plan uses owned land
 AssertEqual("Заявка: Вокзальний кіоск | Вже куплена ділянка | 20-55 ₴/день | ризик 1/5", applicationPlan.ApplicationSummaryText, "Application plan summary");
 AssertEqual("Погоджено: Вокзальний кіоск | можна створити будівлю", applicationPlan.ActivationSummaryText, "Activation plan summary");
 AssertEqual("Будівництво: бракує коштів або сумісної ділянки", buildCatalog.SummaryFor(199), "Build catalog explains missing starter plan");
+
+AssertEqual(
+	DashboardPlayerActionEndpoint.Vacancies,
+	DashboardPlayerActionEndpoints.Classify("/api/jobs/vacancies"),
+	"Vacancies endpoint classification");
+AssertEqual(
+	DashboardPlayerActionEndpoint.JobApply,
+	DashboardPlayerActionEndpoints.Classify("/api/jobs/apply"),
+	"Job apply endpoint classification");
+AssertEqual(
+	DashboardPlayerActionEndpoint.JobApply,
+	DashboardPlayerActionEndpoints.Classify("/api/jobs/apply/player-1"),
+	"Job apply path endpoint classification");
+AssertEqual(
+	DashboardPlayerActionEndpoint.Work,
+	DashboardPlayerActionEndpoints.Classify("/api/jobs/work/player-1"),
+	"Work endpoint classification");
+AssertEqual(
+	DashboardPlayerActionEndpoint.Sleep,
+	DashboardPlayerActionEndpoints.Classify("/api/hostels/sleep/player-1"),
+	"Sleep endpoint classification");
+AssertEqual(
+	DashboardPlayerActionEndpoint.Eat,
+	DashboardPlayerActionEndpoints.Classify("/api/needs/eat/player-1"),
+	"Eat endpoint classification");
+AssertEqual(
+	DashboardPlayerActionEndpoint.BusinessMarket,
+	DashboardPlayerActionEndpoints.Classify("/api/businesses/market"),
+	"Business market endpoint classification");
+AssertEqual(
+	DashboardPlayerActionEndpoint.SportsClubs,
+	DashboardPlayerActionEndpoints.Classify("/api/sports/clubs"),
+	"Sports clubs endpoint classification");
+AssertEqual(
+	DashboardPlayerActionEndpoint.ExamInfo,
+	DashboardPlayerActionEndpoints.Classify("/api/education/exam/info"),
+	"Exam info endpoint classification");
+AssertEqual(
+	DashboardPlayerActionEndpoint.None,
+	DashboardPlayerActionEndpoints.Classify("/api/player/player-1/buildings"),
+	"Non-player-action endpoint classification");
+AssertEqual(
+	DashboardPlayerActionEndpoint.None,
+	DashboardPlayerActionEndpoints.Classify("/api/jobs/vacancies/archive"),
+	"Near-match endpoint classification");
+
+var parsedResponse = DashboardApiResponseParser.Parse("""{"success":true,"data":{"id":"city-1"}}""");
+AssertEqual(
+	DashboardApiResponseParseStatus.Success,
+	parsedResponse.Status,
+	"Valid API response parse status");
+AssertEqual("city-1", parsedResponse.Root?["data"]?["id"]?.ToString(), "Valid API response data");
+AssertEqual(
+	DashboardApiResponseParseStatus.Empty,
+	DashboardApiResponseParser.Parse("").Status,
+	"Empty API response parse status");
+AssertEqual(
+	DashboardApiResponseParseStatus.Empty,
+	DashboardApiResponseParser.Parse("   ").Status,
+	"Whitespace API response parse status");
+AssertEqual(
+	DashboardApiResponseParseStatus.Malformed,
+	DashboardApiResponseParser.Parse("""{"success":true""").Status,
+	"Malformed API response parse status");
 
 Console.WriteLine("Client logic tests passed.");

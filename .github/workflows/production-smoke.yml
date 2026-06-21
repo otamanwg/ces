@@ -1,0 +1,70 @@
+name: Production smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+  pull_request:
+    paths:
+      - ".github/workflows/production-smoke.yml"
+      - ".env.production.example"
+      - "backend/Dockerfile"
+      - "backend/alembic/**"
+      - "backend/app/api/health.py"
+      - "backend/app/api/metrics.py"
+      - "backend/app/core/config.py"
+      - "backend/app/core/observability.py"
+      - "backend/app/core/redis.py"
+      - "backend/app/database.py"
+      - "backend/main.py"
+      - "deploy/**"
+      - "docker-compose.prod.yml"
+      - "scripts/check_targeted.ps1"
+      - "scripts/drill_backup_restore.ps1"
+      - "scripts/rollout_preflight.ps1"
+      - "scripts/smoke_production.ps1"
+      - "secrets/*.example.txt"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - ".github/workflows/production-smoke.yml"
+      - ".env.production.example"
+      - "backend/Dockerfile"
+      - "backend/alembic/**"
+      - "backend/app/api/health.py"
+      - "backend/app/api/metrics.py"
+      - "backend/app/core/config.py"
+      - "backend/app/core/observability.py"
+      - "backend/app/core/redis.py"
+      - "backend/app/database.py"
+      - "backend/main.py"
+      - "deploy/**"
+      - "docker-compose.prod.yml"
+      - "scripts/check_targeted.ps1"
+      - "scripts/drill_backup_restore.ps1"
+      - "scripts/rollout_preflight.ps1"
+      - "scripts/smoke_production.ps1"
+      - "secrets/*.example.txt"
+
+concurrency:
+  group: production-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  production-smoke:
+    name: Isolated production stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker Compose version
+        run: docker compose version
+
+      - name: Run production smoke
+        shell: pwsh
+        run: ./scripts/smoke_production.ps1 -Port 18001 -ProjectName "ces-prod-smoke-ci-${{ github.run_id }}"

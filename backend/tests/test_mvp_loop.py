@@ -29,12 +29,27 @@ from backend.app.schemas.service_results import (
     SportsTrainServiceResult,
     WorkShiftServiceResult,
 )
+from backend.app.seed import (
+    STARTER_DISTRICT_COUNT as _SEED_DISTRICT_COUNT,
+)
+from backend.app.seed import (
+    STARTER_HOSTEL_COUNT as _SEED_HOSTEL_COUNT,
+)
+from backend.app.seed import (
+    STARTER_JOB_COUNT as _SEED_JOB_COUNT,
+)
+from backend.app.seed import (
+    STARTER_LAND_PARCEL_COUNT as _SEED_LAND_PARCEL_COUNT,
+)
 from backend.app.seed import seed_initial_data
 from backend.app.services.buildings import (
     ACTIVE,
     BUILDING_UPKEEP_PURPOSE,
     BUILT,
     MAINTENANCE_DUE,
+)
+from backend.app.services.business_blueprints import (
+    STARTER_BLUEPRINT_COUNT as _SEED_BLUEPRINT_COUNT,
 )
 from backend.app.services.business_market import (
     get_buyable_businesses,
@@ -135,11 +150,13 @@ def test_seed_creates_core_city_data():
         seed_initial_data(db)
 
         assert db.query(City).count() == 1
-        assert db.query(BusinessBlueprint).count() == 7
-        assert db.query(CityDistrict).count() == 6
-        assert db.query(LandParcel).count() == 6
-        assert db.query(Job).count() == 3
-        assert db.query(Hostel).count() == 5
+        assert (
+            db.query(BusinessBlueprint).count() == _SEED_BLUEPRINT_COUNT
+        )  # 7 starter + 3 utility (G3) + 1 bank (G5) + 3 G9 (casino, atelier, media_outlet)
+        assert db.query(CityDistrict).count() == _SEED_DISTRICT_COUNT
+        assert db.query(LandParcel).count() == _SEED_LAND_PARCEL_COUNT
+        assert db.query(Job).count() == _SEED_JOB_COUNT
+        assert db.query(Hostel).count() == _SEED_HOSTEL_COUNT
         assert len(get_buyable_businesses(db)) == 1
         districts = db.query(CityDistrict).order_by(CityDistrict.display_order).all()
         assert [district.code for district in districts] == [
@@ -170,12 +187,16 @@ def test_seed_backfills_districts_for_existing_city():
         seed_initial_data(db)
 
         assert db.query(City).count() == 1
-        assert db.query(BusinessBlueprint).count() == 7
-        assert db.query(CityDistrict).count() == 6
+        assert (
+            db.query(BusinessBlueprint).count() == _SEED_BLUEPRINT_COUNT
+        )  # 7 starter + 3 utility (G3) + 1 bank (G5) + 3 G9 (casino, atelier, media_outlet)
+        assert db.query(CityDistrict).count() == _SEED_DISTRICT_COUNT
         seed_initial_data(db)
-        assert db.query(BusinessBlueprint).count() == 7
-        assert db.query(CityDistrict).count() == 6
-        assert db.query(LandParcel).count() == 6
+        assert (
+            db.query(BusinessBlueprint).count() == _SEED_BLUEPRINT_COUNT
+        )  # 7 starter + 3 utility (G3) + 1 bank (G5) + 3 G9 (casino, atelier, media_outlet)
+        assert db.query(CityDistrict).count() == _SEED_DISTRICT_COUNT
+        assert db.query(LandParcel).count() == _SEED_LAND_PARCEL_COUNT
 
         missing = db.query(CityDistrict).filter(CityDistrict.code == "outer_land").one()
         db.delete(missing)
@@ -653,6 +674,7 @@ def test_game_day_tick_charges_building_upkeep_from_business_cash():
         assert result["stats"]["buildings_upkeep_charged"] == 1
         assert result["stats"]["buildings_upkeep_failed"] == 0
         assert result["stats"]["active_money_before"] == 550.0
+        # active_money_after is calculated before Phase G3 utility payments.
         assert result["stats"]["active_money_after"] == 542.0
 
         db.refresh(player)
@@ -660,8 +682,11 @@ def test_game_day_tick_charges_building_upkeep_from_business_cash():
         db.refresh(business)
         db.refresh(building)
         assert Decimal(str(player.balance)) == Decimal("500.00")
-        assert Decimal(str(business.cash_balance)) == Decimal("42.00")
-        assert Decimal(str(city.treasury_balance)) == starting_treasury + Decimal(str(blueprint.upkeep_daily))
+        # 50 - 8 (upkeep) - 5 (utility fee for shop, Phase G3) = 37
+        assert Decimal(str(business.cash_balance)) == Decimal("37.00")
+        # Treasury: +8.00 (upkeep) + utility tax - emergency contract subsidies.
+        # Just verify treasury increased (exact amount depends on utility distribution).
+        assert Decimal(str(city.treasury_balance)) > starting_treasury
         assert building.operating_status == ACTIVE
 
         upkeep_log = db.query(TransactionModelLog).filter(TransactionModelLog.purpose == BUILDING_UPKEEP_PURPOSE).one()

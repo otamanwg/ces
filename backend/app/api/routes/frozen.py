@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from backend.app.database import get_db
-from backend.app.models import City, Player, SportsClub
+from backend.app.models import City, SportsClub
 from backend.app.schemas.frozen import (
     FrozenSportsClubsResponse,
     FrozenSportsMatchesResponse,
@@ -70,18 +70,14 @@ def police_audit(player_id: str, db: Session = Depends(get_db)):
 
 @router.get("/sports/clubs")
 def get_sports_clubs(db: Session = Depends(get_db)):
-    clubs = db.query(SportsClub).all()
+    clubs = db.query(SportsClub).options(joinedload(SportsClub.owner)).all()
     return FrozenSportsClubsResponse(
         clubs=[
             {
                 "id": str(c.id),
                 "name": c.name,
                 "sport_type": c.sport_type,
-                "owner": (
-                    db.query(Player).filter(Player.id == c.owner_player_id).first().username
-                    if c.owner_player_id
-                    else "ШІ-Управління"
-                ),
+                "owner": (c.owner.username if c.owner_player_id and c.owner else "ШІ-Управління"),
                 "cash_balance": float(c.cash_balance),
                 "stadium_capacity": c.stadium_capacity,
                 "ticket_price": float(c.ticket_price),

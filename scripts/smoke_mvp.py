@@ -32,6 +32,15 @@ def run_loop(client: httpx.Client) -> int:
     auth_headers = {"X-Player-Token": reg["data"]["auth_token"]}
     print(f"OK register: {USERNAME} balance={reg['data']['balance']}")
 
+    onboarding = client.post(
+        "/api/player/onboarding/choose",
+        json={"player_id": player_id, "choice": "find_housing"},
+        headers=auth_headers,
+    ).json()
+    assert onboarding["success"], onboarding
+    assert onboarding["data"]["onboarding"]["completed"], onboarding
+    print("OK onboarding: find_housing")
+
     vacancies = client.get("/api/jobs/vacancies").json()["data"]["vacancies"]
     hs_job = next(j for j in vacancies if j["min_education"] == "High School")
     apply = client.post(
