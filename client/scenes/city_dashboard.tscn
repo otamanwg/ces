@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://c0gtwynhiqsc8"]
+[gd_scene load_steps=11 format=3 uid="uid://c0gtwynhiqsc8"]
 
 [ext_resource type="Script" path="res://scripts/CityDashboardController.cs" id="1"]
 [ext_resource type="Script" path="res://scripts/ExamPanelController.cs" id="2"]
@@ -8,6 +8,8 @@
 [ext_resource type="Script" path="res://scripts/CharacterAvatarPreview.cs" id="6_afu1s"]
 [ext_resource type="Script" path="res://scripts/EducationPanelController.cs" id="7_edu"]
 [ext_resource type="Script" path="res://scripts/BankPanelController.cs" id="8_bank"]
+[ext_resource type="Script" path="res://scripts/PolicePanelController.cs" id="9_police"]
+[ext_resource type="Script" path="res://scripts/CourtPanelController.cs" id="10_court"]
 
 [node name="CityDashboard" type="Control"]
 layout_mode = 3
@@ -733,6 +735,22 @@ size_flags_horizontal = 3
 text = "Банк"
 text_overrun_behavior = 3
 
+[node name="PoliceButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Поліція"
+text_overrun_behavior = 3
+
+[node name="CourtButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Суд"
+text_overrun_behavior = 3
+
 [node name="PoliceRecoveryButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
 visible = false
@@ -1056,6 +1074,212 @@ disabled = true
 text = "Взяти кредит"
 
 [node name="BankCloseButton" type="Button" parent="BankOverlay/BankMargin/BankVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Закрити"
+
+[node name="PoliceOverlay" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 25
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("9_police")
+
+[node name="PoliceMargin" type="MarginContainer" parent="PoliceOverlay"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="PoliceVBox" type="VBoxContainer" parent="PoliceOverlay/PoliceMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PoliceTitleLabel" type="Label" parent="PoliceOverlay/PoliceMargin/PoliceVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Поліція"
+
+[node name="PoliceDescriptionLabel" type="Label" parent="PoliceOverlay/PoliceMargin/PoliceVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ви не є поліцейським"
+
+[node name="PoliceScroll" type="ScrollContainer" parent="PoliceOverlay/PoliceMargin/PoliceVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PoliceContent" type="VBoxContainer" parent="PoliceOverlay/PoliceMargin/PoliceVBox/PoliceScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="OfficerSection" type="Label" parent="PoliceOverlay/PoliceMargin/PoliceVBox/PoliceScroll/PoliceContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.56, 0.9, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Статус офіцера"
+
+[node name="PoliceOfficerContainer" type="VBoxContainer" parent="PoliceOverlay/PoliceMargin/PoliceVBox/PoliceScroll/PoliceContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="RecordsSection" type="Label" parent="PoliceOverlay/PoliceMargin/PoliceVBox/PoliceScroll/PoliceContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.6, 0.36, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Записи правопорушень"
+
+[node name="PoliceRecordsContainer" type="VBoxContainer" parent="PoliceOverlay/PoliceMargin/PoliceVBox/PoliceScroll/PoliceContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CorruptionSection" type="Label" parent="PoliceOverlay/PoliceMargin/PoliceVBox/PoliceScroll/PoliceContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.36, 0.9, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Журнал корупції"
+
+[node name="PoliceCorruptionLogContainer" type="VBoxContainer" parent="PoliceOverlay/PoliceMargin/PoliceVBox/PoliceScroll/PoliceContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PoliceActions" type="HBoxContainer" parent="PoliceOverlay/PoliceMargin/PoliceVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PoliceHireButton" type="Button" parent="PoliceOverlay/PoliceMargin/PoliceVBox/PoliceActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Найнятися"
+
+[node name="PolicePromoteButton" type="Button" parent="PoliceOverlay/PoliceMargin/PoliceVBox/PoliceActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Підвищення"
+
+[node name="PolicePatrolButton" type="Button" parent="PoliceOverlay/PoliceMargin/PoliceVBox/PoliceActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Патруль"
+
+[node name="PoliceCloseButton" type="Button" parent="PoliceOverlay/PoliceMargin/PoliceVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Закрити"
+
+[node name="CourtOverlay" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 25
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("10_court")
+
+[node name="CourtMargin" type="MarginContainer" parent="CourtOverlay"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="CourtVBox" type="VBoxContainer" parent="CourtOverlay/CourtMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CourtTitleLabel" type="Label" parent="CourtOverlay/CourtMargin/CourtVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Суд і тюрма"
+
+[node name="CourtDescriptionLabel" type="Label" parent="CourtOverlay/CourtMargin/CourtVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Активного ув'язнення немає"
+
+[node name="CourtScroll" type="ScrollContainer" parent="CourtOverlay/CourtMargin/CourtVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CourtContent" type="VBoxContainer" parent="CourtOverlay/CourtMargin/CourtVBox/CourtScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="CasesSection" type="Label" parent="CourtOverlay/CourtMargin/CourtVBox/CourtScroll/CourtContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.56, 0.9, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Судові справи"
+
+[node name="CourtCasesContainer" type="VBoxContainer" parent="CourtOverlay/CourtMargin/CourtVBox/CourtScroll/CourtContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SentenceSection" type="Label" parent="CourtOverlay/CourtMargin/CourtVBox/CourtScroll/CourtContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.36, 0.36, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Ув'язнення"
+
+[node name="CourtSentenceContainer" type="VBoxContainer" parent="CourtOverlay/CourtMargin/CourtVBox/CourtScroll/CourtContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PrisonActions" type="HBoxContainer" parent="CourtOverlay/CourtMargin/CourtVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CourtWorkButton" type="Button" parent="CourtOverlay/CourtMargin/CourtVBox/PrisonActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Праця (+20₴)"
+
+[node name="CourtSocializeButton" type="Button" parent="CourtOverlay/CourtMargin/CourtVBox/PrisonActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Спілкування"
+
+[node name="PokerLabel" type="Label" parent="CourtOverlay/CourtMargin/CourtVBox/PrisonActions"]
+layout_mode = 2
+text = "Покер:"
+
+[node name="CourtPokerBet" type="SpinBox" parent="CourtOverlay/CourtMargin/CourtVBox/PrisonActions"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 50.0
+max_value = 500.0
+step = 50.0
+value = 100.0
+
+[node name="CourtPokerButton" type="Button" parent="CourtOverlay/CourtMargin/CourtVBox/PrisonActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Грати"
+
+[node name="CourtCloseButton" type="Button" parent="CourtOverlay/CourtMargin/CourtVBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Закрити"

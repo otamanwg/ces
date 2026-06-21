@@ -905,4 +905,47 @@ Assert(bankModel.HasDeposits, "Has deposits flag");
 Assert(bankModel.HasLoans, "Has loans flag");
 Assert(bankModel.HasAuctions, "Has auctions flag");
 
+// DashboardPoliceModel — Sprint 61 police panel data parsing.
+var officerJson = JsonNode.Parse("""
+{"officer": {"id": "off-1", "rank": "detective", "successful_investigations": 7, "bribes_taken": 1, "is_active": true, "hired_at_game_day": 0, "promoted_at_game_day": 5, "patrol_district_id": null}}
+""")!;
+var noOfficerJson = JsonNode.Parse("""{"officer": null}""")!;
+var policeRecordsJson = JsonNode.Parse("""{"records": [{"id": "rec-1", "offense_type": "minor_offense", "fine_amount": 100.0, "status": "fined", "created_at": "2024-01-01T00:00:00Z"}]}""")!;
+var corruptionLogJson = JsonNode.Parse("""{"logs": [{"id": "log-1", "incident_type": "police_bribe", "evidence_strength": 0.4, "is_investigated": false, "is_proven": false}], "rank": "detective"}""")!;
+var policeModel = DashboardPoliceModel.FromJson(officerJson, policeRecordsJson, corruptionLogJson);
+Assert(policeModel.IsOfficer, "Is officer flag");
+Assert(policeModel.CanArrest, "Detective can arrest");
+Assert(policeModel.CanViewCorruptionLog, "Detective can view corruption log");
+Assert(!policeModel.CanConfiscate, "Detective cannot confiscate");
+AssertEqual("Детектив", policeModel.Officer!.RankLabel, "Detective rank label");
+AssertEqual(7, policeModel.Officer!.SuccessfulInvestigations, "Officer investigations count");
+AssertEqual(1, policeModel.Records.Count, "One police record");
+AssertEqual("Дрібне правопорушення", policeModel.Records[0].OffenseLabel, "Minor offense label");
+AssertEqual(1, policeModel.CorruptionLogs.Count, "One corruption log");
+AssertEqual("Хабар поліції", policeModel.CorruptionLogs[0].IncidentLabel, "Police bribe label");
+var noOfficerModel = DashboardPoliceModel.FromJson(noOfficerJson, null, null);
+Assert(!noOfficerModel.IsOfficer, "No officer flag");
+Assert(!noOfficerModel.CanPatrol, "Non-officer cannot patrol");
+
+// DashboardCourtModel — Sprint 61 court/prison panel data parsing.
+var courtCasesJson = JsonNode.Parse("""
+{"cases": [{"id": "case-1", "verdict": "criminal_case", "is_appealed": true, "appeal_deadline": "2024-01-05T00:00:00Z", "judge_1_vote": "overturn", "judge_2_vote": "undecided", "judge_3_vote": "undecided", "judge_1_bribed": true, "judge_2_bribed": false, "judge_3_bribed": false, "final_verdict": null, "created_at": "2024-01-01T00:00:00Z"}]}
+""")!;
+var sentenceJson = JsonNode.Parse("""
+{"sentence": {"id": "sent-1", "days_total": 30, "days_served": 5, "days_remaining": 25, "status": "serving", "business_impact": "frozen"}}
+""")!;
+var noSentenceJson = JsonNode.Parse("""{"sentence": null}""")!;
+var courtModel = DashboardCourtModel.FromJson(courtCasesJson, sentenceJson);
+Assert(courtModel.HasCases, "Has court cases flag");
+Assert(courtModel.IsImprisoned, "Is imprisoned flag");
+AssertEqual(1, courtModel.Cases.Count, "One court case");
+AssertEqual("Кримінальна справа", courtModel.Cases[0].VerdictLabel, "Criminal case verdict label");
+Assert(courtModel.Cases[0].IsAppealed, "Case is appealed");
+Assert(courtModel.Cases[0].Judge1Bribed, "Judge 1 bribed");
+AssertEqual(30, courtModel.Sentence!.DaysTotal, "Sentence days total");
+AssertEqual(25, courtModel.Sentence!.DaysRemaining, "Sentence days remaining");
+AssertEqual("frozen", courtModel.Sentence!.BusinessImpact, "Sentence business impact");
+var noSentenceModel = DashboardCourtModel.FromJson(null, noSentenceJson);
+Assert(!noSentenceModel.IsImprisoned, "No sentence not imprisoned");
+
 Console.WriteLine("Client logic tests passed.");
