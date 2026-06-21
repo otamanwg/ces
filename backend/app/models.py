@@ -590,6 +590,7 @@ class Business(Base):
 
     # Нові поля для управління бізнесом
     management_mode: Mapped[str] = mapped_column(String(20), default="manual")  # ai/manual/shadow
+    legal_form: Mapped[str] = mapped_column(String(10), default="fop")  # fop/tov/vat
     business_size: Mapped[int] = mapped_column(Integer, default=1)  # кількість працівників
     ai_profit_rate: Mapped[float] = mapped_column(Decimal(5, 2), default=0.10)  # динамічний % для AI
     daily_revenue: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)  # щоденний дохід

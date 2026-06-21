@@ -326,7 +326,19 @@ def game_day_tick(db: Session, city_id: str) -> dict:
     city.inflation_rate = snapshot.inflation_rate
     city.game_day = next_game_day
 
+    # Phase G2: NPC-резиденти — ЗП/премія і цикл витрат для вже найнятих NPC.
+    # Генерація NPC — явна (гравець наймає через API), не автоматична в day tick.
+    from backend.app.services.npc_service import (
+        process_npc_payroll,
+        process_npc_spending,
+    )
+
+    process_npc_payroll(db, city_uuid, next_game_day)
+    process_npc_spending(db, city_uuid, next_game_day)
+    db.flush()
+
     # Phase G1: динамічні метрики районів + композитні індекси + сезонність.
+    # Викликається після NPC-операцій, щоб population включало NPC.
     from backend.app.services.district_metrics import recalculate_all_districts
 
     recalculate_all_districts(db, city_uuid, next_game_day)

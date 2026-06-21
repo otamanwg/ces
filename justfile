@@ -94,6 +94,9 @@ check-observability:
 check-districts:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 districts
 
+check-npcs:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 npcs
+
 check-prod:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 prod-fast
 

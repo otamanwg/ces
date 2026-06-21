@@ -8,6 +8,7 @@ param(
         "scheduler",
         "observability",
         "districts",
+        "npcs",
         "prod-fast",
         "prod-smoke",
         "client",
@@ -98,6 +99,7 @@ function Show-Profiles {
     Write-Host "  scheduler     Scheduler leader lock and lifecycle tests."
     Write-Host "  observability Health, metrics, request id/logging tests."
     Write-Host "  districts     Phase G1+ dynamic district metrics, seasonality, radar API."
+    Write-Host "  npcs          Phase G2+ NPC residents: hire, payroll, spending, API."
     Write-Host "  prod-fast     Production config/lifecycle/health tests + Compose config validation."
     Write-Host "  prod-smoke    Isolated production Compose smoke with migration, readiness, metrics, Prometheus/Grafana."
     Write-Host "  client        Client logic tests + Godot C# build."
@@ -172,6 +174,14 @@ switch ($Profile) {
         Invoke-Alembic
         Invoke-PythonStatic
         Invoke-Pytest @(
+            "backend\tests\test_district_metrics.py"
+        )
+    }
+    "npcs" {
+        Invoke-Alembic
+        Invoke-PythonStatic
+        Invoke-Pytest @(
+            "backend\tests\test_npc_service.py",
             "backend\tests\test_district_metrics.py"
         )
     }

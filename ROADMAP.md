@@ -98,15 +98,18 @@
 5. [x] API `/api/districts/{id}/radar`: 6 композитних індексів + тренд за 7 днів.
 6. [x] Тести: day tick оновлює метрики, feedback loops, сезони, snapshot, radar endpoint (20 passed).
 
-### Phase G2 — NPC Residents
+### Phase G2 — NPC Residents (DONE)
 
 Полегшені NPC-акаунти як робітники і споживачі.
 
-1. [ ] Таблиця `npc_residents` (окрема від `Player`): `district_id`, `workplace_business_id`, `cash_balance`, `salary`, `employed_at`, `npc_type`.
-2. [ ] Сервіс `npc_service.py`: генерація (мінімальна кількість для функціонування бізнесу), найм, звільнення (стирається як видалений акаунт).
-3. [ ] Цикл витрат: рандомні дії з ймовірністю, баланс кешу в коридорі (не банкрут, не накопичує).
-4. [ ] ЗП і премія двічі на місяць (8-10 день ЗП, 20-23 премія).
-5. [ ] Тести.
+1. [x] Таблиця `npc_residents` (окрема від `Player`): `district_id`, `workplace_business_id`, `cash_balance`, `salary`, `employed_at`, `npc_type`.
+2. [x] Сервіс `npc_service.py`: генерація (явний найм через API), звільнення (стирається як видалений акаунт), ліміти за legal_form (ФОП=1, ТОВ=5, ВАТ=10).
+3. [x] Цикл витрат: рандомні дії з ймовірністю 70%, баланс кешу в коридорі [20, 500] (не банкрут, не накопичує).
+4. [x] ЗП і премія двічі на місяць (8-10 день ЗП, 20-23 премія 20%).
+5. [x] Day tick інтеграція: payroll + spending для вже найнятих NPC (генерація — явна).
+6. [x] API: `/businesses/{id}/npcs` (список), `/businesses/{id}/npcs/hire`, `/businesses/{id}/npcs/{npc_id}/dismiss`.
+7. [x] Інтеграція з district_metrics: NPC входять у population району.
+8. [x] Тести: 28 passed (ліміти, генерація, звільнення, ЗП, премія, витрати, API, day tick, metrics).
 
 ### Phase G3 — Utility Services as Businesses
 
@@ -219,7 +222,7 @@
 - Phase 5 — Multiplayer Readiness: 90%
 - Phase 6 — Production Ready: 99%
 - Phase G1 — Dynamic District Metrics: 100% (DONE)
-- Phase G2 — NPC Residents: 0%
+- Phase G2 — NPC Residents: 100% (DONE)
 - Phase G3 — Utility Services: 0%
 - Phase G4 — Vacancies and Hiring: 0%
 - Phase G5 — Bank as Business: 0%

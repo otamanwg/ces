@@ -13,6 +13,7 @@ from backend.app.database import get_db
 from backend.app.models import (
     Building,
     BuildingApplication,
+    Business,
     BusinessBlueprint,
     City,
     CityDistrict,
@@ -961,6 +962,87 @@ def collect_business_dividend(
         business=res["business"],
         dividend=res["dividend"],
     )
+
+
+@router.get("/businesses/{business_id}/npcs")
+def list_business_npcs_endpoint(business_id: str, db: Session = Depends(get_db)):
+    """Phase G2: список NPC, найнятих у бізнесі."""
+    from backend.app.services.npc_service import list_business_npcs, npc_to_dict
+
+    business_uuid = try_uuid(business_id)
+    if business_uuid is None:
+        return api_error("Невірний ідентифікатор бізнесу.")
+
+    business = db.query(Business).filter(Business.id == business_uuid).first()
+    if not business:
+        return api_error("Бізнес не знайдено.")
+
+    npcs = list_business_npcs(db, business_uuid)
+    return api_success(
+        "NPC бізнесу.",
+        {"npcs": [npc_to_dict(n) for n in npcs], "count": len(npcs)},
+    )
+
+
+@router.post("/businesses/{business_id}/npcs/hire")
+def hire_npc_endpoint(
+    business_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G2: найм NPC для бізнесу (власником)."""
+    from backend.app.services.npc_service import hire_npc_for_business
+
+    business_uuid = try_uuid(business_id)
+    if business_uuid is None:
+        return api_error("Невірний ідентифікатор бізнесу.")
+
+    business = db.query(Business).filter(Business.id == business_uuid).first()
+    if not business:
+        return api_error("Бізнес не знайдено.")
+
+    # Перевірка власника (якщо бізнес має власника — потрібен token).
+    # Для муніципальних бізнесів (owner_player_id is None) — дозволено.
+    if business.owner_player_id is not None and not player_token:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    result = hire_npc_for_business(db, business)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/businesses/{business_id}/npcs/{npc_id}/dismiss")
+def dismiss_npc_endpoint(
+    business_id: str,
+    npc_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G2: звільнення NPC з бізнесу."""
+    from backend.app.services.npc_service import dismiss_npc
+
+    business_uuid = try_uuid(business_id)
+    if business_uuid is None:
+        return api_error("Невірний ідентифікатор бізнесу.")
+
+    npc_uuid = try_uuid(npc_id)
+    if npc_uuid is None:
+        return api_error("Невірний ідентифікатор NPC.")
+
+    business = db.query(Business).filter(Business.id == business_uuid).first()
+    if not business:
+        return api_error("Бізнес не знайдено.")
+
+    if business.owner_player_id is not None and not player_token:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    dismissed = dismiss_npc(db, npc_uuid)
+    if not dismissed:
+        return api_error("NPC не знайдено.")
+    db.commit()
+    return api_success("NPC звільнено.", {"npc_id": npc_id})
 
 
 @router.get("/sports/clubs")
