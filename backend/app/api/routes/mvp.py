@@ -33,6 +33,7 @@ from backend.app.models import (
     LandParcel,
     Player,
     PlayerSkin,
+    PoliceRecord,
     PressBlackmail,
     PressInvestigation,
     ShadowBusiness,
@@ -2195,7 +2196,114 @@ def police_corruption_log_endpoint(
     return api_success("Corruption log", {"logs": logs, "rank": officer.rank})
 
 
+@router.get("/police/officer")
+def police_officer_status_endpoint(
+    player_id: str,
+    db: Session = Depends(get_db),
+):
+    """Phase G8: статус поліцейського гравця для клієнтського Police panel."""
+    city = db.query(City).first()
+    player_uuid = try_uuid(player_id)
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    officer = get_officer(db, city.id, player_uuid)
+    if not officer:
+        return api_success("Гравець не є поліцейським.", {"officer": None})
+    return api_success(
+        "Статус поліцейського.",
+        {
+            "officer": {
+                "id": str(officer.id),
+                "rank": officer.rank,
+                "successful_investigations": officer.successful_investigations,
+                "bribes_taken": officer.bribes_taken,
+                "is_active": officer.is_active,
+                "hired_at_game_day": officer.hired_at_game_day,
+                "promoted_at_game_day": officer.promoted_at_game_day,
+                "patrol_district_id": str(officer.patrol_district_id) if officer.patrol_district_id else None,
+            }
+        },
+    )
+
+
+@router.get("/player/{player_id}/police-records")
+def player_police_records_endpoint(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G8: police records гравця для клієнтського Police/Court panel."""
+    player = require_player(db, player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    records = (
+        db.query(PoliceRecord)
+        .filter(PoliceRecord.player_id == player.id)
+        .order_by(PoliceRecord.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    return api_success(
+        "Police records гравця.",
+        {
+            "records": [
+                {
+                    "id": str(record.id),
+                    "offense_type": record.offense_type,
+                    "fine_amount": float(record.fine_amount) if record.fine_amount else None,
+                    "status": record.status,
+                    "created_at": record.created_at.isoformat() if record.created_at else None,
+                }
+                for record in records
+            ]
+        },
+    )
+
+
 # --- Phase G8: Court ---
+
+
+@router.get("/player/{player_id}/court-cases")
+def player_court_cases_endpoint(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G8: court cases гравця для клієнтського Court panel."""
+    player = require_player(db, player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    cases = (
+        db.query(CourtCase)
+        .filter(CourtCase.defendant_id == player.id)
+        .order_by(CourtCase.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    return api_success(
+        "Court cases гравця.",
+        {
+            "cases": [
+                {
+                    "id": str(case.id),
+                    "verdict": case.verdict,
+                    "is_appealed": case.is_appealed,
+                    "appeal_deadline": case.appeal_deadline.isoformat() if case.appeal_deadline else None,
+                    "judge_1_vote": case.judge_1_vote,
+                    "judge_2_vote": case.judge_2_vote,
+                    "judge_3_vote": case.judge_3_vote,
+                    "judge_1_bribed": case.judge_1_bribed,
+                    "judge_2_bribed": case.judge_2_bribed,
+                    "judge_3_bribed": case.judge_3_bribed,
+                    "final_verdict": case.final_verdict,
+                    "created_at": case.created_at.isoformat() if case.created_at else None,
+                }
+                for case in cases
+            ]
+        },
+    )
 
 
 @router.post("/court/create-case")
