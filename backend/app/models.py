@@ -1151,12 +1151,8 @@ class BankDeposit(Base):
     __tablename__ = "bank_deposits"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    bank_business_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False
-    )
-    player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    bank_business_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False)
+    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     interest_rate: Mapped[float] = mapped_column(Decimal(5, 2), nullable=False)
     created_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -1171,12 +1167,8 @@ class BankCredit(Base):
     __tablename__ = "bank_credits"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    bank_business_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False
-    )
-    borrower_player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    bank_business_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False)
+    borrower_player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     principal_amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     remaining_amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     interest_rate: Mapped[float] = mapped_column(Decimal(5, 2), nullable=False)
@@ -1194,25 +1186,17 @@ class BankruptcyAuction(Base):
     __tablename__ = "bankruptcy_auctions"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    business_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False
-    )
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
+    business_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False)
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
     starting_price: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     debt_amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     city_percentage: Mapped[float] = mapped_column(Decimal(5, 2), default=10.00)
     highest_bid: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
-    highest_bidder_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("players.id", ondelete="SET NULL")
-    )
+    highest_bidder_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="active")  # active/won/closed
-    winner_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("players.id", ondelete="SET NULL")
-    )
+    winner_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
     winning_bid: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
 
 
@@ -1225,9 +1209,7 @@ class AuctionBid(Base):
     auction_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("bankruptcy_auctions.id", ondelete="CASCADE"), nullable=False
     )
-    bidder_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    bidder_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     placed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -1239,12 +1221,8 @@ class CityOffice(Base):
     __tablename__ = "city_offices"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
-    player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     position: Mapped[str] = mapped_column(String(30), nullable=False)
     department: Mapped[str | None] = mapped_column(String(50), nullable=True)
     hired_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -1258,15 +1236,11 @@ class MayorElection(Base):
     __tablename__ = "mayor_elections"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
     started_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
     ends_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="active")  # active/concluded
-    winner_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("players.id", ondelete="SET NULL")
-    )
+    winner_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -1276,12 +1250,8 @@ class ElectionCandidate(Base):
     __tablename__ = "election_candidates"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    election_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("mayor_elections.id", ondelete="CASCADE"), nullable=False
-    )
-    player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    election_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("mayor_elections.id", ondelete="CASCADE"), nullable=False)
+    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     platform_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     registered_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -1293,12 +1263,8 @@ class MayorVote(Base):
     __tablename__ = "mayor_votes"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    election_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("mayor_elections.id", ondelete="CASCADE"), nullable=False
-    )
-    voter_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    election_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("mayor_elections.id", ondelete="CASCADE"), nullable=False)
+    voter_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     candidate_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("election_candidates.id", ondelete="CASCADE"), nullable=False
     )
@@ -1312,15 +1278,9 @@ class VoteBribe(Base):
     __tablename__ = "vote_bribes"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    election_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("mayor_elections.id", ondelete="CASCADE"), nullable=False
-    )
-    briber_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
-    voter_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    election_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("mayor_elections.id", ondelete="CASCADE"), nullable=False)
+    briber_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
+    voter_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="offered")  # offered/accepted/rejected/reported
     created_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -1333,12 +1293,8 @@ class PoliticalCorruptionLog(Base):
     __tablename__ = "political_corruption_log"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
-    actor_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     action_type: Mapped[str] = mapped_column(String(30), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     evidence_strength: Mapped[float] = mapped_column(Decimal(5, 2), default=0.00)
