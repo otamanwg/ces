@@ -1383,6 +1383,235 @@ def fire_player_endpoint(
     return api_success(result["message"], {"job_id": job_id})
 
 
+# --- Phase G10: Education ---
+
+
+@router.get("/education/courses")
+def education_courses_endpoint():
+    """Phase G10: каталог курсів."""
+    from backend.app.services.education_service import list_courses
+
+    return api_success("Каталог курсів.", {"courses": list_courses()})
+
+
+@router.post("/education/enroll")
+def education_enroll_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G10: записатися на курс."""
+    from backend.app.services.education_service import enroll
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    course = data.get("course", "")
+    mode = data.get("mode", "full_time")
+    result = enroll(db, player, course, mode)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.get("/education/active")
+def education_active_endpoint(player_id: str, db: Session = Depends(get_db)):
+    """Phase G10: активні курси гравця."""
+    from backend.app.services.education_service import get_active_enrollments
+
+    player_uuid = try_uuid(player_id)
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    active = get_active_enrollments(db, player)
+    return api_success(
+        "Активні курси.",
+        {
+            "active": [
+                {
+                    "id": str(e.id),
+                    "course": e.course,
+                    "mode": e.mode,
+                    "status": e.status,
+                    "is_fake": e.is_fake,
+                    "enrolled_at": e.enrolled_at.isoformat() if e.enrolled_at else None,
+                }
+                for e in active
+            ]
+        },
+    )
+
+
+@router.get("/education/completed")
+def education_completed_endpoint(player_id: str, db: Session = Depends(get_db)):
+    """Phase G10: завершені курси гравця."""
+    from backend.app.services.education_service import get_completed_courses
+
+    player_uuid = try_uuid(player_id)
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    completed = get_completed_courses(db, player)
+    return api_success(
+        "Завершені курси.",
+        {
+            "completed": [
+                {
+                    "id": str(e.id),
+                    "course": e.course,
+                    "mode": e.mode,
+                    "is_fake": e.is_fake,
+                    "completed_at": e.completed_at.isoformat() if e.completed_at else None,
+                }
+                for e in completed
+            ]
+        },
+    )
+
+
+@router.post("/education/complete")
+def education_complete_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G10: завершити курс (викликається scheduler-ом після duration_days)."""
+    from backend.app.models import Education
+    from backend.app.services.education_service import complete_education
+
+    edu_uuid = try_uuid(data.get("education_id", ""))
+    if edu_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    education = db.query(Education).filter(Education.id == edu_uuid).first()
+    if not education:
+        return api_error("Курс не знайдено.")
+    result = complete_education(db, education)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/education/exam")
+def education_exam_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G10: скласти іспит (міні-гра)."""
+    from backend.app.services.education_service import take_exam
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    exam_type = data.get("exam_type", "")
+    game_day = int(data.get("game_day", 0))
+    result = take_exam(db, player, exam_type, game_day)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/education/exam/bribe")
+def education_exam_bribe_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G10: підкуп іспитуйача (після 2 провалів)."""
+    from backend.app.services.education_service import bribe_exam
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    exam_type = data.get("exam_type", "")
+    result = bribe_exam(db, player, exam_type)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/education/license/lawyer")
+def education_license_lawyer_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G10: ліцензія адвоката."""
+    from backend.app.services.education_service import issue_lawyer_license
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    result = issue_lawyer_license(db, player)
+    if not result["success"]:
+        return api_error(result["message"])
+    return api_success(result["message"], result)
+
+
+@router.post("/education/license/police")
+def education_license_police_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G10: кваліфікація поліцейського."""
+    from backend.app.services.education_service import issue_police_qualification
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    result = issue_police_qualification(db, player)
+    if not result["success"]:
+        return api_error(result["message"])
+    return api_success(result["message"], result)
+
+
+@router.post("/education/license/judge")
+def education_license_judge_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G10: кваліфікація судді."""
+    from backend.app.services.education_service import issue_judge_qualification
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    result = issue_judge_qualification(db, player)
+    if not result["success"]:
+        return api_error(result["message"])
+    return api_success(result["message"], result)
+
+
+@router.get("/education/mayor-eligibility")
+def education_mayor_eligibility_endpoint(player_id: str, db: Session = Depends(get_db)):
+    """Phase G10: перевірка відповідності вимогам мера."""
+    from backend.app.services.education_service import check_mayor_eligibility
+
+    player_uuid = try_uuid(player_id)
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    result = check_mayor_eligibility(db, player)
+    return api_success(result["message"], result)
+
+
+@router.post("/education/fake-diploma")
+def education_fake_diploma_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G10: купити підробний диплом (тіньова механіка)."""
+    from backend.app.services.education_service import buy_fake_diploma
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    course = data.get("course", "")
+    result = buy_fake_diploma(db, player, course)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
 # --- Phase G9: Casino ---
 
 

@@ -179,12 +179,12 @@
 
 ### Phase G10 — Education Tree, Exams, Licenses
 
-1. [ ] Освіта як дерево рішень: базова → економічна/юридична/поліцейська/медична/інженерна/журналістська/дизайн/гостинність. Очно одна + заочно одна, їсть енергію (1000/день).
-2. [ ] Іспити: міні-гра раз на ігровий день. Два провали → варіант підкупу (шансовий, залежить від criminal_rep).
-3. [ ] Ліцензії: адвокат (3 міс у юридичній фірмі + іспит, діє 1 рік), поліцейський (щорічний іспит), суддя (щорічний іспит), мер (економічна + юридична освіта + 3 міс у мерії).
-4. [ ] Куплений диплом (корупція): повноцінний диплом, розкриття не блокує, тільки мінус репутація.
-5. [ ] Стипендія від AI (фіксована) для очної освіти.
-6. [ ] Тести.
+1. [x] Освіта як дерево рішень: 8 курсів (economic, legal, police, medical, engineering, journalism, fashion, hospitality). Очно одна + заочно одна одночасно. Енергія: 1000/день (full_time), 500/день (part_time). Стипендія 50/день для очної.
+2. [x] Іспити: take_exam (pass chance 0.7, -0.15 per fail), bribe_exam після 2 провалів (success = 0.5 + criminal_rep*0.005, cost 500). License validity 365 днів.
+3. [x] Ліцензії: lawyer (legal education + exam), police (police education + exam), judge (legal education + exam), mayor eligibility (economic + legal + 90 successful_deals).
+4. [x] Куплений диплом: buy_fake_diploma (cost 5000, +15 criminal_rep, is_fake=True, status=completed). expose_fake_diploma — НЕ блокує диплом, лише логування (per gameplay model).
+5. [x] Стипендія від AI: 50/день для full_time (в daily_tick).
+6. [x] Тести: 28 нових (8 enroll, 4 complete, 4 exams, 6 licenses, 5 fake diploma). 383 total pass. `just check-g10` profile.
 
 ### Phase G11 — 3D Visual Layers (Optional, post-G7)
 
