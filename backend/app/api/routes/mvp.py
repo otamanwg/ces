@@ -1383,6 +1383,321 @@ def fire_player_endpoint(
     return api_success(result["message"], {"job_id": job_id})
 
 
+# --- Phase G9: Casino ---
+
+
+@router.post("/casino/blackjack")
+def casino_blackjack_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: блекджек проти казино."""
+    from backend.app.models import Business
+    from backend.app.services.casino_service import play_blackjack
+
+    casino_uuid = try_uuid(data.get("casino_id", ""))
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if casino_uuid is None or player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    casino = db.query(Business).filter(Business.id == casino_uuid).first()
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not casino or not player:
+        return api_error("Не знайдено.")
+    bet = Decimal(str(data.get("bet", 0)))
+    result = play_blackjack(db, casino, player, bet)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/casino/roulette")
+def casino_roulette_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: рулетка."""
+    from backend.app.models import Business
+    from backend.app.services.casino_service import play_roulette
+
+    casino_uuid = try_uuid(data.get("casino_id", ""))
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if casino_uuid is None or player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    casino = db.query(Business).filter(Business.id == casino_uuid).first()
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not casino or not player:
+        return api_error("Не знайдено.")
+    bet = Decimal(str(data.get("bet", 0)))
+    bet_type = data.get("bet_type", "red")
+    result = play_roulette(db, casino, player, bet, bet_type)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/casino/poker/create")
+def casino_poker_create_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: створити покерний стіл."""
+    from backend.app.models import Business
+    from backend.app.services.casino_service import create_poker_game
+
+    casino_uuid = try_uuid(data.get("casino_id", ""))
+    if casino_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    casino = db.query(Business).filter(Business.id == casino_uuid).first()
+    if not casino:
+        return api_error("Казино не знайдено.")
+    min_buyin = Decimal(str(data.get("min_buyin", 100)))
+    result = create_poker_game(db, casino, min_buyin)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/casino/tax")
+def casino_tax_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: збір податку з казино (25%)."""
+    from backend.app.models import Business
+    from backend.app.services.casino_service import collect_casino_tax
+
+    casino_uuid = try_uuid(data.get("casino_id", ""))
+    if casino_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    casino = db.query(Business).filter(Business.id == casino_uuid).first()
+    city = db.query(City).first()
+    if not casino or not city:
+        return api_error("Не знайдено.")
+    result = collect_casino_tax(db, casino, city)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+# --- Phase G9: Atelier ---
+
+
+@router.post("/atelier/create-skin")
+def atelier_create_skin_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: створити скін."""
+    from backend.app.models import Business
+    from backend.app.services.atelier_service import create_skin
+
+    designer_uuid = try_uuid(data.get("designer_id", ""))
+    atelier_uuid = try_uuid(data.get("atelier_id", ""))
+    if designer_uuid is None or atelier_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    designer = db.query(Player).filter(Player.id == designer_uuid).first()
+    atelier = db.query(Business).filter(Business.id == atelier_uuid).first()
+    if not designer or not atelier:
+        return api_error("Не знайдено.")
+    result = create_skin(
+        db,
+        designer,
+        atelier,
+        data.get("name", "Untitled"),
+        data.get("config", {}),
+        data.get("rarity", "common"),
+        bool(data.get("is_unique", False)),
+        int(data.get("copies_total", 1)),
+        Decimal(str(data.get("price", 100))),
+    )
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/atelier/buy-skin")
+def atelier_buy_skin_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: купити скін."""
+    from backend.app.models import Business, Skin
+    from backend.app.services.atelier_service import buy_skin
+
+    buyer_uuid = try_uuid(data.get("buyer_id", ""))
+    skin_uuid = try_uuid(data.get("skin_id", ""))
+    atelier_uuid = try_uuid(data.get("atelier_id", ""))
+    if buyer_uuid is None or skin_uuid is None or atelier_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    buyer = db.query(Player).filter(Player.id == buyer_uuid).first()
+    skin = db.query(Skin).filter(Skin.id == skin_uuid).first()
+    atelier = db.query(Business).filter(Business.id == atelier_uuid).first()
+    if not buyer or not skin or not atelier:
+        return api_error("Не знайдено.")
+    result = buy_skin(db, buyer, skin, atelier)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/atelier/equip-skin")
+def atelier_equip_skin_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: надягнути скін."""
+    from backend.app.models import PlayerSkin
+    from backend.app.services.atelier_service import equip_skin
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    player_skin_uuid = try_uuid(data.get("player_skin_id", ""))
+    if player_uuid is None or player_skin_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    player_skin = db.query(PlayerSkin).filter(PlayerSkin.id == player_skin_uuid).first()
+    if not player or not player_skin:
+        return api_error("Не знайдено.")
+    result = equip_skin(db, player, player_skin)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.get("/atelier/skins")
+def atelier_list_skins_endpoint(atelier_id: str, db: Session = Depends(get_db)):
+    """Phase G9: список скінів на продаж."""
+    from backend.app.models import Business
+    from backend.app.services.atelier_service import list_skins_for_sale
+
+    atelier_uuid = try_uuid(atelier_id)
+    if atelier_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    atelier = db.query(Business).filter(Business.id == atelier_uuid).first()
+    if not atelier:
+        return api_error("Ательє не знайдено.")
+    skins = list_skins_for_sale(db, atelier)
+    return api_success("Скіни на продажу.", {"skins": skins})
+
+
+# --- Phase G9: Shadow ---
+
+
+@router.post("/shadow/open-business")
+def shadow_open_business_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: відкрити тіньовий бізнес (потрібен criminal_rep >= 30)."""
+    from backend.app.models import CityDistrict
+    from backend.app.services.shadow_service import open_shadow_business
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    district_uuid = try_uuid(data.get("district_id", ""))
+    if player_uuid is None or district_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    district = db.query(CityDistrict).filter(CityDistrict.id == district_uuid).first()
+    if not player or not district:
+        return api_error("Не знайдено.")
+    business_type = data.get("business_type", "illegal_bar")
+    result = open_shadow_business(db, player, district, business_type)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/shadow/business-income")
+def shadow_business_income_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: дохід тіньового бізнесу (day tick)."""
+    from backend.app.models import ShadowBusiness
+    from backend.app.services.shadow_service import shadow_business_income
+
+    business_uuid = try_uuid(data.get("business_id", ""))
+    if business_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    business = db.query(ShadowBusiness).filter(ShadowBusiness.id == business_uuid).first()
+    if not business:
+        return api_error("Тіньовий бізнес не знайдено.")
+    game_day = int(data.get("game_day", 0))
+    result = shadow_business_income(db, business, game_day)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/shadow/check-discovery")
+def shadow_check_discovery_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: перевірка виявлення тіньового бізнесу поліцією."""
+    from backend.app.models import Player, ShadowBusiness
+    from backend.app.services.shadow_service import check_discovery
+
+    business_uuid = try_uuid(data.get("business_id", ""))
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if business_uuid is None or player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    business = db.query(ShadowBusiness).filter(ShadowBusiness.id == business_uuid).first()
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not business or not player:
+        return api_error("Не знайдено.")
+    result = check_discovery(db, business, player)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/shadow/fraud-offer")
+def shadow_fraud_offer_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: пропозиція шахрайства (day tick)."""
+    from backend.app.services.shadow_service import offer_fraud
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    game_day = int(data.get("game_day", 0))
+    result = offer_fraud(db, player, game_day)
+    return api_success(result["message"], result)
+
+
+@router.post("/shadow/fraud-accept")
+def shadow_fraud_accept_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: прийняти шахрайство."""
+    from backend.app.services.shadow_service import accept_fraud
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    amount = Decimal(str(data.get("amount", 0)))
+    game_day = int(data.get("game_day", 0))
+    result = accept_fraud(db, player, amount, game_day)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/shadow/money-laundering")
+def shadow_money_laundering_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: відмивання грошей."""
+    from backend.app.services.shadow_service import money_laundering_service
+
+    launderer_uuid = try_uuid(data.get("launderer_id", ""))
+    client_uuid = try_uuid(data.get("client_id", ""))
+    if launderer_uuid is None or client_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    launderer = db.query(Player).filter(Player.id == launderer_uuid).first()
+    client = db.query(Player).filter(Player.id == client_uuid).first()
+    if not launderer or not client:
+        return api_error("Не знайдено.")
+    amount = Decimal(str(data.get("amount", 0)))
+    result = money_laundering_service(db, launderer, client, amount)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.get("/shadow/market")
+def shadow_market_endpoint(player_id: str, db: Session = Depends(get_db)):
+    """Phase G9: доступ до тіньового ринку (criminal_rep >= 30)."""
+    from backend.app.services.shadow_service import can_access_shadow_market
+
+    player_uuid = try_uuid(player_id)
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    if not can_access_shadow_market(player):
+        return api_error("Доступ до тіньового ринку вимагає criminal_rep >= 30.")
+    return api_success(
+        "Тіньовий ринок доступний.",
+        {
+            "criminal_rep": float(player.criminal_rep),
+            "items": [
+                {"type": "contraband_electronics", "price_modifier": 0.6},
+                {"type": "stolen_goods", "price_modifier": 0.5},
+                {"type": "fake_medicine", "price_modifier": 0.4},
+            ],
+        },
+    )
+
+
 # --- Phase G8: Police ---
 
 

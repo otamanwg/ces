@@ -172,10 +172,10 @@
 
 ### Phase G9 — Casino, Atelier, Shadow Niches
 
-1. [ ] Казино як бізнес (blueprint `gambling`): блекджек + рулетка (покер пізніше), rake, house edge, ліцензія від мера, податок 25%. Підпільне казино (тіньова ніша, без ліцензії).
-2. [ ] Ательє як бізнес (blueprint `fashion`): створення скінів (JSON-конфіг через API), продаж (унікальні/масові), аукціон скінів, equip.
-3. [ ] Тіньові ніші після тюрми: `criminal_rep` (фоновий приріст за професією/бізнесом), пропозиції шахрайства (ймовірність залежить від criminal_rep), тіньовий ринок, тіньові бізнеси (підпільне казино, контрабанда, тіньова аптека, нелегальний бар, відмивання).
-4. [ ] Тести.
+1. [x] Казино як бізнес (blueprint `casino`, категорія `gambling`): блекджек + рулетка, rake 7%, house edge, податок 25%, ліцензійний збір 500/міс. Покер — створення/сетлмент (движок пізніше). `shut_down_casino` (відкликання ліцензії). Підпільне казино — через `shadow_service.open_shadow_business(type="illegal_casino")`.
+2. [x] Ательє як бізнес (blueprint `atelier`, категорія `fashion`): створення скінів (JSON-конфіг), продаж (унікальні/масові), equip/unequip, list for sale. Commission 20% to atelier, tax 10% to treasury. Ціна: rarity × unique multiplier.
+3. [x] Тіньові ніші: `criminal_rep` (add/decay/clamp 0-100), пропозиції шахрайства (шанс: <10=0%, 10-30=5%, 30-60=15%, 60-100=30%), accept/refuse, тіньовий ринок (buy 60%/sell 80% legal price, +2 rep), тіньові бізнеси (illegal_casino/smuggling/shadow_pharmacy/illegal_bar/money_laundering, доступ при rep>=30), check_discovery (chance=0.05+rep*0.003 → CorruptionLog), money_laundering_service (15% commission).
+4. [x] Тести: 33 нових (8 casino, 8 atelier, 17 shadow). 355 total pass. `just check-g9` profile.
 
 ### Phase G10 — Education Tree, Exams, Licenses
 

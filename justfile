@@ -112,6 +112,9 @@ check-political:
 check-g8:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 g8
 
+check-g9:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 g9
+
 check-prod:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 prod-fast
 

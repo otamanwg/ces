@@ -719,25 +719,17 @@ class PoliceOfficer(Base):
     __tablename__ = "police_officers"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
-    player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     rank: Mapped[str] = mapped_column(String(20), nullable=False, default="patrol")  # patrol|detective|chief
     department: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    patrol_district_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("city_districts.id", ondelete="SET NULL")
-    )
+    patrol_district_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("city_districts.id", ondelete="SET NULL"))
     successful_investigations: Mapped[int] = mapped_column(Integer, default=0)
     bribes_taken: Mapped[int] = mapped_column(Integer, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     hired_at_game_day: Mapped[int] = mapped_column(Integer, default=0)
     promoted_at_game_day: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    appointed_by_mayor_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("players.id", ondelete="SET NULL")
-    )
+    appointed_by_mayor_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
