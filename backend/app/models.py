@@ -125,7 +125,12 @@ class DistrictPrestige(Base):
 
 
 class PlayerInteraction(Base):
-    """Логи взаємодій між гравцями"""
+    """Логи взаємодій між гравцями.
+
+    Frozen: defined for future social/relationship mechanics (post-MVP).
+    Table exists in DB but no service writes to it yet. Do not remove —
+    migration chain depends on it. See AGENTS.md "frozen until MVP stable".
+    """
 
     __tablename__ = "player_interactions"
 
@@ -185,7 +190,12 @@ class PlayerBusinessRating(Base):
 
 
 class CityEvent(Base):
-    """Динамічні події в місті"""
+    """Динамічні події в місті.
+
+    Frozen: defined for future event system (festivals, crises, disasters).
+    Table exists in DB but no service creates events yet. Do not remove —
+    migration chain depends on it. See AGENTS.md "frozen until MVP stable".
+    """
 
     __tablename__ = "city_events"
 

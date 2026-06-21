@@ -340,9 +340,11 @@ class TestDayTickIntegration:
             city = db.query(City).one()
             before = (
                 db.query(DistrictMetricSnapshot)
-                .filter(DistrictMetricSnapshot.district_id.in_(
-                    [d.id for d in db.query(CityDistrict).filter_by(city_id=city.id).all()]
-                ))
+                .filter(
+                    DistrictMetricSnapshot.district_id.in_(
+                        [d.id for d in db.query(CityDistrict).filter_by(city_id=city.id).all()]
+                    )
+                )
                 .count()
             )
             result = game_day_tick(db, str(city.id))
@@ -351,9 +353,11 @@ class TestDayTickIntegration:
 
             after = (
                 db.query(DistrictMetricSnapshot)
-                .filter(DistrictMetricSnapshot.district_id.in_(
-                    [d.id for d in db.query(CityDistrict).filter_by(city_id=city.id).all()]
-                ))
+                .filter(
+                    DistrictMetricSnapshot.district_id.in_(
+                        [d.id for d in db.query(CityDistrict).filter_by(city_id=city.id).all()]
+                    )
+                )
                 .count()
             )
             # At least one snapshot per district should have been created.

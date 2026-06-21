@@ -6,8 +6,6 @@
 from decimal import Decimal
 
 import pytest
-from sqlalchemy.orm import Session
-
 from app.database import SessionLocal
 from app.models import Business, City, Hostel, Job, Player
 from app.services.buildings import process_daily_building_upkeep
@@ -18,6 +16,7 @@ from app.services.economy import (
 )
 from app.services.money import money
 from app.services.needs import DAY_HUNGER_INCREASE, increase_hunger
+from sqlalchemy.orm import Session
 
 
 class TestEconomyBalance:

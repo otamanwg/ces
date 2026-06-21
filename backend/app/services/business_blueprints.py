@@ -534,6 +534,9 @@ STARTER_BUSINESS_BLUEPRINTS: tuple[StarterBusinessBlueprint, ...] = (
 )
 
 
+STARTER_BLUEPRINT_COUNT = len(STARTER_BUSINESS_BLUEPRINTS)
+
+
 def ensure_business_blueprints(db: Session) -> None:
     blueprint_repo = BusinessBlueprintRepository(db)
 

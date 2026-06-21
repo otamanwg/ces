@@ -10,18 +10,35 @@ from backend.app.api.responses import (
     save_player_action_response,
 )
 from backend.app.core.config import settings
+from backend.app.core.redis import (
+    CacheService,
+    invalidate_player_cache,
+)
 from backend.app.database import get_db
 from backend.app.models import (
+    BankCredit,
+    BankDeposit,
+    BankruptcyAuction,
     Building,
     BuildingApplication,
     Business,
     BusinessBlueprint,
     City,
     CityDistrict,
+    CorruptionLog,
+    CourtCase,
+    Education,
+    ElectionCandidate,
     Job,
     LandParcel,
     Player,
+    PlayerSkin,
+    PressBlackmail,
+    PressInvestigation,
+    ShadowBusiness,
+    Skin,
     SportsClub,
+    VoteBribe,
 )
 from backend.app.schemas.mvp import (
     AvatarCatalogData,
@@ -55,12 +72,34 @@ from backend.app.schemas.mvp import (
     VacancyItem,
     WorkActionData,
 )
-from backend.app.schemas.response import api_error, api_success
-from backend.app.services.auth import get_authorized_player, new_player_token_pair
+from backend.app.schemas.response import (
+    api_error,
+    api_success,
+)
+from backend.app.services.atelier_service import (
+    buy_skin,
+    create_skin,
+    equip_skin,
+    list_player_skins,
+    list_skins_for_sale,
+    unequip_all,
+)
+from backend.app.services.auth import (
+    get_authorized_player,
+    new_player_token_pair,
+)
 from backend.app.services.avatar_profile import (
     build_avatar_catalog,
     create_player_avatar,
     validate_avatar_selection,
+)
+from backend.app.services.bank_service import (
+    create_deposit,
+    issue_loan,
+    list_active_auctions,
+    place_bid,
+    repay_loan,
+    withdraw_deposit,
 )
 from backend.app.services.building_applications import create_building_application
 from backend.app.services.buildings import (
@@ -80,32 +119,80 @@ from backend.app.services.business_market import (
     process_business_dividend_collection,
     process_business_purchase,
 )
+from backend.app.services.casino_service import (
+    collect_casino_tax,
+    create_poker_game,
+    play_blackjack,
+    play_roulette,
+)
 from backend.app.services.city_districts import get_city_districts
-from backend.app.services.city_news import build_city_news, build_day_tick_news
+from backend.app.services.city_news import (
+    build_city_news,
+    build_day_tick_news,
+)
+from backend.app.services.court_service import (
+    bribe_judge,
+    create_court_case,
+    file_appeal,
+)
+from backend.app.services.district_metrics import get_radar_with_trend
 from backend.app.services.economy import (
     game_day_tick,
     process_rent_payment,
     process_shift_work,
     update_inflation_rate,
 )
-from backend.app.services.education import load_manager_exam, process_exam_submission
+from backend.app.services.education import (
+    load_manager_exam,
+    process_exam_submission,
+)
+from backend.app.services.education_service import (
+    bribe_exam,
+    buy_fake_diploma,
+    check_mayor_eligibility,
+    complete_education,
+    enroll,
+    get_active_enrollments,
+    get_completed_courses,
+    issue_judge_qualification,
+    issue_lawyer_license,
+    issue_police_qualification,
+    list_courses,
+    take_exam,
+)
 from backend.app.services.idempotency import (
     get_idempotent_response,
     save_idempotent_response,
 )
-from backend.app.services.ids import to_uuid, try_uuid
+from backend.app.services.ids import (
+    to_uuid,
+    try_uuid,
+)
 from backend.app.services.job_queries import (
     education_rank,
     get_active_job,
     get_job,
     get_vacant_jobs,
 )
-from backend.app.services.land import get_land_parcels, process_land_purchase
+from backend.app.services.land import (
+    get_land_parcels,
+    process_land_purchase,
+)
+from backend.app.services.lawyer_service import (
+    appeal_with_lawyer,
+    engage_lawyer,
+)
 from backend.app.services.messages import (
     INVALID_PLAYER_SESSION_MESSAGE,
     JOB_NOT_FOUND_MESSAGE,
 )
 from backend.app.services.needs import process_meal_purchase
+from backend.app.services.npc_service import (
+    dismiss_npc,
+    hire_npc_for_business,
+    list_business_npcs,
+    npc_to_dict,
+)
 from backend.app.services.onboarding import (
     ONBOARDING_REQUIRED_MESSAGE,
     build_onboarding_snapshot,
@@ -120,7 +207,70 @@ from backend.app.services.player_profile import (
     get_player_snapshot,
 )
 from backend.app.services.player_progress import build_goal_effects
-from backend.app.services.sports import sign_athlete_contract, train_at_gym
+from backend.app.services.police_service import (
+    accept_bribe,
+    appoint_chief,
+    arrest_player,
+    confiscate_business,
+    get_corruption_log_access,
+    get_officer,
+    hire_police_officer,
+    patrol_district,
+    promote_officer,
+    refuse_bribe,
+)
+from backend.app.services.political_service import (
+    ai_mayor_invest,
+    cast_vote,
+    conclude_election,
+    get_active_election,
+    get_election_results,
+    hire_office_worker,
+    offer_bribe,
+    register_candidate,
+    respond_to_bribe,
+    start_election,
+    vote_of_no_confidence,
+)
+from backend.app.services.press_service import (
+    accept_advertising,
+    offer_blackmail,
+    publish_article,
+    respond_to_blackmail,
+    start_investigation,
+)
+from backend.app.services.prison_service import (
+    get_active_sentence,
+    prison_poker,
+    prison_work,
+    socialize,
+)
+from backend.app.services.shadow_service import (
+    accept_fraud,
+    can_access_shadow_market,
+    check_discovery,
+    money_laundering_service,
+    offer_fraud,
+    open_shadow_business,
+    shadow_business_income,
+)
+from backend.app.services.sports import (
+    sign_athlete_contract,
+    train_at_gym,
+)
+from backend.app.services.utility_service import (
+    get_mayor_warnings,
+    get_utility_status,
+)
+from backend.app.services.vacancy_service import (
+    DEFAULT_BONUS_PCT,
+    fire_player,
+    job_to_dict,
+    list_open_vacancies,
+    list_student_vacancies,
+    owner_works_shift,
+    post_player_vacancy,
+)
 
 router = APIRouter(prefix="/api", tags=["mvp"])
 
@@ -353,8 +503,6 @@ def business_blueprint_item(blueprint: BusinessBlueprint) -> BusinessBlueprintIt
 
 @router.get("/city/status")
 async def get_city_status(db: Session = Depends(get_db)):
-    from backend.app.core.redis import CacheService
-
     city = db.query(City).first()
     if not city:
         raise HTTPException(status_code=404, detail="Місто не знайдене")
@@ -433,8 +581,6 @@ def get_avatar_catalog():
 @router.get("/districts/{district_id}/radar")
 def get_district_radar(district_id: str, db: Session = Depends(get_db)):
     """Phase G1: композитні індекси району (0-100) + тренд за 7 днів."""
-    from backend.app.services.district_metrics import get_radar_with_trend
-
     district_uuid = try_uuid(district_id)
     if district_uuid is None:
         return api_error("Невірний ідентифікатор району.")
@@ -817,8 +963,6 @@ async def get_player_status(
     player_token: str | None = Header(default=None, alias="X-Player-Token"),
     db: Session = Depends(get_db),
 ):
-    from backend.app.core.redis import CacheService
-
     if not require_player(db, player_id, player_token):
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
 
@@ -969,8 +1113,6 @@ def collect_business_dividend(
 @router.get("/businesses/{business_id}/npcs")
 def list_business_npcs_endpoint(business_id: str, db: Session = Depends(get_db)):
     """Phase G2: список NPC, найнятих у бізнесі."""
-    from backend.app.services.npc_service import list_business_npcs, npc_to_dict
-
     business_uuid = try_uuid(business_id)
     if business_uuid is None:
         return api_error("Невірний ідентифікатор бізнесу.")
@@ -993,8 +1135,6 @@ def hire_npc_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G2: найм NPC для бізнесу (власником)."""
-    from backend.app.services.npc_service import hire_npc_for_business
-
     business_uuid = try_uuid(business_id)
     if business_uuid is None:
         return api_error("Невірний ідентифікатор бізнесу.")
@@ -1023,8 +1163,6 @@ def dismiss_npc_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G2: звільнення NPC з бізнесу."""
-    from backend.app.services.npc_service import dismiss_npc
-
     business_uuid = try_uuid(business_id)
     if business_uuid is None:
         return api_error("Невірний ідентифікатор бізнесу.")
@@ -1050,8 +1188,6 @@ def dismiss_npc_endpoint(
 @router.get("/city/utility-status")
 def get_utility_status_endpoint(db: Session = Depends(get_db)):
     """Phase G3: статус комунальних служб міста + попередження мера."""
-    from backend.app.services.utility_service import get_mayor_warnings, get_utility_status
-
     city = db.query(City).first()
     if not city:
         return api_error("Місто не знайдене.")
@@ -1229,8 +1365,6 @@ async def do_work_shift(
         return api_error(res["message"])
 
     # Інвалідуємо кеш гравця після успішної зміни
-    from backend.app.core.redis import invalidate_player_cache
-
     await invalidate_player_cache(player_id)
 
     player = db.query(Player).filter(Player.id == to_uuid(player_id)).first()
@@ -1252,8 +1386,6 @@ async def do_work_shift(
 @router.get("/vacancies/player")
 def list_player_vacancies(db: Session = Depends(get_db)):
     """Phase G4: список відкритих гравець-вакансій (не NPC)."""
-    from backend.app.services.vacancy_service import job_to_dict, list_open_vacancies
-
     city = db.query(City).first()
     city_id = city.id if city else None
     vacancies = list_open_vacancies(db, city_id)
@@ -1266,8 +1398,6 @@ def list_player_vacancies(db: Session = Depends(get_db)):
 @router.get("/vacancies/student")
 def list_student_vacancies_endpoint(db: Session = Depends(get_db)):
     """Phase G4: біржа студентських робіт (вечірні зміни)."""
-    from backend.app.services.vacancy_service import job_to_dict, list_student_vacancies
-
     city = db.query(City).first()
     city_id = city.id if city else None
     vacancies = list_student_vacancies(db, city_id)
@@ -1285,8 +1415,6 @@ def post_vacancy_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G4: власник виставляє вакансію для гравця-працівника."""
-    from backend.app.services.vacancy_service import DEFAULT_BONUS_PCT, post_player_vacancy
-
     business_uuid = try_uuid(business_id)
     if business_uuid is None:
         return api_error("Невірний ідентифікатор бізнесу.")
@@ -1325,8 +1453,6 @@ def owner_works_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G4: власник працює у власному бізнесі (витрачає енергію)."""
-    from backend.app.services.vacancy_service import owner_works_shift
-
     business_uuid = try_uuid(business_id)
     if business_uuid is None:
         return api_error("Невірний ідентифікатор бізнесу.")
@@ -1358,8 +1484,6 @@ def fire_player_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G4: власник звільняє гравця-працівника."""
-    from backend.app.services.vacancy_service import fire_player
-
     job_uuid = try_uuid(job_id)
     if job_uuid is None:
         return api_error("Невірний ідентифікатор вакансії.")
@@ -1389,16 +1513,12 @@ def fire_player_endpoint(
 @router.get("/education/courses")
 def education_courses_endpoint():
     """Phase G10: каталог курсів."""
-    from backend.app.services.education_service import list_courses
-
     return api_success("Каталог курсів.", {"courses": list_courses()})
 
 
 @router.post("/education/enroll")
 def education_enroll_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G10: записатися на курс."""
-    from backend.app.services.education_service import enroll
-
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1417,8 +1537,6 @@ def education_enroll_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.get("/education/active")
 def education_active_endpoint(player_id: str, db: Session = Depends(get_db)):
     """Phase G10: активні курси гравця."""
-    from backend.app.services.education_service import get_active_enrollments
-
     player_uuid = try_uuid(player_id)
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1447,8 +1565,6 @@ def education_active_endpoint(player_id: str, db: Session = Depends(get_db)):
 @router.get("/education/completed")
 def education_completed_endpoint(player_id: str, db: Session = Depends(get_db)):
     """Phase G10: завершені курси гравця."""
-    from backend.app.services.education_service import get_completed_courses
-
     player_uuid = try_uuid(player_id)
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1476,8 +1592,6 @@ def education_completed_endpoint(player_id: str, db: Session = Depends(get_db)):
 @router.post("/education/complete")
 def education_complete_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G10: завершити курс (викликається scheduler-ом після duration_days)."""
-    from backend.app.models import Education
-    from backend.app.services.education_service import complete_education
 
     edu_uuid = try_uuid(data.get("education_id", ""))
     if edu_uuid is None:
@@ -1495,8 +1609,6 @@ def education_complete_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/education/exam")
 def education_exam_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G10: скласти іспит (міні-гра)."""
-    from backend.app.services.education_service import take_exam
-
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1513,8 +1625,6 @@ def education_exam_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/education/exam/bribe")
 def education_exam_bribe_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G10: підкуп іспитуйача (після 2 провалів)."""
-    from backend.app.services.education_service import bribe_exam
-
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1530,8 +1640,6 @@ def education_exam_bribe_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/education/license/lawyer")
 def education_license_lawyer_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G10: ліцензія адвоката."""
-    from backend.app.services.education_service import issue_lawyer_license
-
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1547,8 +1655,6 @@ def education_license_lawyer_endpoint(data: dict, db: Session = Depends(get_db))
 @router.post("/education/license/police")
 def education_license_police_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G10: кваліфікація поліцейського."""
-    from backend.app.services.education_service import issue_police_qualification
-
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1564,8 +1670,6 @@ def education_license_police_endpoint(data: dict, db: Session = Depends(get_db))
 @router.post("/education/license/judge")
 def education_license_judge_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G10: кваліфікація судді."""
-    from backend.app.services.education_service import issue_judge_qualification
-
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1581,8 +1685,6 @@ def education_license_judge_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.get("/education/mayor-eligibility")
 def education_mayor_eligibility_endpoint(player_id: str, db: Session = Depends(get_db)):
     """Phase G10: перевірка відповідності вимогам мера."""
-    from backend.app.services.education_service import check_mayor_eligibility
-
     player_uuid = try_uuid(player_id)
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1596,8 +1698,6 @@ def education_mayor_eligibility_endpoint(player_id: str, db: Session = Depends(g
 @router.post("/education/fake-diploma")
 def education_fake_diploma_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G10: купити підробний диплом (тіньова механіка)."""
-    from backend.app.services.education_service import buy_fake_diploma
-
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1618,8 +1718,6 @@ def education_fake_diploma_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/casino/blackjack")
 def casino_blackjack_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: блекджек проти казино."""
-    from backend.app.models import Business
-    from backend.app.services.casino_service import play_blackjack
 
     casino_uuid = try_uuid(data.get("casino_id", ""))
     player_uuid = try_uuid(data.get("player_id", ""))
@@ -1638,8 +1736,6 @@ def casino_blackjack_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/casino/roulette")
 def casino_roulette_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: рулетка."""
-    from backend.app.models import Business
-    from backend.app.services.casino_service import play_roulette
 
     casino_uuid = try_uuid(data.get("casino_id", ""))
     player_uuid = try_uuid(data.get("player_id", ""))
@@ -1659,8 +1755,6 @@ def casino_roulette_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/casino/poker/create")
 def casino_poker_create_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: створити покерний стіл."""
-    from backend.app.models import Business
-    from backend.app.services.casino_service import create_poker_game
 
     casino_uuid = try_uuid(data.get("casino_id", ""))
     if casino_uuid is None:
@@ -1679,8 +1773,6 @@ def casino_poker_create_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/casino/tax")
 def casino_tax_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: збір податку з казино (25%)."""
-    from backend.app.models import Business
-    from backend.app.services.casino_service import collect_casino_tax
 
     casino_uuid = try_uuid(data.get("casino_id", ""))
     if casino_uuid is None:
@@ -1700,8 +1792,6 @@ def casino_tax_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/atelier/create-skin")
 def atelier_create_skin_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: створити скін."""
-    from backend.app.models import Business
-    from backend.app.services.atelier_service import create_skin
 
     designer_uuid = try_uuid(data.get("designer_id", ""))
     atelier_uuid = try_uuid(data.get("atelier_id", ""))
@@ -1731,8 +1821,6 @@ def atelier_create_skin_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/atelier/buy-skin")
 def atelier_buy_skin_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: купити скін."""
-    from backend.app.models import Business, Skin
-    from backend.app.services.atelier_service import buy_skin
 
     buyer_uuid = try_uuid(data.get("buyer_id", ""))
     skin_uuid = try_uuid(data.get("skin_id", ""))
@@ -1754,8 +1842,6 @@ def atelier_buy_skin_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/atelier/equip-skin")
 def atelier_equip_skin_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: надягнути скін."""
-    from backend.app.models import PlayerSkin
-    from backend.app.services.atelier_service import equip_skin
 
     player_uuid = try_uuid(data.get("player_id", ""))
     player_skin_uuid = try_uuid(data.get("player_skin_id", ""))
@@ -1773,8 +1859,6 @@ def atelier_equip_skin_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.get("/atelier/skins")
 def atelier_list_skins_endpoint(atelier_id: str, db: Session = Depends(get_db)):
     """Phase G9: список скінів на продаж."""
-    from backend.app.models import Business
-    from backend.app.services.atelier_service import list_skins_for_sale
 
     atelier_uuid = try_uuid(atelier_id)
     if atelier_uuid is None:
@@ -1789,8 +1873,6 @@ def atelier_list_skins_endpoint(atelier_id: str, db: Session = Depends(get_db)):
 @router.get("/atelier/player-skins")
 def atelier_player_skins_endpoint(player_id: str, db: Session = Depends(get_db)):
     """Phase G9: скіни гравця (власні)."""
-    from backend.app.services.atelier_service import list_player_skins
-
     player_uuid = try_uuid(player_id)
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1804,8 +1886,6 @@ def atelier_player_skins_endpoint(player_id: str, db: Session = Depends(get_db))
 @router.post("/atelier/unequip-all")
 def atelier_unequip_all_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: зняти всі скіни."""
-    from backend.app.services.atelier_service import unequip_all
-
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1823,8 +1903,6 @@ def atelier_unequip_all_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/shadow/open-business")
 def shadow_open_business_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: відкрити тіньовий бізнес (потрібен criminal_rep >= 30)."""
-    from backend.app.models import CityDistrict
-    from backend.app.services.shadow_service import open_shadow_business
 
     player_uuid = try_uuid(data.get("player_id", ""))
     district_uuid = try_uuid(data.get("district_id", ""))
@@ -1845,8 +1923,6 @@ def shadow_open_business_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/shadow/business-income")
 def shadow_business_income_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: дохід тіньового бізнесу (day tick)."""
-    from backend.app.models import ShadowBusiness
-    from backend.app.services.shadow_service import shadow_business_income
 
     business_uuid = try_uuid(data.get("business_id", ""))
     if business_uuid is None:
@@ -1863,8 +1939,6 @@ def shadow_business_income_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/shadow/check-discovery")
 def shadow_check_discovery_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: перевірка виявлення тіньового бізнесу поліцією."""
-    from backend.app.models import Player, ShadowBusiness
-    from backend.app.services.shadow_service import check_discovery
 
     business_uuid = try_uuid(data.get("business_id", ""))
     player_uuid = try_uuid(data.get("player_id", ""))
@@ -1882,8 +1956,6 @@ def shadow_check_discovery_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/shadow/fraud-offer")
 def shadow_fraud_offer_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: пропозиція шахрайства (day tick)."""
-    from backend.app.services.shadow_service import offer_fraud
-
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1899,8 +1971,6 @@ def shadow_fraud_offer_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/shadow/fraud-accept")
 def shadow_fraud_accept_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: прийняти шахрайство."""
-    from backend.app.services.shadow_service import accept_fraud
-
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1917,8 +1987,6 @@ def shadow_fraud_accept_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/shadow/money-laundering")
 def shadow_money_laundering_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G9: відмивання грошей."""
-    from backend.app.services.shadow_service import money_laundering_service
-
     launderer_uuid = try_uuid(data.get("launderer_id", ""))
     client_uuid = try_uuid(data.get("client_id", ""))
     if launderer_uuid is None or client_uuid is None:
@@ -1936,8 +2004,6 @@ def shadow_money_laundering_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.get("/shadow/market")
 def shadow_market_endpoint(player_id: str, db: Session = Depends(get_db)):
     """Phase G9: доступ до тіньового ринку (criminal_rep >= 30)."""
-    from backend.app.services.shadow_service import can_access_shadow_market
-
     player_uuid = try_uuid(player_id)
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -1968,8 +2034,6 @@ def police_hire_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G8: найм гравця в поліцію (patrol)."""
-    from backend.app.services.police_service import hire_police_officer
-
     city = db.query(City).first()
     if not city:
         return api_error("Місто не знайдене.")
@@ -1992,8 +2056,6 @@ def police_hire_endpoint(
 @router.post("/police/promote")
 def police_promote_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: підвищення patrol → detective."""
-    from backend.app.services.police_service import get_officer, promote_officer
-
     city = db.query(City).first()
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
@@ -2011,8 +2073,6 @@ def police_promote_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/police/appoint-chief")
 def police_appoint_chief_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: мер призначає начальника поліції."""
-    from backend.app.services.police_service import appoint_chief
-
     city = db.query(City).first()
     mayor_uuid = try_uuid(data.get("mayor_id", ""))
     candidate_uuid = try_uuid(data.get("candidate_id", ""))
@@ -2032,8 +2092,6 @@ def police_appoint_chief_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/police/patrol")
 def police_patrol_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: патрулювання району."""
-    from backend.app.models import CityDistrict
-    from backend.app.services.police_service import get_officer, patrol_district
 
     city = db.query(City).first()
     player_uuid = try_uuid(data.get("player_id", ""))
@@ -2054,8 +2112,6 @@ def police_patrol_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/police/accept-bribe")
 def police_accept_bribe_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: поліцейський бере хабар."""
-    from backend.app.services.police_service import accept_bribe, get_officer
-
     city = db.query(City).first()
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
@@ -2073,8 +2129,6 @@ def police_accept_bribe_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/police/arrest")
 def police_arrest_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: детектив арештовує гравця."""
-    from backend.app.services.police_service import arrest_player, get_officer
-
     city = db.query(City).first()
     officer_uuid = try_uuid(data.get("officer_id", ""))
     target_uuid = try_uuid(data.get("target_id", ""))
@@ -2091,14 +2145,45 @@ def police_arrest_endpoint(data: dict, db: Session = Depends(get_db)):
     return api_success(result["message"], result)
 
 
+@router.post("/police/refuse-bribe")
+def police_refuse_bribe_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: поліцейський відмовляє від хабаря (+репутація)."""
+    city = db.query(City).first()
+    officer_uuid = try_uuid(data.get("officer_id", ""))
+    if officer_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    officer = get_officer(db, city.id, officer_uuid)
+    if not officer:
+        return api_error("Офіцера не знайдено.")
+    result = refuse_bribe(db, officer)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/police/confiscate-business")
+def police_confiscate_business_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: chief конфіскує бізнес за рішенням суду."""
+    city = db.query(City).first()
+    officer_uuid = try_uuid(data.get("officer_id", ""))
+    business_uuid = try_uuid(data.get("business_id", ""))
+    if officer_uuid is None or business_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    officer = get_officer(db, city.id, officer_uuid)
+    if not officer:
+        return api_error("Офіцера не знайдено.")
+    result = confiscate_business(db, officer, business_uuid, data.get("game_day", 0))
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
 @router.get("/police/corruption-log")
 def police_corruption_log_endpoint(
     player_id: str,
     db: Session = Depends(get_db),
 ):
     """Phase G8: доступ детектива до corruption_log."""
-    from backend.app.services.police_service import get_corruption_log_access, get_officer
-
     city = db.query(City).first()
     player_uuid = try_uuid(player_id)
     if player_uuid is None:
@@ -2116,8 +2201,6 @@ def police_corruption_log_endpoint(
 @router.post("/court/create-case")
 def court_create_case_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: створення судової справи з corruption_log."""
-    from backend.app.models import CorruptionLog
-    from backend.app.services.court_service import create_court_case
 
     corruption_uuid = try_uuid(data.get("corruption_log_id", ""))
     defendant_uuid = try_uuid(data.get("defendant_id", ""))
@@ -2137,8 +2220,6 @@ def court_create_case_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/court/appeal")
 def court_appeal_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: подача апеляції."""
-    from backend.app.models import CourtCase
-    from backend.app.services.court_service import file_appeal
 
     case_uuid = try_uuid(data.get("case_id", ""))
     player_uuid = try_uuid(data.get("player_id", ""))
@@ -2158,8 +2239,6 @@ def court_appeal_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/court/bribe-judge")
 def court_bribe_judge_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: підкуп судді."""
-    from backend.app.models import CourtCase
-    from backend.app.services.court_service import bribe_judge
 
     case_uuid = try_uuid(data.get("case_id", ""))
     player_uuid = try_uuid(data.get("player_id", ""))
@@ -2182,8 +2261,6 @@ def court_bribe_judge_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.get("/prison/sentence")
 def prison_sentence_endpoint(player_id: str, db: Session = Depends(get_db)):
     """Phase G8: статус ув'язнення гравця."""
-    from backend.app.services.prison_service import get_active_sentence
-
     player_uuid = try_uuid(player_id)
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -2208,8 +2285,6 @@ def prison_sentence_endpoint(player_id: str, db: Session = Depends(get_db)):
 @router.post("/prison/work")
 def prison_work_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: тюремна робота."""
-    from backend.app.services.prison_service import get_active_sentence, prison_work
-
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -2225,8 +2300,6 @@ def prison_work_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/prison/poker")
 def prison_poker_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: покер у тюрмі."""
-    from backend.app.services.prison_service import get_active_sentence, prison_poker
-
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -2243,8 +2316,6 @@ def prison_poker_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/prison/socialize")
 def prison_socialize_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: соціалізація з NPC-в'язнями."""
-    from backend.app.services.prison_service import get_active_sentence, socialize
-
     player_uuid = try_uuid(data.get("player_id", ""))
     if player_uuid is None:
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
@@ -2263,8 +2334,6 @@ def prison_socialize_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/press/investigate")
 def press_investigate_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: почати розслідування."""
-    from backend.app.services.press_service import start_investigation
-
     journalist_uuid = try_uuid(data.get("journalist_id", ""))
     target_uuid = try_uuid(data.get("target_id", ""))
     if journalist_uuid is None or target_uuid is None:
@@ -2284,8 +2353,6 @@ def press_investigate_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/press/publish")
 def press_publish_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: публікація статті."""
-    from backend.app.models import PressInvestigation
-    from backend.app.services.press_service import publish_article
 
     investigation_uuid = try_uuid(data.get("investigation_id", ""))
     target_uuid = try_uuid(data.get("target_id", ""))
@@ -2305,8 +2372,6 @@ def press_publish_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/press/blackmail")
 def press_blackmail_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: шантаж цільового гравця."""
-    from backend.app.models import PressInvestigation
-    from backend.app.services.press_service import offer_blackmail
 
     investigation_uuid = try_uuid(data.get("investigation_id", ""))
     journalist_uuid = try_uuid(data.get("journalist_id", ""))
@@ -2333,8 +2398,6 @@ def press_blackmail_respond_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G8: ціль відповідає на шантаж."""
-    from backend.app.models import PressBlackmail, PressInvestigation
-    from backend.app.services.press_service import respond_to_blackmail
 
     blackmail_uuid = try_uuid(blackmail_id)
     if blackmail_uuid is None:
@@ -2359,14 +2422,31 @@ def press_blackmail_respond_endpoint(
     return api_success(result["message"], result)
 
 
+@router.post("/press/advertising")
+def press_advertising_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: рекламодавець платить журналісту за рекламу."""
+    journalist_uuid = try_uuid(data.get("journalist_id", ""))
+    advertiser_uuid = try_uuid(data.get("advertiser_id", ""))
+    if journalist_uuid is None or advertiser_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    journalist = db.query(Player).filter(Player.id == journalist_uuid).first()
+    advertiser = db.query(Player).filter(Player.id == advertiser_uuid).first()
+    if not journalist or not advertiser:
+        return api_error("Не знайдено.")
+    amount = Decimal(str(data.get("amount", 0)))
+    result = accept_advertising(db, journalist, advertiser, amount)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
 # --- Phase G8: Lawyer ---
 
 
 @router.post("/lawyer/engage")
 def lawyer_engage_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: найм адвоката для супроводу угоди."""
-    from backend.app.services.lawyer_service import engage_lawyer
-
     lawyer_uuid = try_uuid(data.get("lawyer_id", ""))
     client_uuid = try_uuid(data.get("client_id", ""))
     if lawyer_uuid is None or client_uuid is None:
@@ -2387,8 +2467,6 @@ def lawyer_engage_endpoint(data: dict, db: Session = Depends(get_db)):
 @router.post("/lawyer/appeal")
 def lawyer_appeal_endpoint(data: dict, db: Session = Depends(get_db)):
     """Phase G8: адвокат допомагає з апеляцією."""
-    from backend.app.models import CourtCase
-    from backend.app.services.lawyer_service import appeal_with_lawyer
 
     case_uuid = try_uuid(data.get("case_id", ""))
     lawyer_uuid = try_uuid(data.get("lawyer_id", ""))
@@ -2417,8 +2495,6 @@ def hire_office_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G6: найм гравця на посаду у мерію."""
-    from backend.app.services.political_service import hire_office_worker
-
     city = db.query(City).first()
     if not city:
         return api_error("Місто не знайдене.")
@@ -2444,11 +2520,6 @@ def hire_office_endpoint(
 @router.get("/city/election")
 def get_election_endpoint(db: Session = Depends(get_db)):
     """Phase G6: статус активних виборів мера."""
-    from backend.app.services.political_service import (
-        get_active_election,
-        get_election_results,
-    )
-
     city = db.query(City).first()
     if not city:
         return api_error("Місто не знайдене.")
@@ -2478,8 +2549,6 @@ def start_election_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G6: почати вибори мера."""
-    from backend.app.services.political_service import start_election
-
     city = db.query(City).first()
     if not city:
         return api_error("Місто не знайдене.")
@@ -2499,8 +2568,6 @@ def register_candidate_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G6: реєстрація кандидата у виборах."""
-    from backend.app.services.political_service import get_active_election, register_candidate
-
     city = db.query(City).first()
     if not city:
         return api_error("Місто не знайдене.")
@@ -2533,8 +2600,6 @@ def cast_vote_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G6: гравець голосує за кандидата (відкрите голосування)."""
-    from backend.app.models import ElectionCandidate
-    from backend.app.services.political_service import cast_vote, get_active_election
 
     city = db.query(City).first()
     if not city:
@@ -2572,8 +2637,6 @@ def conclude_election_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G6: підбити підсумки виборів."""
-    from backend.app.services.political_service import conclude_election, get_active_election
-
     city = db.query(City).first()
     if not city:
         return api_error("Місто не знайдене.")
@@ -2597,8 +2660,6 @@ def offer_bribe_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G6: підкуп голосів (тиньовий фонд)."""
-    from backend.app.services.political_service import get_active_election, offer_bribe
-
     city = db.query(City).first()
     if not city:
         return api_error("Місто не знайдене.")
@@ -2639,8 +2700,6 @@ def respond_bribe_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G6: виборець відповідає на хабар."""
-    from backend.app.models import VoteBribe
-    from backend.app.services.political_service import respond_to_bribe
 
     bribe_uuid = try_uuid(bribe_id)
     if bribe_uuid is None:
@@ -2673,8 +2732,6 @@ def no_confidence_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G6: вотум недовіри меру → дострокові вибори."""
-    from backend.app.services.political_service import vote_of_no_confidence
-
     city = db.query(City).first()
     if not city:
         return api_error("Місто не знайдене.")
@@ -2700,8 +2757,6 @@ def ai_mayor_invest_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G6: AI-мер інвестує з treasury у найгірший район."""
-    from backend.app.services.political_service import ai_mayor_invest
-
     city = db.query(City).first()
     if not city:
         return api_error("Місто не знайдене.")
@@ -2725,8 +2780,6 @@ def bank_deposit_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G5: гравець кладе депозит у банк."""
-    from backend.app.services.bank_service import create_deposit
-
     bank_uuid = try_uuid(bank_id)
     if bank_uuid is None:
         return api_error("Невірний ідентифікатор банку.")
@@ -2761,8 +2814,6 @@ def bank_withdraw_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G5: гравець знімає депозит."""
-    from backend.app.models import BankDeposit
-    from backend.app.services.bank_service import withdraw_deposit
 
     deposit_uuid = try_uuid(deposit_id)
     if deposit_uuid is None:
@@ -2793,8 +2844,6 @@ def bank_loan_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G5: гравець бере кредит у банку."""
-    from backend.app.services.bank_service import issue_loan
-
     bank_uuid = try_uuid(bank_id)
     if bank_uuid is None:
         return api_error("Невірний ідентифікатор банку.")
@@ -2830,8 +2879,6 @@ def bank_repay_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G5: гравець погашає кредит."""
-    from backend.app.models import BankCredit
-    from backend.app.services.bank_service import repay_loan
 
     loan_uuid = try_uuid(loan_id)
     if loan_uuid is None:
@@ -2858,8 +2905,6 @@ def bank_repay_endpoint(
 @router.get("/auctions/active")
 def list_active_auctions_endpoint(db: Session = Depends(get_db)):
     """Phase G5: список активних аукціонів банкрутів."""
-    from backend.app.services.bank_service import list_active_auctions
-
     city = db.query(City).first()
     city_id = city.id if city else None
     auctions = list_active_auctions(db, city_id)
@@ -2889,8 +2934,6 @@ def auction_bid_endpoint(
     db: Session = Depends(get_db),
 ):
     """Phase G5: гравець робить ставку на аукціоні банкрутів."""
-    from backend.app.models import BankruptcyAuction
-    from backend.app.services.bank_service import place_bid
 
     auction_uuid = try_uuid(auction_id)
     if auction_uuid is None:

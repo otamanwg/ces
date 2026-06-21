@@ -314,7 +314,7 @@ def confiscate_business(
     if not business:
         return {"success": False, "message": "Бізнес не знайдено."}
 
-    business.is_active = False
+    business.status = "closed"
     db.flush()
     logger.info("Бізнес %s конфісковано", business.name)
     return {"success": True, "message": f"Бізнес {business.name} конфісковано."}
