@@ -1,0 +1,67 @@
+[gd_scene load_steps=8 format=3 uid="uid://bdxv5mk0260fs"]
+
+[ext_resource type="Script" path="res://scripts/PlayerAvatarController.cs" id="1_avatar"]
+[ext_resource type="PackedScene" uid="uid://b8lxipenip8wk" path="res://assets/visual/anime/avatar/canonical_anime_avatar.glb" id="2_avatar_model"]
+[ext_resource type="Script" path="res://scripts/LocationPortal.cs" id="3_portal"]
+
+[sub_resource type="Environment" id="Environment_street"]
+background_mode = 1
+background_color = Color(0.5, 0.7, 0.9, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.6, 0.7, 0.8, 1)
+ambient_light_energy = 0.5
+fog_enabled = true
+fog_light_color = Color(0.7, 0.8, 0.9, 1)
+fog_light_energy = 0.3
+
+[sub_resource type="BoxMesh" id="BoxMesh_ground"]
+size = Vector3(40, 0.2, 40)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
+size = Vector3(40, 0.2, 40)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_portal"]
+size = Vector3(1.5, 2, 1.5)
+
+[node name="CityStreetLocation" type="Node3D"]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, 0.25, -0.433, 0, 0.866, 0.5, 0.5, -0.433, 0.75, 10, 15, 10)
+light_color = Color(1, 0.95, 0.85, 1)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_street")
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_ground")
+
+[node name="GroundCollider" type="StaticBody3D" parent="Ground"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground/GroundCollider"]
+shape = SubResource("BoxShape3D_ground")
+
+[node name="PlayerAvatar" type="CharacterBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+script = ExtResource("1_avatar")
+
+[node name="AvatarModel" parent="PlayerAvatar" instance=ExtResource("2_avatar_model")]
+
+[node name="CameraPivot" type="Node3D" parent="PlayerAvatar"]
+
+[node name="Camera3D" type="Camera3D" parent="PlayerAvatar/CameraPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 4.5)
+current = true
+
+[node name="PortalToDashboard" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)
+script = ExtResource("3_portal")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PortalToDashboard"]
+shape = SubResource("BoxShape3D_portal")
+
+[node name="Label3D" type="Label3D" parent="PortalToDashboard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+modulate = Color(1, 1, 1, 0.5)
+text = "[E] До дашборду"

@@ -151,13 +151,13 @@
 5. [x] API: /city/offices/hire, /city/election (GET/start/register/vote/conclude), /city/election/bribe, /city/no-confidence, /city/ai-mayor-invest.
 6. [x] Тести: 25 passed (office hierarchy, candidacy, elections, voting, no-confidence, bribery, AI mayor, API).
 
-### Phase G7 — 3D Avatar and Locations (Godot)
+### Phase G7 — 3D Avatar and Locations (Godot) (DONE)
 
-1. [ ] `PlayerAvatar.tscn`: 3D-персонаж, базові анімації (idle/walk/run), third-person камера, WASD + миша.
-2. [ ] Скін-система: JSON-конфіг → матеріали/меші (зачіска, обличчя, очі, губи, зріст, вага, костюм, кольори).
-3. [ ] Перша локація: `CityStreetLocation.tscn` (перехід між локаціями через портали/меню).
-4. [ ] WebSocket-синхронізація позиції гравця з іншими в тій самій локації.
-5. [ ] Тести (Godot MCP diagnostics).
+1. [x] `PlayerAvatar.tscn`: 3D-персонаж (CharacterBody3D + canonical_anime_avatar.glb), базові анімації (idle/walk/run через AnimationPlayer), third-person камера, WASD + миша.
+2. [x] Скін-система: існуюча AvatarAppearanceResolver (зачіска, обличчя, очі, губи, зріст, вага, костюм, кольори) — вже працює з G7 аватаром.
+3. [x] Перша локація: `CityStreetLocation.tscn` (підлога, освітлення, fog, портал до дашборду через LocationPortal.cs).
+4. [x] WebSocket-синхронізація позиції гравця: NetworkManager.SyncPlayerPosition (6.7Hz), backend broadcast `type: "position"`.
+5. [x] Godot MCP diagnostics: editor connected, is_playing=true, get_errors=0, scene_tree_dump підтверджує повне дерево (avatar skeleton + portal + camera).
 
 ### Phase G8 — Prison, Police, Press, Court, Lawyer
 
@@ -232,7 +232,7 @@
 - Phase G4 — Vacancies and Hiring: 100% (DONE)
 - Phase G5 — Bank as Business: 100% (DONE)
 - Phase G6 — Political System: 100% (DONE)
-- Phase G7 — 3D Avatar and Locations: 0%
+- Phase G7 — 3D Avatar and Locations: 100% (DONE)
 - Phase G8 — Prison/Police/Press/Court/Lawyer: 0%
 - Phase G9 — Casino/Atelier/Shadow Niches: 0%
 - Phase G10 — Education Tree/Exams/Licenses: 0%

@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3 uid="uid://playeravatar_g7"]
+
+[ext_resource type="Script" path="res://scripts/PlayerAvatarController.cs" id="1_controller"]
+[ext_resource type="PackedScene" path="res://assets/visual/anime/avatar/canonical_anime_avatar.glb" id="2_avatar"]
+
+[node name="PlayerAvatar" type="CharacterBody3D"]
+script = ExtResource("1_controller")
+walk_speed = 3.5
+run_speed = 7.0
+rotation_speed = 8.0
+camera_distance = 4.5
+camera_height = 2.2
+camera_lerp = 6.0
+mouse_sensitivity = 0.0025
+
+[node name="AvatarModel" parent="." instance=ExtResource("2_avatar")]
+
+[node name="CameraPivot" type="Node3D" parent="."]
+
+[node name="Camera3D" type="Camera3D" parent="CameraPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 4.5)
+current = true

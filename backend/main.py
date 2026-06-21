@@ -179,6 +179,20 @@ async def websocket_city_hub(websocket: WebSocket, city_id: str):
                 elif data.get("type") == "ping":
                     # Відповідаємо на ping для підтримки з'єднання
                     await websocket.send_json({"type": "pong"})
+                elif data.get("type") == "position":
+                    # Phase G7: позиційна синхронізація між гравцями в локації
+                    await ws_manager.broadcast(
+                        {
+                            "type": "position",
+                            "player_id": str(player.id),
+                            "username": player.username,
+                            "location": data.get("location", ""),
+                            "x": float(data.get("x", 0)),
+                            "y": float(data.get("y", 0)),
+                            "z": float(data.get("z", 0)),
+                            "rot_y": float(data.get("rot_y", 0)),
+                        }
+                    )
 
         except WebSocketDisconnect:
             logger.info(f"Player {player.username} disconnected from city {city_id}")

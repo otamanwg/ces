@@ -111,4 +111,42 @@ public partial class NetworkManager : Node
         _cancellationTokenSource?.Cancel();
         _webSocket?.Dispose();
     }
+
+    // --- Phase G7: WebSocket позиційна синхронізація ---
+
+    private float _positionSyncInterval = 0.15f; // 6-7 разів на секунду
+    private float _positionSyncTimer;
+    private string _currentLocationId = string.Empty;
+
+    /// <summary>
+    /// Встановлює поточну локацію для позиційної синхронізації.
+    /// </summary>
+    public void SetLocation(string locationId)
+    {
+        _currentLocationId = locationId ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Відправляє позицію гравця на сервер для синхронізації з іншими гравцями.
+    /// Викликається з PlayerAvatarController._PhysicsProcess.
+    /// </summary>
+    public void SyncPlayerPosition(float x, float y, float z, float rotationY)
+    {
+        if (string.IsNullOrEmpty(_currentLocationId))
+        {
+            return;
+        }
+
+        _positionSyncTimer += (float)GetProcessDeltaTime();
+
+        if (_positionSyncTimer < _positionSyncInterval)
+        {
+            return;
+        }
+
+        _positionSyncTimer = 0;
+
+        string json = $"{{\"type\":\"position\",\"location\":\"{_currentLocationId}\",\"x\":{x:F2},\"y\":{y:F2},\"z\":{z:F2},\"rot_y\":{rotationY:F2}}}";
+        SendJsonMessage(json);
+    }
 }
