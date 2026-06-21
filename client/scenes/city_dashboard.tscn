@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://c0gtwynhiqsc8"]
+[gd_scene load_steps=17 format=3 uid="uid://c0gtwynhiqsc8"]
 
 [ext_resource type="Script" path="res://scripts/CityDashboardController.cs" id="1"]
 [ext_resource type="Script" path="res://scripts/ExamPanelController.cs" id="2"]
@@ -14,6 +14,8 @@
 [ext_resource type="Script" path="res://scripts/PressPanelController.cs" id="12_press"]
 [ext_resource type="Script" path="res://scripts/CasinoPanelController.cs" id="13_casino"]
 [ext_resource type="Script" path="res://scripts/ShadowPanelController.cs" id="14_shadow"]
+[ext_resource type="Script" path="res://scripts/LawyerPanelController.cs" id="15_lawyer"]
+[ext_resource type="Script" path="res://scripts/AtelierPanelController.cs" id="16_atelier"]
 
 [node name="CityDashboard" type="Control"]
 layout_mode = 3
@@ -785,6 +787,22 @@ custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Тіньова"
+text_overrun_behavior = 3
+
+[node name="LawyerButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Адвокат"
+text_overrun_behavior = 3
+
+[node name="AtelierButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Ательє"
 text_overrun_behavior = 3
 
 [node name="PoliceRecoveryButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
@@ -1818,6 +1836,215 @@ disabled = true
 text = "Продати"
 
 [node name="ShadowCloseButton" type="Button" parent="ShadowOverlay/ShadowMargin/ShadowVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Закрити"
+
+[node name="LawyerOverlay" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 25
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("15_lawyer")
+
+[node name="LawyerMargin" type="MarginContainer" parent="LawyerOverlay"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="LawyerVBox" type="VBoxContainer" parent="LawyerOverlay/LawyerMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LawyerTitleLabel" type="Label" parent="LawyerOverlay/LawyerMargin/LawyerVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Адвокат"
+
+[node name="LawyerDescriptionLabel" type="Label" parent="LawyerOverlay/LawyerMargin/LawyerVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Рівень: 0 | Успішних угод: 0"
+
+[node name="LawyerScroll" type="ScrollContainer" parent="LawyerOverlay/LawyerMargin/LawyerVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LawyerContent" type="VBoxContainer" parent="LawyerOverlay/LawyerMargin/LawyerVBox/LawyerScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="EngagementsSection" type="Label" parent="LawyerOverlay/LawyerMargin/LawyerVBox/LawyerScroll/LawyerContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.56, 0.9, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Доручення"
+
+[node name="LawyerEngagementsContainer" type="VBoxContainer" parent="LawyerOverlay/LawyerMargin/LawyerVBox/LawyerScroll/LawyerContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LawyerDealTypeOption" type="OptionButton" parent="LawyerOverlay/LawyerMargin/LawyerVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+item_count = 4
+text = "general"
+item_0/text = "general"
+item_0/icon = null
+item_1/text = "shadow_deal"
+item_1/icon = null
+item_2/text = "police_defense"
+item_2/icon = null
+item_3/text = "appeal"
+item_3/icon = null
+selected = 0
+
+[node name="AmountRow" type="HBoxContainer" parent="LawyerOverlay/LawyerMargin/LawyerVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AmountLabel" type="Label" parent="LawyerOverlay/LawyerMargin/LawyerVBox/AmountRow"]
+layout_mode = 2
+text = "Сума:"
+
+[node name="LawyerAmountBox" type="SpinBox" parent="LawyerOverlay/LawyerMargin/LawyerVBox/AmountRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+min_value = 1.0
+max_value = 1000000.0
+value = 1000.0
+
+[node name="LawyerActions" type="HBoxContainer" parent="LawyerOverlay/LawyerMargin/LawyerVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LawyerEngageButton" type="Button" parent="LawyerOverlay/LawyerMargin/LawyerVBox/LawyerActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Найняти адвоката"
+
+[node name="LawyerAppealButton" type="Button" parent="LawyerOverlay/LawyerMargin/LawyerVBox/LawyerActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Апеляція"
+
+[node name="LawyerLicenseButton" type="Button" parent="LawyerOverlay/LawyerMargin/LawyerVBox/LawyerActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ліцензія адвоката"
+
+[node name="LawyerCloseButton" type="Button" parent="LawyerOverlay/LawyerMargin/LawyerVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Закрити"
+
+[node name="AtelierOverlay" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 25
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("16_atelier")
+
+[node name="AtelierMargin" type="MarginContainer" parent="AtelierOverlay"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="AtelierVBox" type="VBoxContainer" parent="AtelierOverlay/AtelierMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AtelierTitleLabel" type="Label" parent="AtelierOverlay/AtelierMargin/AtelierVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Ательє"
+
+[node name="AtelierDescriptionLabel" type="Label" parent="AtelierOverlay/AtelierMargin/AtelierVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "У магазині: 0 скінів"
+
+[node name="AtelierScroll" type="ScrollContainer" parent="AtelierOverlay/AtelierMargin/AtelierVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="AtelierContent" type="VBoxContainer" parent="AtelierOverlay/AtelierMargin/AtelierVBox/AtelierScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="ShopSection" type="Label" parent="AtelierOverlay/AtelierMargin/AtelierVBox/AtelierScroll/AtelierContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.56, 0.9, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Магазин скінів"
+
+[node name="AtelierShopContainer" type="VBoxContainer" parent="AtelierOverlay/AtelierMargin/AtelierVBox/AtelierScroll/AtelierContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="AtelierShopSkinOption" type="OptionButton" parent="AtelierOverlay/AtelierMargin/AtelierVBox/AtelierScroll/AtelierContent"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="InventorySection" type="Label" parent="AtelierOverlay/AtelierMargin/AtelierVBox/AtelierScroll/AtelierContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.6, 0.36, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Мої скіни"
+
+[node name="AtelierInventoryContainer" type="VBoxContainer" parent="AtelierOverlay/AtelierMargin/AtelierVBox/AtelierScroll/AtelierContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="AtelierPlayerSkinOption" type="OptionButton" parent="AtelierOverlay/AtelierMargin/AtelierVBox/AtelierScroll/AtelierContent"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="AtelierActions" type="HBoxContainer" parent="AtelierOverlay/AtelierMargin/AtelierVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AtelierBuyButton" type="Button" parent="AtelierOverlay/AtelierMargin/AtelierVBox/AtelierActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Купити скін"
+
+[node name="AtelierEquipButton" type="Button" parent="AtelierOverlay/AtelierMargin/AtelierVBox/AtelierActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Екіпірувати"
+
+[node name="AtelierUnequipAllButton" type="Button" parent="AtelierOverlay/AtelierMargin/AtelierVBox/AtelierActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Зняти всі"
+
+[node name="AtelierCloseButton" type="Button" parent="AtelierOverlay/AtelierMargin/AtelierVBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Закрити"

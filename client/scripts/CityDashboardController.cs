@@ -39,6 +39,8 @@ public partial class CityDashboardController : Control
     private PressPanelController _pressPanel;
     private CasinoPanelController _casinoPanel;
     private ShadowPanelController _shadowPanel;
+    private LawyerPanelController _lawyerPanel;
+    private AtelierPanelController _atelierPanel;
     private CityVisualOverlay _cityVisualOverlay;
     private Button _applyJobButton;
     private Button _workButton;
@@ -59,6 +61,8 @@ public partial class CityDashboardController : Control
     private Button _pressButton;
     private Button _casinoButton;
     private Button _shadowButton;
+    private Button _lawyerButton;
+    private Button _atelierButton;
     private Control _leftRail;
     private Control _centerScroll;
     private Control _actionRail;
@@ -190,6 +194,14 @@ public partial class CityDashboardController : Control
         {
             _shadowButton.Pressed += OnShadowButtonPressed;
         }
+        if (_lawyerButton != null)
+        {
+            _lawyerButton.Pressed += OnLawyerButtonPressed;
+        }
+        if (_atelierButton != null)
+        {
+            _atelierButton.Pressed += OnAtelierButtonPressed;
+        }
         if (_onboardingPoliceButton != null)
         {
             _onboardingPoliceButton.Pressed += OnOnboardingPoliceButtonPressed;
@@ -248,6 +260,8 @@ public partial class CityDashboardController : Control
         _pressPanel = GetNodeOrNull<PressPanelController>("PressOverlay");
         _casinoPanel = GetNodeOrNull<CasinoPanelController>("CasinoOverlay");
         _shadowPanel = GetNodeOrNull<ShadowPanelController>("ShadowOverlay");
+        _lawyerPanel = GetNodeOrNull<LawyerPanelController>("LawyerOverlay");
+        _atelierPanel = GetNodeOrNull<AtelierPanelController>("AtelierOverlay");
         _cityVisualOverlay?.SetStyleCode(_session?.VisualStyleCode);
         ConfigureOnboardingPortraitMaterial();
         ConfigureCharacterCreationVisual();
@@ -339,6 +353,22 @@ public partial class CityDashboardController : Control
             _shadowPanel.MarketBuyRequested += OnMarketBuyRequested;
             _shadowPanel.MarketSellRequested += OnMarketSellRequested;
             _shadowPanel.Closed += () => SetStatus("Тіньову панель закрито.");
+        }
+
+        if (_lawyerPanel != null)
+        {
+            _lawyerPanel.EngageRequested += OnEngageRequested;
+            _lawyerPanel.AppealRequested += OnAppealRequested;
+            _lawyerPanel.LicenseRequested += OnLicenseRequested;
+            _lawyerPanel.Closed += () => SetStatus("Адвокатську панель закрито.");
+        }
+
+        if (_atelierPanel != null)
+        {
+            _atelierPanel.BuyRequested += OnBuyRequested;
+            _atelierPanel.EquipRequested += OnEquipRequested;
+            _atelierPanel.UnequipAllRequested += OnUnequipAllRequested;
+            _atelierPanel.Closed += () => SetStatus("Ательє панель закрито.");
         }
 
         if (EnergyBar != null)
@@ -434,6 +464,8 @@ public partial class CityDashboardController : Control
         _pressButton ??= GetNodeOrNull<Button>("%PressButton");
         _casinoButton ??= GetNodeOrNull<Button>("%CasinoButton");
         _shadowButton ??= GetNodeOrNull<Button>("%ShadowButton");
+        _lawyerButton ??= GetNodeOrNull<Button>("%LawyerButton");
+        _atelierButton ??= GetNodeOrNull<Button>("%AtelierButton");
         _onboardingOverlay ??= GetNodeOrNull<Control>("%OnboardingOverlay");
         _onboardingBackdrop ??= GetNodeOrNull<TextureRect>("%OnboardingBackdrop");
         _onboardingPortrait ??= GetNodeOrNull<TextureRect>("%OnboardingPortrait");

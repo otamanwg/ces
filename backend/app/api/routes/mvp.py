@@ -33,6 +33,7 @@ from backend.app.models import (
     ElectionCandidate,
     Job,
     LandParcel,
+    LawyerEngagement,
     Player,
     PlayerSkin,
     PoliceRecord,
@@ -2744,6 +2745,47 @@ def lawyer_appeal_endpoint(data: dict, db: Session = Depends(get_db)):
         return api_error(result["message"])
     db.commit()
     return api_success(result["message"], result)
+
+
+@router.get("/player/{player_id}/lawyer-engagements")
+def player_lawyer_engagements_endpoint(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G8: адвокатські доручення гравця (як адвоката або клієнта) для Lawyer panel."""
+    player = require_player(db, player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    engagements = (
+        db.query(LawyerEngagement)
+        .filter((LawyerEngagement.lawyer_id == player.id) | (LawyerEngagement.client_id == player.id))
+        .order_by(LawyerEngagement.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    return api_success(
+        "Адвокатські доручення гравця.",
+        {
+            "successful_deals": int(player.successful_deals),
+            "engagements": [
+                {
+                    "id": str(eng.id),
+                    "lawyer_id": str(eng.lawyer_id),
+                    "client_id": str(eng.client_id),
+                    "deal_type": eng.deal_type,
+                    "amount": float(eng.amount),
+                    "commission": float(eng.commission),
+                    "success_chance_bonus": float(eng.success_chance_bonus),
+                    "is_successful": eng.is_successful,
+                    "created_at": eng.created_at.isoformat() if eng.created_at else None,
+                    "role": "lawyer" if eng.lawyer_id == player.id else "client",
+                }
+                for eng in engagements
+            ],
+        },
+    )
 
 
 # --- Phase G6: Political System ---

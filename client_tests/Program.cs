@@ -1030,4 +1030,44 @@ var lowRepShadowModel = DashboardShadowModel.FromJson(
     JsonNode.Parse("""{"criminal_rep": 10.0, "businesses": []}"""), null);
 Assert(!lowRepShadowModel.HasMarketAccess, "No market access (rep < 30)");
 
+// DashboardLawyerModel — Sprint 61 lawyer panel data parsing.
+var lawyerJson = JsonNode.Parse("""
+{"successful_deals": 25, "engagements": [{"id": "e-1", "lawyer_id": "p-1", "client_id": "p-2", "deal_type": "general", "amount": 5000.0, "commission": 500.0, "success_chance_bonus": 0.15, "is_successful": null, "created_at": "2024-01-01T00:00:00Z", "role": "lawyer"}]}
+""")!;
+var emptyLawyerJson = JsonNode.Parse("""{"successful_deals": 0, "engagements": []}""")!;
+var lawyerModel = DashboardLawyerModel.FromJson(lawyerJson);
+AssertEqual(25, lawyerModel.SuccessfulDeals, "Successful deals count");
+AssertEqual(2, lawyerModel.LawyerLevel, "Lawyer level (25/10)");
+Assert(lawyerModel.HasEngagements, "Has engagements flag");
+AssertEqual(0.1, lawyerModel.SuccessChanceBonus, "Success chance bonus (2*0.05)");
+AssertEqual(0.06, lawyerModel.DetectionChanceReduction, "Detection reduction (2*0.03)");
+AssertEqual(1, lawyerModel.Engagements.Count, "One engagement");
+AssertEqual("Загальне доручення", lawyerModel.Engagements[0].DealTypeLabel, "General deal type label");
+AssertEqual("Очікує", lawyerModel.Engagements[0].StatusLabel, "Pending status label");
+AssertEqual("Адвокат", lawyerModel.Engagements[0].RoleLabel, "Lawyer role label");
+var emptyLawyerModel = DashboardLawyerModel.FromJson(emptyLawyerJson);
+Assert(!emptyLawyerModel.HasEngagements, "No engagements flag");
+AssertEqual(0, emptyLawyerModel.LawyerLevel, "Zero level");
+
+// DashboardAtelierModel — Sprint 61 atelier panel data parsing.
+var shopJson = JsonNode.Parse("""
+{"skins": [{"skin_id": "s-1", "name": "Cool", "rarity": "rare", "is_unique": false, "price": 300.0, "copies_total": 10, "copies_sold": 2, "copies_available": 8, "designer_id": "p-1", "created_at": "2024-01-01T00:00:00Z"}]}
+""")!;
+var playerSkinsJson = JsonNode.Parse("""
+{"skins": [{"player_skin_id": "ps-1", "skin_id": "s-1", "name": "Cool", "rarity": "rare", "is_unique": false, "is_equipped": true, "acquired_at": "2024-01-01T00:00:00Z"}]}
+""")!;
+var atelierModel = DashboardAtelierModel.FromJson(shopJson, playerSkinsJson);
+Assert(atelierModel.HasShopSkins, "Has shop skins flag");
+Assert(atelierModel.HasPlayerSkins, "Has player skins flag");
+Assert(atelierModel.HasEquippedSkin, "Has equipped skin flag");
+AssertEqual(1, atelierModel.ShopSkins.Count, "One shop skin");
+AssertEqual("Cool", atelierModel.ShopSkins[0].Name, "Shop skin name");
+AssertEqual("Рідкісний", atelierModel.ShopSkins[0].RarityLabel, "Rare rarity label");
+AssertEqual(8, atelierModel.ShopSkins[0].CopiesAvailable, "Copies available");
+AssertEqual(1, atelierModel.PlayerSkins.Count, "One player skin");
+Assert(atelierModel.PlayerSkins[0].IsEquipped, "Player skin equipped");
+var emptyAtelierModel = DashboardAtelierModel.FromJson(null, null);
+Assert(!emptyAtelierModel.HasShopSkins, "No shop skins flag");
+Assert(!emptyAtelierModel.HasPlayerSkins, "No player skins flag");
+
 Console.WriteLine("Client logic tests passed.");

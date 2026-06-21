@@ -239,7 +239,8 @@ switch ($Profile) {
         Invoke-PythonStatic
         Invoke-Pytest @(
             "backend\tests\test_g8_services.py",
-            "backend\tests\test_police_court_query_api.py"
+            "backend\tests\test_police_court_query_api.py",
+            "backend\tests\test_lawyer_atelier_query_api.py"
         )
     }
     "g9" {

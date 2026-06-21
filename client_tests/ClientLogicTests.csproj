@@ -21,6 +21,8 @@
     <Compile Include="..\client\scripts\DashboardPressModel.cs" Link="DashboardPressModel.cs" />
     <Compile Include="..\client\scripts\DashboardCasinoModel.cs" Link="DashboardCasinoModel.cs" />
     <Compile Include="..\client\scripts\DashboardShadowModel.cs" Link="DashboardShadowModel.cs" />
+    <Compile Include="..\client\scripts\DashboardLawyerModel.cs" Link="DashboardLawyerModel.cs" />
+    <Compile Include="..\client\scripts\DashboardAtelierModel.cs" Link="DashboardAtelierModel.cs" />
     <Compile Include="..\client\scripts\DashboardVisualAnimation.cs" Link="DashboardVisualAnimation.cs" />
     <Compile Include="..\client\scripts\DashboardVisualPalette.cs" Link="DashboardVisualPalette.cs" />
     <Compile Include="..\client\scripts\DashboardVisualStylePack.cs" Link="DashboardVisualStylePack.cs" />
