@@ -2957,6 +2957,90 @@ def auction_bid_endpoint(
     return api_success(result["message"], result)
 
 
+@router.get("/banks")
+def list_banks_endpoint(db: Session = Depends(get_db)):
+    """Phase G5: список банків міста для клієнтського Bank panel."""
+    banks = db.query(Business).filter(Business.type == "bank").all()
+    return api_success(
+        "Банки міста.",
+        {
+            "banks": [
+                {
+                    "id": str(bank.id),
+                    "name": bank.name,
+                    "cash_balance": float(bank.cash_balance or 0),
+                    "owner_player_id": str(bank.owner_player_id) if bank.owner_player_id else None,
+                    "status": bank.status,
+                }
+                for bank in banks
+            ]
+        },
+    )
+
+
+@router.get("/player/{player_id}/deposits")
+def list_player_deposits_endpoint(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G5: депозити гравця для клієнтського Bank panel."""
+    player = require_player(db, player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    deposits = db.query(BankDeposit).filter(BankDeposit.player_id == player.id, BankDeposit.is_active.is_(True)).all()
+    return api_success(
+        "Депозити гравця.",
+        {
+            "deposits": [
+                {
+                    "id": str(deposit.id),
+                    "bank_business_id": str(deposit.bank_business_id),
+                    "amount": float(deposit.amount),
+                    "interest_rate": float(deposit.interest_rate),
+                    "created_at_game_day": deposit.created_at_game_day,
+                    "last_interest_game_day": deposit.last_interest_game_day,
+                    "is_active": deposit.is_active,
+                }
+                for deposit in deposits
+            ]
+        },
+    )
+
+
+@router.get("/player/{player_id}/loans")
+def list_player_loans_endpoint(
+    player_id: str,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G5: кредити гравця для клієнтського Bank panel."""
+    player = require_player(db, player_id, player_token)
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    loans = db.query(BankCredit).filter(BankCredit.borrower_player_id == player.id, BankCredit.status == "active").all()
+    return api_success(
+        "Кредити гравця.",
+        {
+            "loans": [
+                {
+                    "id": str(loan.id),
+                    "bank_business_id": str(loan.bank_business_id),
+                    "principal_amount": float(loan.principal_amount),
+                    "remaining_amount": float(loan.remaining_amount),
+                    "interest_rate": float(loan.interest_rate),
+                    "term_days": loan.term_days,
+                    "due_game_day": loan.due_game_day,
+                    "status": loan.status,
+                }
+                for loan in loans
+            ]
+        },
+    )
+
+
 @router.post("/hostels/sleep/{player_id}")
 def sleep_in_hostel(
     player_id: str,

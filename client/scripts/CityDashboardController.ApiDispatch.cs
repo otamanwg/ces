@@ -51,6 +51,16 @@ public partial class CityDashboardController
             return;
         }
 
+        if (TryHandleEducationResponse(endpoint, root))
+        {
+            return;
+        }
+
+        if (TryHandleBankResponse(endpoint, root))
+        {
+            return;
+        }
+
         bool apiSuccess = root["success"]?.GetValue<bool>() ?? false;
         string message = root["message"]?.ToString() ?? "";
         var data = root["data"];

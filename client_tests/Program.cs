@@ -859,4 +859,50 @@ AssertNear(0.90, businessAccent.Green, 0.01, "Business accent Green");
 var systemAccent = DashboardActionCategoryStyle.Accent(DashboardActionCategory.System);
 AssertNear(0.54, systemAccent.Red, 0.01, "System accent Red");
 
+// DashboardEducationModel — Sprint 61 education panel data parsing.
+var educationJson = JsonNode.Parse("""
+{
+	"courses": [
+		{"code": "economic", "name": "Економічна освіта", "duration_days": 30, "cost": 2000, "energy_per_day": 1000, "opens": ["business_management"], "required_for": ["mayor"]},
+		{"code": "legal", "name": "Юридична освіта", "duration_days": 60, "cost": 4000, "energy_per_day": 1000, "opens": ["lawyer"], "required_for": []}
+	]
+}
+""")!;
+var activeEduJson = JsonNode.Parse("""{"active": [{"id": "edu-1", "course": "economic", "mode": "full_time", "status": "enrolled", "is_fake": false}]}""")!;
+var completedEduJson = JsonNode.Parse("""{"completed": [{"id": "edu-2", "course": "legal", "mode": "part_time", "status": "completed", "is_fake": true}]}""")!;
+var educationModel = DashboardEducationModel.FromJson(educationJson, activeEduJson, completedEduJson);
+AssertEqual(2, educationModel.Courses.Count, "Education catalog has 2 courses");
+AssertEqual("economic", educationModel.Courses[0].Code, "First course code");
+AssertEqual("Економічна освіта", educationModel.Courses[0].Name, "First course name");
+AssertEqual(30, educationModel.Courses[0].DurationDays, "First course duration");
+AssertEqual(2000.0, educationModel.Courses[0].Cost, "First course cost");
+AssertEqual(1, educationModel.Active.Count, "One active enrollment");
+AssertEqual("Очно", educationModel.Active[0].ModeLabel, "Full-time mode label");
+AssertEqual(1, educationModel.Completed.Count, "One completed course");
+AssertEqual(" ⚠ ФЕЙК", educationModel.Completed[0].FakeBadge, "Fake diploma badge");
+Assert(educationModel.HasActiveEnrollment, "Has active enrollment flag");
+Assert(educationModel.HasCompletedCourses, "Has completed courses flag");
+
+// DashboardBankModel — Sprint 61 bank panel data parsing.
+var banksJson = JsonNode.Parse("""{"banks": [{"id": "bank-1", "name": "CityBank", "cash_balance": 50000, "owner_player_id": null, "status": "active"}]}""")!;
+var depositsJson = JsonNode.Parse("""{"deposits": [{"id": "dep-1", "bank_business_id": "bank-1", "amount": 1000, "interest_rate": 5.0, "created_at_game_day": 0, "is_active": true}]}""")!;
+var loansJson = JsonNode.Parse("""{"loans": [{"id": "loan-1", "bank_business_id": "bank-1", "principal_amount": 5000, "remaining_amount": 5100, "interest_rate": 12.0, "term_days": 30, "due_game_day": 30, "status": "active"}]}""")!;
+var auctionsJson = JsonNode.Parse("""{"auctions": [{"id": "auc-1", "business_id": "biz-1", "starting_price": 5000, "highest_bid": 5500, "ends_at": "2024-01-15T12:00:00Z", "status": "active"}]}""")!;
+var bankModel = DashboardBankModel.FromJson(banksJson, depositsJson, loansJson, auctionsJson);
+AssertEqual(1, bankModel.Banks.Count, "One bank in catalog");
+AssertEqual("CityBank", bankModel.Banks[0].Name, "Bank name");
+AssertEqual(50000.0, bankModel.Banks[0].CashBalance, "Bank cash balance");
+AssertEqual(1, bankModel.Deposits.Count, "One deposit");
+AssertEqual(1000.0, bankModel.Deposits[0].Amount, "Deposit amount");
+AssertEqual(5.0, bankModel.Deposits[0].InterestRate, "Deposit interest rate");
+AssertEqual(1, bankModel.Loans.Count, "One loan");
+AssertEqual(5100.0, bankModel.Loans[0].RemainingAmount, "Loan remaining amount");
+AssertEqual(30, bankModel.Loans[0].DueGameDay, "Loan due game day");
+AssertEqual(1, bankModel.Auctions.Count, "One auction");
+AssertEqual(5500.0, bankModel.Auctions[0].HighestBid, "Auction highest bid");
+Assert(bankModel.HasBanks, "Has banks flag");
+Assert(bankModel.HasDeposits, "Has deposits flag");
+Assert(bankModel.HasLoans, "Has loans flag");
+Assert(bankModel.HasAuctions, "Has auctions flag");
+
 Console.WriteLine("Client logic tests passed.");
