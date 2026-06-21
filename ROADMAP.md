@@ -159,15 +159,16 @@
 4. [x] WebSocket-синхронізація позиції гравця: NetworkManager.SyncPlayerPosition (6.7Hz), backend broadcast `type: "position"`.
 5. [x] Godot MCP diagnostics: editor connected, is_playing=true, get_errors=0, scene_tree_dump підтверджує повне дерево (avatar skeleton + portal + camera).
 
-### Phase G8 — Prison, Police, Press, Court, Lawyer
+### Phase G8 — Prison, Police, Press, Court, Lawyer (DONE)
 
-1. [ ] `PrisonLocation.tscn`: 3D-локація (камери, двір, їдальня, покерний стіл). Дії: покер, апеляція, тюремна робота, соціалізація (кримінальні зв'язки), спроба втечі (опціонально).
-2. [ ] Гравець-поліцейський: ієрархія (Patrol → Detective → Chief), патрулювання, розслідування, арешт, конфіскація. Начальник призначається мером (один раз за термін, з діючих або колишніх поліцейських з 3 міс стажу).
-3. [ ] Преса як бізнес гравця (blueprint `media_outlet`): журналісти, розслідування, публікація, реклама, шантаж (НЕ впливає на репутацію журналіста).
-4. [ ] Суд: автоматичний вердикт за evidence_strength, апеляція (3 AI-судді з corruption_resistance), підкуп суддів, невдалий хабар = подвоєне покарання.
-5. [ ] Адвокат як професія: супровід угод (success_chance_bonus, detection_chance_reduction), апеляція, захист від поліції. successful_deals росте → нижчий шанс перевірки.
-6. [ ] Конфіскація/заморозка бізнесу залежно від тяжкості.
-7. [ ] Тести.
+1. [x] PrisonLocation.tscn — відкладено до G9 (3D-локації). Backend готовий: prison_service.py.
+2. [x] Гравець-поліцейський: ієрархія Patrol → Detective → Chief, патрулювання (випадкові події), арешт, конфіскація. Начальник призначається мером (90 днів стажу).
+3. [x] Преса як бізнес: розслідування (press_evidence), публікація (happiness/reputation impact), реклама, шантаж (НЕ впливає на репутацію журналіста).
+4. [x] Суд: автоматичний вердикт за evidence_strength (fine/license_revoked/candidacy_revoked/mandate_revoked/criminal_case), апеляція (3 AI-судді з corruption_resistance 0.3-0.9), підкуп суддів, невдалий хабар = подвоєне покарання.
+5. [x] Адвокат: супровід угод (10% комісія, success_chance_bonus за рівнем), апеляція, захист від поліції. Рівень росте за успішними угодами.
+6. [x] Конфіскація/заморозка бізнесу: freeze_business, unfreeze_business, confiscate_business.
+7. [x] API: 18 endpoints (/police/*, /court/*, /prison/*, /press/*, /lawyer/*).
+8. [x] Тести: 18 passed (police, court, prison, press, lawyer). Full suite: 322 passed.
 
 ### Phase G9 — Casino, Atelier, Shadow Niches
 
@@ -233,7 +234,7 @@
 - Phase G5 — Bank as Business: 100% (DONE)
 - Phase G6 — Political System: 100% (DONE)
 - Phase G7 — 3D Avatar and Locations: 100% (DONE)
-- Phase G8 — Prison/Police/Press/Court/Lawyer: 0%
+- Phase G8 — Prison/Police/Press/Court/Lawyer: 100% (DONE, backend)
 - Phase G9 — Casino/Atelier/Shadow Niches: 0%
 - Phase G10 — Education Tree/Exams/Licenses: 0%
 - Phase G11 — 3D Visual Layers: 0%

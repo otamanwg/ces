@@ -1383,6 +1383,454 @@ def fire_player_endpoint(
     return api_success(result["message"], {"job_id": job_id})
 
 
+# --- Phase G8: Police ---
+
+
+@router.post("/police/hire")
+def police_hire_endpoint(
+    data: dict,
+    db: Session = Depends(get_db),
+):
+    """Phase G8: найм гравця в поліцію (patrol)."""
+    from backend.app.services.police_service import hire_police_officer
+
+    city = db.query(City).first()
+    if not city:
+        return api_error("Місто не знайдене.")
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    game_day = data.get("game_day", 0)
+    result = hire_police_officer(db, city, player, game_day)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/police/promote")
+def police_promote_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: підвищення patrol → detective."""
+    from backend.app.services.police_service import get_officer, promote_officer
+
+    city = db.query(City).first()
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    officer = get_officer(db, city.id, player_uuid)
+    if not officer:
+        return api_error("Поліцейський не знайдено.")
+    result = promote_officer(db, officer, data.get("game_day", 0))
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/police/appoint-chief")
+def police_appoint_chief_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: мер призначає начальника поліції."""
+    from backend.app.services.police_service import appoint_chief
+
+    city = db.query(City).first()
+    mayor_uuid = try_uuid(data.get("mayor_id", ""))
+    candidate_uuid = try_uuid(data.get("candidate_id", ""))
+    if mayor_uuid is None or candidate_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    mayor = db.query(Player).filter(Player.id == mayor_uuid).first()
+    candidate = db.query(Player).filter(Player.id == candidate_uuid).first()
+    if not mayor or not candidate:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    result = appoint_chief(db, city, mayor, candidate, data.get("game_day", 0))
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/police/patrol")
+def police_patrol_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: патрулювання району."""
+    from backend.app.models import CityDistrict
+    from backend.app.services.police_service import get_officer, patrol_district
+
+    city = db.query(City).first()
+    player_uuid = try_uuid(data.get("player_id", ""))
+    district_uuid = try_uuid(data.get("district_id", ""))
+    if player_uuid is None or district_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    officer = get_officer(db, city.id, player_uuid)
+    if not officer:
+        return api_error("Поліцейський не знайдено.")
+    district = db.query(CityDistrict).filter(CityDistrict.id == district_uuid).first()
+    if not district:
+        return api_error("Район не знайдено.")
+    result = patrol_district(db, officer, district, data.get("game_day", 0))
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/police/accept-bribe")
+def police_accept_bribe_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: поліцейський бере хабар."""
+    from backend.app.services.police_service import accept_bribe, get_officer
+
+    city = db.query(City).first()
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    officer = get_officer(db, city.id, player_uuid)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not officer or not player:
+        return api_error("Поліцейський не знайдено.")
+    amount = Decimal(str(data.get("amount", 0)))
+    result = accept_bribe(db, officer, player, amount, data.get("game_day", 0))
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/police/arrest")
+def police_arrest_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: детектив арештовує гравця."""
+    from backend.app.services.police_service import arrest_player, get_officer
+
+    city = db.query(City).first()
+    officer_uuid = try_uuid(data.get("officer_id", ""))
+    target_uuid = try_uuid(data.get("target_id", ""))
+    if officer_uuid is None or target_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    officer = get_officer(db, city.id, officer_uuid)
+    target = db.query(Player).filter(Player.id == target_uuid).first()
+    if not officer or not target:
+        return api_error("Не знайдено.")
+    result = arrest_player(db, officer, target, data.get("game_day", 0))
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.get("/police/corruption-log")
+def police_corruption_log_endpoint(
+    player_id: str,
+    db: Session = Depends(get_db),
+):
+    """Phase G8: доступ детектива до corruption_log."""
+    from backend.app.services.police_service import get_corruption_log_access, get_officer
+
+    city = db.query(City).first()
+    player_uuid = try_uuid(player_id)
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    officer = get_officer(db, city.id, player_uuid)
+    if not officer:
+        return api_error("Поліцейський не знайдено.")
+    logs = get_corruption_log_access(db, officer, city.id)
+    return api_success("Corruption log", {"logs": logs, "rank": officer.rank})
+
+
+# --- Phase G8: Court ---
+
+
+@router.post("/court/create-case")
+def court_create_case_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: створення судової справи з corruption_log."""
+    from backend.app.models import CorruptionLog
+    from backend.app.services.court_service import create_court_case
+
+    corruption_uuid = try_uuid(data.get("corruption_log_id", ""))
+    defendant_uuid = try_uuid(data.get("defendant_id", ""))
+    if corruption_uuid is None or defendant_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    corruption = db.query(CorruptionLog).filter(CorruptionLog.id == corruption_uuid).first()
+    defendant = db.query(Player).filter(Player.id == defendant_uuid).first()
+    if not corruption or not defendant:
+        return api_error("Не знайдено.")
+    result = create_court_case(db, corruption, defendant, data.get("game_day", 0))
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/court/appeal")
+def court_appeal_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: подача апеляції."""
+    from backend.app.models import CourtCase
+    from backend.app.services.court_service import file_appeal
+
+    case_uuid = try_uuid(data.get("case_id", ""))
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if case_uuid is None or player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    case = db.query(CourtCase).filter(CourtCase.id == case_uuid).first()
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not case or not player:
+        return api_error("Не знайдено.")
+    result = file_appeal(db, case, player, data.get("game_day", 0))
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/court/bribe-judge")
+def court_bribe_judge_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: підкуп судді."""
+    from backend.app.models import CourtCase
+    from backend.app.services.court_service import bribe_judge
+
+    case_uuid = try_uuid(data.get("case_id", ""))
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if case_uuid is None or player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    case = db.query(CourtCase).filter(CourtCase.id == case_uuid).first()
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not case or not player:
+        return api_error("Не знайдено.")
+    judge_number = int(data.get("judge_number", 0))
+    amount = Decimal(str(data.get("amount", 0)))
+    result = bribe_judge(db, case, player, judge_number, amount, data.get("game_day", 0))
+    db.commit()
+    return api_success(result["message"], result)
+
+
+# --- Phase G8: Prison ---
+
+
+@router.get("/prison/sentence")
+def prison_sentence_endpoint(player_id: str, db: Session = Depends(get_db)):
+    """Phase G8: статус ув'язнення гравця."""
+    from backend.app.services.prison_service import get_active_sentence
+
+    player_uuid = try_uuid(player_id)
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    sentence = get_active_sentence(db, player_uuid)
+    if not sentence:
+        return api_success("Активного ув'язнення немає.", {"sentence": None})
+    return api_success(
+        "Активне ув'язнення.",
+        {
+            "sentence": {
+                "id": str(sentence.id),
+                "days_total": sentence.days_total,
+                "days_served": sentence.days_served,
+                "days_remaining": sentence.days_remaining,
+                "status": sentence.status,
+                "business_impact": sentence.business_impact,
+            }
+        },
+    )
+
+
+@router.post("/prison/work")
+def prison_work_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: тюремна робота."""
+    from backend.app.services.prison_service import get_active_sentence, prison_work
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    sentence = get_active_sentence(db, player_uuid)
+    if not sentence or not player:
+        return api_error("Ув'язнення не знайдено.")
+    result = prison_work(db, sentence, player)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/prison/poker")
+def prison_poker_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: покер у тюрмі."""
+    from backend.app.services.prison_service import get_active_sentence, prison_poker
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    sentence = get_active_sentence(db, player_uuid)
+    if not sentence or not player:
+        return api_error("Ув'язнення не знайдено.")
+    bet = Decimal(str(data.get("bet", 0)))
+    result = prison_poker(db, sentence, player, bet)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/prison/socialize")
+def prison_socialize_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: соціалізація з NPC-в'язнями."""
+    from backend.app.services.prison_service import get_active_sentence, socialize
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    sentence = get_active_sentence(db, player_uuid)
+    if not sentence or not player:
+        return api_error("Ув'язнення не знайдено.")
+    result = socialize(db, sentence, player)
+    db.commit()
+    return api_success(result["message"], result)
+
+
+# --- Phase G8: Press ---
+
+
+@router.post("/press/investigate")
+def press_investigate_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: почати розслідування."""
+    from backend.app.services.press_service import start_investigation
+
+    journalist_uuid = try_uuid(data.get("journalist_id", ""))
+    target_uuid = try_uuid(data.get("target_id", ""))
+    if journalist_uuid is None or target_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    journalist = db.query(Player).filter(Player.id == journalist_uuid).first()
+    target = db.query(Player).filter(Player.id == target_uuid).first()
+    if not journalist or not target:
+        return api_error("Не знайдено.")
+    incident_type = data.get("incident_type", "corruption")
+    result = start_investigation(db, journalist, target, incident_type)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/press/publish")
+def press_publish_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: публікація статті."""
+    from backend.app.models import PressInvestigation
+    from backend.app.services.press_service import publish_article
+
+    investigation_uuid = try_uuid(data.get("investigation_id", ""))
+    target_uuid = try_uuid(data.get("target_id", ""))
+    if investigation_uuid is None or target_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    investigation = db.query(PressInvestigation).filter(PressInvestigation.id == investigation_uuid).first()
+    target = db.query(Player).filter(Player.id == target_uuid).first()
+    if not investigation or not target:
+        return api_error("Не знайдено.")
+    result = publish_article(db, investigation, target, data.get("article_title"))
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/press/blackmail")
+def press_blackmail_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: шантаж цільового гравця."""
+    from backend.app.models import PressInvestigation
+    from backend.app.services.press_service import offer_blackmail
+
+    investigation_uuid = try_uuid(data.get("investigation_id", ""))
+    journalist_uuid = try_uuid(data.get("journalist_id", ""))
+    target_uuid = try_uuid(data.get("target_id", ""))
+    if investigation_uuid is None or journalist_uuid is None or target_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    investigation = db.query(PressInvestigation).filter(PressInvestigation.id == investigation_uuid).first()
+    journalist = db.query(Player).filter(Player.id == journalist_uuid).first()
+    target = db.query(Player).filter(Player.id == target_uuid).first()
+    if not investigation or not journalist or not target:
+        return api_error("Не знайдено.")
+    amount = Decimal(str(data.get("amount", 0)))
+    result = offer_blackmail(db, investigation, journalist, target, amount)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/press/blackmail/{blackmail_id}/respond")
+def press_blackmail_respond_endpoint(
+    blackmail_id: str,
+    data: dict,
+    db: Session = Depends(get_db),
+):
+    """Phase G8: ціль відповідає на шантаж."""
+    from backend.app.models import PressBlackmail, PressInvestigation
+    from backend.app.services.press_service import respond_to_blackmail
+
+    blackmail_uuid = try_uuid(blackmail_id)
+    if blackmail_uuid is None:
+        return api_error("Невірний ідентифікатор.")
+    blackmail = db.query(PressBlackmail).filter(PressBlackmail.id == blackmail_uuid).first()
+    if not blackmail:
+        return api_error("Шантаж не знайдено.")
+    target = db.query(Player).filter(Player.id == blackmail.target_id).first()
+    journalist = db.query(Player).filter(Player.id == blackmail.journalist_id).first()
+    investigation = (
+        db.query(PressInvestigation).filter(PressInvestigation.id == blackmail.investigation_id).first()
+        if blackmail.investigation_id
+        else None
+    )
+    if not target or not journalist or not investigation:
+        return api_error("Не знайдено.")
+    action = data.get("action", "refuse")
+    result = respond_to_blackmail(db, blackmail, target, journalist, investigation, action)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+# --- Phase G8: Lawyer ---
+
+
+@router.post("/lawyer/engage")
+def lawyer_engage_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: найм адвоката для супроводу угоди."""
+    from backend.app.services.lawyer_service import engage_lawyer
+
+    lawyer_uuid = try_uuid(data.get("lawyer_id", ""))
+    client_uuid = try_uuid(data.get("client_id", ""))
+    if lawyer_uuid is None or client_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    lawyer = db.query(Player).filter(Player.id == lawyer_uuid).first()
+    client = db.query(Player).filter(Player.id == client_uuid).first()
+    if not lawyer or not client:
+        return api_error("Не знайдено.")
+    deal_type = data.get("deal_type", "general")
+    amount = Decimal(str(data.get("amount", 0)))
+    result = engage_lawyer(db, lawyer, client, deal_type, amount, data.get("game_day", 0))
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/lawyer/appeal")
+def lawyer_appeal_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G8: адвокат допомагає з апеляцією."""
+    from backend.app.models import CourtCase
+    from backend.app.services.lawyer_service import appeal_with_lawyer
+
+    case_uuid = try_uuid(data.get("case_id", ""))
+    lawyer_uuid = try_uuid(data.get("lawyer_id", ""))
+    client_uuid = try_uuid(data.get("client_id", ""))
+    if case_uuid is None or lawyer_uuid is None or client_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    case = db.query(CourtCase).filter(CourtCase.id == case_uuid).first()
+    lawyer = db.query(Player).filter(Player.id == lawyer_uuid).first()
+    client = db.query(Player).filter(Player.id == client_uuid).first()
+    if not case or not lawyer or not client:
+        return api_error("Не знайдено.")
+    result = appeal_with_lawyer(db, case, lawyer, client, data.get("game_day", 0))
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
 # --- Phase G6: Political System ---
 
 

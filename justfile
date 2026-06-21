@@ -109,6 +109,9 @@ check-bank:
 check-political:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 political
 
+check-g8:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 g8
+
 check-prod:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 prod-fast
 
