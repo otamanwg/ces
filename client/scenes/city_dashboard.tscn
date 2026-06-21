@@ -444,6 +444,10 @@ size_flags_horizontal = 3
 [node name="NextActionLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/NextActionPanel"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.92, 0.68, 0.96)
+theme_override_colors/font_outline_color = Color(0.06, 0.08, 0.1, 0.85)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 14
 text = "Наступний крок: —"
 autowrap_mode = 3
 text_overrun_behavior = 3
@@ -534,6 +538,10 @@ theme_override_constants/separation = 6
 [node name="GoalLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/GoalPanel/GoalBox"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.94, 0.76, 0.96)
+theme_override_colors/font_outline_color = Color(0.06, 0.08, 0.1, 0.85)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 13
 text = "Ціль: —"
 autowrap_mode = 3
 text_overrun_behavior = 3
@@ -556,7 +564,13 @@ size_flags_horizontal = 3
 [node name="EventHistoryLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/EventPanel"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.74, 0.92)
+theme_override_colors/font_outline_color = Color(0.06, 0.08, 0.1, 0.8)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 12
 text = "Події: —"
+autowrap_mode = 3
+text_overrun_behavior = 3
 autowrap_mode = 3
 text_overrun_behavior = 3
 
@@ -577,6 +591,14 @@ layout_mode = 2
 text = "Дії"
 horizontal_alignment = 1
 
+[node name="WorkCategoryHeader" type="Label" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.56, 0.9, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "Робота"
+horizontal_alignment = 0
+
 [node name="ApplyJobButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 50)
@@ -592,6 +614,22 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Працювати"
 text_overrun_behavior = 3
+
+[node name="ExamButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Іспит"
+text_overrun_behavior = 3
+
+[node name="SurvivalCategoryHeader" type="Label" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.6, 0.36, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "Виживання"
+horizontal_alignment = 0
 
 [node name="SleepButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
@@ -609,13 +647,13 @@ size_flags_horizontal = 3
 text = "Поїсти"
 text_overrun_behavior = 3
 
-[node name="ExamButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+[node name="BusinessCategoryHeader" type="Label" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
-size_flags_horizontal = 3
-text = "Іспит"
-text_overrun_behavior = 3
+theme_override_colors/font_color = Color(0.36, 0.9, 0.45, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "Бізнес"
+horizontal_alignment = 0
 
 [node name="BuyBusinessButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
@@ -633,6 +671,14 @@ size_flags_horizontal = 3
 text = "Зібрати дивіденд"
 text_overrun_behavior = 3
 
+[node name="SportsCategoryHeader" type="Label" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.36, 0.9, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "Спорт"
+horizontal_alignment = 0
+
 [node name="JoinSportsButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 50)
@@ -648,6 +694,14 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Тренуватись"
 text_overrun_behavior = 3
+
+[node name="SystemCategoryHeader" type="Label" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.54, 0.54, 0.58, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "Система"
+horizontal_alignment = 0
 
 [node name="RefreshButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true

@@ -61,7 +61,17 @@ public sealed class DashboardStatusPresenter
 
         if (_eventHistoryLabel != null)
         {
-            _eventHistoryLabel.Text = "Події:\n" + string.Join("\n", _eventHistory.Events);
+            var lines = new System.Collections.Generic.List<string>();
+            int index = 0;
+            foreach (string evt in _eventHistory.Events)
+            {
+                // Most recent event gets a bright marker, older events fade.
+                float alpha = 0.95f - index * 0.15f;
+                string marker = index == 0 ? "▶" : "·";
+                lines.Add($"{marker} {evt}");
+                index++;
+            }
+            _eventHistoryLabel.Text = string.Join("\n", lines);
         }
     }
 }

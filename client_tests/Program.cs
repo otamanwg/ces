@@ -825,4 +825,18 @@ AssertEqual(
 	DashboardApiResponseParser.Parse("""{"success":true""").Status,
 	"Malformed API response parse status");
 
+// DashboardActionCategoryStyle — Sprint 60 #37 category colors and headers.
+AssertEqual("Виживання", DashboardActionCategoryStyle.HeaderText(DashboardActionCategory.Survival), "Survival header");
+AssertEqual("Робота", DashboardActionCategoryStyle.HeaderText(DashboardActionCategory.Work), "Work header");
+AssertEqual("Бізнес", DashboardActionCategoryStyle.HeaderText(DashboardActionCategory.Business), "Business header");
+AssertEqual("Спорт", DashboardActionCategoryStyle.HeaderText(DashboardActionCategory.Sports), "Sports header");
+AssertEqual("Система", DashboardActionCategoryStyle.HeaderText(DashboardActionCategory.System), "System header");
+
+var survivalAccent = DashboardActionCategoryStyle.Accent(DashboardActionCategory.Survival);
+AssertNear(0.90, survivalAccent.Red, 0.01, "Survival accent Red");
+var businessAccent = DashboardActionCategoryStyle.Accent(DashboardActionCategory.Business);
+AssertNear(0.90, businessAccent.Green, 0.01, "Business accent Green");
+var systemAccent = DashboardActionCategoryStyle.Accent(DashboardActionCategory.System);
+AssertNear(0.54, systemAccent.Red, 0.01, "System accent Red");
+
 Console.WriteLine("Client logic tests passed.");
