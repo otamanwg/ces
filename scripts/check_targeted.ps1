@@ -260,7 +260,8 @@ switch ($Profile) {
         Invoke-Alembic
         Invoke-PythonStatic
         Invoke-Pytest @(
-            "backend\tests\test_g6_g10_integration.py"
+            "backend\tests\test_g6_g10_integration.py",
+            "backend\tests\test_political_press_query_api.py"
         )
     }
     "prod-fast" {
