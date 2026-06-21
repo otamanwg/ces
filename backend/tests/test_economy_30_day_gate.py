@@ -276,8 +276,10 @@ def test_seeded_production_loop_stays_balanced_for_30_days():
             "player retained seven days of food-and-rent runway": (
                 final_player_cash >= ESSENTIAL_DAILY_COST * MIN_PLAYER_RUNWAY_DAYS
             ),
-            "kiosk operating gain covered 75% of its advertised minimum profit": (
-                business_operating_gain >= _decimal(blueprint.daily_profit_min) * SIMULATION_DAYS * Decimal("0.75")
+            "kiosk operating gain covered 50% of its advertised minimum profit": (
+                # Phase G3: utility fees (~5/day for shop) reduce net profit.
+                # Threshold lowered from 75% to 50% to account for utility costs.
+                business_operating_gain >= _decimal(blueprint.daily_profit_min) * SIMULATION_DAYS * Decimal("0.50")
             ),
             "kiosk operating gain did not exceed its advertised maximum profit": (
                 business_operating_gain <= _decimal(blueprint.daily_profit_max) * SIMULATION_DAYS

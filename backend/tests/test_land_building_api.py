@@ -105,7 +105,7 @@ def test_business_blueprints_endpoint_returns_starter_catalog(client):
     assert body["success"] is True
     data = BusinessBlueprintsData.model_validate(body["data"])
     blueprints = {blueprint.code: blueprint for blueprint in data.blueprints}
-    assert len(blueprints) == 7
+    assert len(blueprints) == 10  # 7 starter + 3 utility (Phase G3)
     assert blueprints["station_kiosk"].project_type == "commercial"
     assert blueprints["station_kiosk"].business_type == "shop"
     assert blueprints["station_kiosk"].metric_effects["expected_jobs"] == 2

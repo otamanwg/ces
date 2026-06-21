@@ -97,6 +97,9 @@ check-districts:
 check-npcs:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 npcs
 
+check-utilities:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 utilities
+
 check-prod:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 prod-fast
 

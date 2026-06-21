@@ -606,6 +606,12 @@ class Business(Base):
     profit_margin: Mapped[float] = mapped_column(Decimal(5, 2), default=15.00)  # рентабельність %
     market_share: Mapped[float] = mapped_column(Decimal(5, 2), default=1.00)  # частка ринку %
 
+    # Phase G3: Utility-служби (power/water/waste/housing)
+    utility_service_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    service_capacity: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+    service_load: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+    is_emergency_contract: Mapped[bool] = mapped_column(Boolean, default=False)
+
     # Зв'язки ORM
     city: Mapped["City"] = relationship("City", back_populates="businesses")
     owner: Mapped[Optional["Player"]] = relationship("Player", back_populates="businesses")
@@ -1108,3 +1114,25 @@ class PressBlackmail(Base):
     status: Mapped[str] = mapped_column(String(30), default="pending")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+# 14. МОДЕЛЬ ЕКСТРЕНИХ КОНТРАКТІВ (Phase G3)
+class UtilityEmergencyContract(Base):
+    """Контракт з сусіднім містом при банкрутстві комунальної служби.
+
+    Створується коли utility-служба банкротиться і тендер не закритий за 1 день.
+    Мерія платить різницю між нормальною і завищеною ціною — це руйнує рейтинг мера.
+    """
+
+    __tablename__ = "utility_emergency_contracts"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    utility_service_type: Mapped[str] = mapped_column(String(20), nullable=False)  # power/water/waste
+    provider_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    price_per_unit: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
+    normal_price_per_unit: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
+    started_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
+    ended_at_game_day: Mapped[int | None] = mapped_column(Integer)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

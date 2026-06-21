@@ -1045,6 +1045,37 @@ def dismiss_npc_endpoint(
     return api_success("NPC звільнено.", {"npc_id": npc_id})
 
 
+@router.get("/city/utility-status")
+def get_utility_status_endpoint(db: Session = Depends(get_db)):
+    """Phase G3: статус комунальних служб міста + попередження мера."""
+    from backend.app.services.utility_service import get_mayor_warnings, get_utility_status
+
+    city = db.query(City).first()
+    if not city:
+        return api_error("Місто не знайдене.")
+
+    statuses = get_utility_status(db, city.id)
+    warnings = get_mayor_warnings(db, city.id)
+    return api_success(
+        "Статус комунальних служб.",
+        {
+            "services": [
+                {
+                    "service_type": s.service_type,
+                    "active_businesses": s.active_businesses,
+                    "total_capacity": s.total_capacity,
+                    "total_load": s.total_load,
+                    "load_ratio": round(s.load_ratio, 3),
+                    "has_emergency_contract": s.has_emergency_contract,
+                    "warnings": s.warnings,
+                }
+                for s in statuses
+            ],
+            "mayor_warnings": warnings,
+        },
+    )
+
+
 @router.get("/sports/clubs")
 def get_mvp_sports_clubs(db: Session = Depends(get_db)):
     clubs = db.query(SportsClub).order_by(SportsClub.name).all()

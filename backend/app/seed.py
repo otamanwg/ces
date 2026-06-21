@@ -38,6 +38,8 @@ def seed_initial_data(db: Session) -> None:
         type="utility_housing",
         owner_player_id=None,
         cash_balance=20000.00,
+        utility_service_type="housing",
+        service_capacity=100,
     )
     voda = Business(
         city_id=city.id,
@@ -45,6 +47,8 @@ def seed_initial_data(db: Session) -> None:
         type="utility_water",
         owner_player_id=None,
         cash_balance=15000.00,
+        utility_service_type="water",
+        service_capacity=100,
     )
     coffee_shop = Business(
         city_id=city.id,

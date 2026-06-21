@@ -111,15 +111,17 @@
 7. [x] Інтеграція з district_metrics: NPC входять у population району.
 8. [x] Тести: 28 passed (ліміти, генерація, звільнення, ЗП, премія, витрати, API, day tick, metrics).
 
-### Phase G3 — Utility Services as Businesses
+### Phase G3 — Utility Services as Businesses (DONE)
 
 Комунальні служби (електростанція, водоканал, сміттєзавод) як бізнеси.
 
-1. [ ] Blueprint-категорія `utility`.
-2. [ ] Комунальні платежі йдуть службам → служби платять у казну, мають свій баланс.
-3. [ ] Банкрутство служби → тригер тендеру → 1 ігровий день без сервісу → контракт з сусіднім містом за завищеними цінами (різницю платить мерія, руйнує рейтинг мера).
-4. [ ] Попередження у мера про проблеми з усіма службами.
-5. [ ] Тести.
+1. [x] Blueprint-категорія `utility` (power_plant, water_works, waste_plant).
+2. [x] Комунальні платежі йдуть службам → служби платять у казну (10% податок), мають свій баланс.
+3. [x] Банкрутство служби → екстрений контракт з сусіднім містом за завищеними цінами (3x), різницю платить мерія.
+4. [x] Попередження у мера про проблеми з усіма службами (high load, low balance, no service, emergency).
+5. [x] Інтеграція з district_metrics: реальні потужності utility замість базових 100.
+6. [x] API `/city/utility-status`: статус служб + попередження мера.
+7. [x] Тести: 18 passed (blueprints, payments, bankruptcy, emergency contracts, warnings, metrics, API, day tick).
 
 ### Phase G4 — Vacancies and Hiring (NPC + Players)
 
@@ -223,7 +225,7 @@
 - Phase 6 — Production Ready: 99%
 - Phase G1 — Dynamic District Metrics: 100% (DONE)
 - Phase G2 — NPC Residents: 100% (DONE)
-- Phase G3 — Utility Services: 0%
+- Phase G3 — Utility Services: 100% (DONE)
 - Phase G4 — Vacancies and Hiring: 0%
 - Phase G5 — Bank as Business: 0%
 - Phase G6 — Political System: 0%

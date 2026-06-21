@@ -337,6 +337,16 @@ def game_day_tick(db: Session, city_id: str) -> dict:
     process_npc_spending(db, city_uuid, next_game_day)
     db.flush()
 
+    # Phase G3: Комунальні служби — платежі, банкрутство, екстрені контракти.
+    from backend.app.services.utility_service import (
+        check_utility_bankruptcy,
+        process_utility_payments,
+    )
+
+    process_utility_payments(db, city_uuid, next_game_day)
+    check_utility_bankruptcy(db, city_uuid, next_game_day)
+    db.flush()
+
     # Phase G1: динамічні метрики районів + композитні індекси + сезонність.
     # Викликається після NPC-операцій, щоб population включало NPC.
     from backend.app.services.district_metrics import recalculate_all_districts

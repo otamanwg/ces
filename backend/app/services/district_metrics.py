@@ -28,6 +28,7 @@ from backend.app.models import (
     NpcResident,
 )
 from backend.app.services.season_service import SeasonModifiers, get_season_modifiers
+from backend.app.services.utility_service import get_total_capacity_by_type
 
 logger = logging.getLogger("DistrictMetrics")
 
@@ -131,11 +132,17 @@ def recalculate_district_metrics(
     population = float(npc_count) + float(district.population)
 
     # --- Базові "потужності" інфраструктури ---
-    # У Phase G1 комунальних служб ще немає як окремих бізнесів з потужністю,
-    # тому використовуємо базові 100 і знижуємо попитом. Phase G3 замінить це
-    # на реальні потужності електростанцій/водоканалів.
-    power_capacity = 100.0
-    water_capacity = 100.0
+    # Phase G3: реальні потужності utility-бізнесів міста (сума по всіх службах).
+    # Якщо utility-служб немає — fallback на базові 100 (стартове місто).
+    power_capacity = get_total_capacity_by_type(db, district.city_id, "power")
+    if power_capacity <= 0:
+        power_capacity = 100.0
+    water_capacity = get_total_capacity_by_type(db, district.city_id, "water")
+    if water_capacity <= 0:
+        water_capacity = 100.0
+    waste_capacity = get_total_capacity_by_type(db, district.city_id, "waste")
+    if waste_capacity <= 0:
+        waste_capacity = 100.0
 
     # --- Сезонні дельти ---
     sm = season_modifiers
@@ -157,8 +164,8 @@ def recalculate_district_metrics(
     # water_supply: потужність - попит населення - попит бізнесів - сезонний попит
     water_supply = _clamp(water_capacity - population * 0.4 - counts.active_total * 1.5 - sm.water_demand_delta)
 
-    # waste_management: базова - попит населення + озеленення (компост)
-    waste_management = _clamp(70.0 - population * 0.3 + float(district.green_space) * 0.5)
+    # waste_management: потужність сміттєзаводу - попит населення + озеленення
+    waste_management = _clamp(waste_capacity - population * 0.3 + float(district.green_space) * 0.5)
 
     # fire_safety: базова + інфраструктура - виробництво (ризик пожежі)
     fire_safety = _clamp(60.0 + float(district.service_coverage) * 0.2 - counts.production * 3.0)
