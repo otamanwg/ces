@@ -11,6 +11,7 @@ param(
         "npcs",
         "utilities",
         "vacancies",
+        "bank",
         "prod-fast",
         "prod-smoke",
         "client",
@@ -104,6 +105,7 @@ function Show-Profiles {
     Write-Host "  npcs          Phase G2+ NPC residents: hire, payroll, spending, API."
     Write-Host "  utilities     Phase G3+ utility services, payments, bankruptcy, emergency contracts."
     Write-Host "  vacancies     Phase G4+ vacancies, hiring, firing, owner-works, student jobs."
+    Write-Host "  bank          Phase G5+ bank deposits, loans, bankruptcy auctions."
     Write-Host "  prod-fast     Production config/lifecycle/health tests + Compose config validation."
     Write-Host "  prod-smoke    Isolated production Compose smoke with migration, readiness, metrics, Prometheus/Grafana."
     Write-Host "  client        Client logic tests + Godot C# build."
@@ -203,6 +205,14 @@ switch ($Profile) {
         Invoke-Pytest @(
             "backend\tests\test_vacancy_service.py",
             "backend\tests\test_npc_service.py"
+        )
+    }
+    "bank" {
+        Invoke-Alembic
+        Invoke-PythonStatic
+        Invoke-Pytest @(
+            "backend\tests\test_bank_service.py",
+            "backend\tests\test_utility_service.py"
         )
     }
     "prod-fast" {

@@ -377,6 +377,45 @@ STARTER_BUSINESS_BLUEPRINTS: tuple[StarterBusinessBlueprint, ...] = (
             "Дохід від комунальних платежів.",
         ),
     ),
+    # --- Phase G5: Bank ---
+    StarterBusinessBlueprint(
+        code="bank",
+        name="Банк",
+        category="finance",
+        business_type="bank",
+        project_type="commercial",
+        description="Банк: приймає депозити, видає кредити, оперує з власного cash_balance.",
+        difficulty="hard",
+        allowed_land_types=("in_city",),
+        allowed_zoning_types=("commercial",),
+        min_area_hectares=Decimal("0.30"),
+        construction_cost=Decimal("8000.00"),
+        opening_fee=Decimal("800.00"),
+        recommended_cash_reserve=Decimal("20000.00"),
+        daily_profit_min=Decimal("20.00"),
+        daily_profit_max=Decimal("80.00"),
+        upkeep_daily=Decimal("25.00"),
+        risk_level=4,
+        risks=(
+            "Банк-рун: якщо вкладники знімають одночасно — банкрот.",
+            "Дефолт позичальників → втрата principal.",
+            "Відмова у кредитах при високому criminal_rep (Phase H).",
+        ),
+        metric_effects={
+            "expected_jobs": 3,
+            "traffic_load": 10,
+            "service_load": 0,
+            "medical_load": 0,
+            "public_benefit": 15,
+        },
+        visual_archetype="bank",
+        style_tags=("commercial", "finance", "high_value"),
+        player_hints=(
+            "Банк оперує з власного cash_balance — потрібен великий резерв.",
+            "Дохід: різниця між ставкою за кредитами і ставкою за депозитами.",
+            "Банкрутство бізнесу → аукціон (24 години реального часу).",
+        ),
+    ),
 )
 
 

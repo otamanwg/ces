@@ -133,13 +133,14 @@
 6. [x] API: /vacancies/player, /vacancies/student, /businesses/{id}/vacancies, /businesses/{id}/owner-work, /jobs/{id}/fire.
 7. [x] Тести: 19 passed (fixed salary, post vacancy, apply, fire, owner-works, student vacancies, API).
 
-### Phase G5 — Bank as Business
+### Phase G5 — Bank as Business (DONE)
 
-1. [ ] Blueprint `bank` (окремий, оперує з власного `cash_balance`).
-2. [ ] Кредити (AI-банк: умови з економіки; банк гравця: гравець обирає).
-3. [ ] Депозити від гравців + відсоток.
-4. [ ] Банкрутство бізнесу → аукціон (24 години реального часу, стартова ціна = борги + % місту, будь-який гравець, AI-мер не купує).
-5. [ ] Тести.
+1. [x] Blueprint `bank` (category="finance", оперує з власного cash_balance).
+2. [x] Кредити (банк видає з власного балансу, гравець обирає ставку через API).
+3. [x] Депозити від гравців + щоденне нарахування відсотків.
+4. [x] Банкрутство бізнесу → аукціон (24 години реального часу, стартова ціна = борги + 10% місту, будь-який гравець).
+5. [x] API: /banks/{id}/deposit, /banks/deposits/{id}/withdraw, /banks/{id}/loan, /banks/loans/{id}/repay, /auctions/active, /auctions/{id}/bid.
+6. [x] Тести: 23 passed (deposits, loans, interest, auctions, bidding, closing, API).
 
 ### Phase G6 — Political System
 
@@ -228,7 +229,7 @@
 - Phase G2 — NPC Residents: 100% (DONE)
 - Phase G3 — Utility Services: 100% (DONE)
 - Phase G4 — Vacancies and Hiring: 100% (DONE)
-- Phase G5 — Bank as Business: 0%
+- Phase G5 — Bank as Business: 100% (DONE)
 - Phase G6 — Political System: 0%
 - Phase G7 — 3D Avatar and Locations: 0%
 - Phase G8 — Prison/Police/Press/Court/Lawyer: 0%

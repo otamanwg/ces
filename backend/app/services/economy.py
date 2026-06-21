@@ -347,6 +347,13 @@ def game_day_tick(db: Session, city_id: str) -> dict:
     check_utility_bankruptcy(db, city_uuid, next_game_day)
     db.flush()
 
+    # Phase G5: Банк — нарахування відсотків по депозитах і кредитах.
+    from backend.app.services.bank_service import process_deposit_interest, process_loan_interest
+
+    process_deposit_interest(db, city_uuid, next_game_day)
+    process_loan_interest(db, city_uuid, next_game_day)
+    db.flush()
+
     # Phase G1: динамічні метрики районів + композитні індекси + сезонність.
     # Викликається після NPC-операцій, щоб population включало NPC.
     from backend.app.services.district_metrics import recalculate_all_districts

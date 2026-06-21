@@ -1383,6 +1383,206 @@ def fire_player_endpoint(
     return api_success(result["message"], {"job_id": job_id})
 
 
+# --- Phase G5: Bank as Business ---
+
+
+@router.post("/banks/{bank_id}/deposit")
+def bank_deposit_endpoint(
+    bank_id: str,
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G5: гравець кладе депозит у банк."""
+    from backend.app.services.bank_service import create_deposit
+
+    bank_uuid = try_uuid(bank_id)
+    if bank_uuid is None:
+        return api_error("Невірний ідентифікатор банку.")
+    bank = db.query(Business).filter(Business.id == bank_uuid).first()
+    if not bank:
+        return api_error("Банк не знайдено.")
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    amount = Decimal(str(data.get("amount", 0)))
+    rate = data.get("interest_rate")
+    interest_rate = Decimal(str(rate)) if rate is not None else None
+    game_day = data.get("game_day", 0)
+
+    result = create_deposit(db, bank, player, amount, interest_rate, game_day)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/banks/deposits/{deposit_id}/withdraw")
+def bank_withdraw_endpoint(
+    deposit_id: str,
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G5: гравець знімає депозит."""
+    from backend.app.models import BankDeposit
+    from backend.app.services.bank_service import withdraw_deposit
+
+    deposit_uuid = try_uuid(deposit_id)
+    if deposit_uuid is None:
+        return api_error("Невірний ідентифікатор депозиту.")
+    deposit = db.query(BankDeposit).filter(BankDeposit.id == deposit_uuid).first()
+    if not deposit:
+        return api_error("Депозит не знайдено.")
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    result = withdraw_deposit(db, deposit, player)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/banks/{bank_id}/loan")
+def bank_loan_endpoint(
+    bank_id: str,
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G5: гравець бере кредит у банку."""
+    from backend.app.services.bank_service import issue_loan
+
+    bank_uuid = try_uuid(bank_id)
+    if bank_uuid is None:
+        return api_error("Невірний ідентифікатор банку.")
+    bank = db.query(Business).filter(Business.id == bank_uuid).first()
+    if not bank:
+        return api_error("Банк не знайдено.")
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    amount = Decimal(str(data.get("amount", 0)))
+    rate = data.get("interest_rate")
+    interest_rate = Decimal(str(rate)) if rate is not None else None
+    term_days = int(data.get("term_days", 30))
+    game_day = data.get("game_day", 0)
+
+    result = issue_loan(db, bank, player, amount, interest_rate, term_days, game_day)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/banks/loans/{loan_id}/repay")
+def bank_repay_endpoint(
+    loan_id: str,
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G5: гравець погашає кредит."""
+    from backend.app.models import BankCredit
+    from backend.app.services.bank_service import repay_loan
+
+    loan_uuid = try_uuid(loan_id)
+    if loan_uuid is None:
+        return api_error("Невірний ідентифікатор кредиту.")
+    loan = db.query(BankCredit).filter(BankCredit.id == loan_uuid).first()
+    if not loan:
+        return api_error("Кредит не знайдено.")
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    amount = Decimal(str(data.get("amount", 0)))
+    result = repay_loan(db, loan, player, amount)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.get("/auctions/active")
+def list_active_auctions_endpoint(db: Session = Depends(get_db)):
+    """Phase G5: список активних аукціонів банкрутів."""
+    from backend.app.services.bank_service import list_active_auctions
+
+    city = db.query(City).first()
+    city_id = city.id if city else None
+    auctions = list_active_auctions(db, city_id)
+    return api_success(
+        "Активні аукціони банкрутів.",
+        {
+            "auctions": [
+                {
+                    "id": str(a.id),
+                    "business_id": str(a.business_id),
+                    "starting_price": float(a.starting_price),
+                    "highest_bid": float(a.highest_bid),
+                    "ends_at": a.ends_at.isoformat(),
+                    "status": a.status,
+                }
+                for a in auctions
+            ]
+        },
+    )
+
+
+@router.post("/auctions/{auction_id}/bid")
+def auction_bid_endpoint(
+    auction_id: str,
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G5: гравець робить ставку на аукціоні банкрутів."""
+    from backend.app.models import BankruptcyAuction
+    from backend.app.services.bank_service import place_bid
+
+    auction_uuid = try_uuid(auction_id)
+    if auction_uuid is None:
+        return api_error("Невірний ідентифікатор аукціону.")
+    auction = db.query(BankruptcyAuction).filter(BankruptcyAuction.id == auction_uuid).first()
+    if not auction:
+        return api_error("Аукціон не знайдено.")
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    amount = Decimal(str(data.get("amount", 0)))
+    result = place_bid(db, auction, player, amount)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
 @router.post("/hostels/sleep/{player_id}")
 def sleep_in_hostel(
     player_id: str,

@@ -135,7 +135,7 @@ def test_seed_creates_core_city_data():
         seed_initial_data(db)
 
         assert db.query(City).count() == 1
-        assert db.query(BusinessBlueprint).count() == 10  # 7 starter + 3 utility (Phase G3)
+        assert db.query(BusinessBlueprint).count() == 11  # 7 starter + 3 utility (G3) + 1 bank (G5)
         assert db.query(CityDistrict).count() == 6
         assert db.query(LandParcel).count() == 6
         assert db.query(Job).count() == 3
@@ -170,10 +170,10 @@ def test_seed_backfills_districts_for_existing_city():
         seed_initial_data(db)
 
         assert db.query(City).count() == 1
-        assert db.query(BusinessBlueprint).count() == 10  # 7 starter + 3 utility (Phase G3)
+        assert db.query(BusinessBlueprint).count() == 11  # 7 starter + 3 utility (G3) + 1 bank (G5)
         assert db.query(CityDistrict).count() == 6
         seed_initial_data(db)
-        assert db.query(BusinessBlueprint).count() == 10  # 7 starter + 3 utility (Phase G3)
+        assert db.query(BusinessBlueprint).count() == 11  # 7 starter + 3 utility (G3) + 1 bank (G5)
         assert db.query(CityDistrict).count() == 6
         assert db.query(LandParcel).count() == 6
 

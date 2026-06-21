@@ -1140,3 +1140,91 @@ class UtilityEmergencyContract(Base):
     ended_at_game_day: Mapped[int | None] = mapped_column(Integer)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# 15. МОДЕЛЬ БАНКУ (Phase G5)
+class BankDeposit(Base):
+    """Депозит гравця у банку."""
+
+    __tablename__ = "bank_deposits"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    bank_business_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False
+    )
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
+    interest_rate: Mapped[float] = mapped_column(Decimal(5, 2), nullable=False)
+    created_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
+    last_interest_game_day: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BankCredit(Base):
+    """Кредит, виданий банком гравцю (Phase G5). Окремо від frozen BankLoan."""
+
+    __tablename__ = "bank_credits"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    bank_business_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False
+    )
+    borrower_player_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    principal_amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
+    remaining_amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
+    interest_rate: Mapped[float] = mapped_column(Decimal(5, 2), nullable=False)
+    term_days: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
+    due_game_day: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active/repaid/defaulted
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# 16. МОДЕЛЬ АУКЦІОНУ БАНКРУТІВ (Phase G5)
+class BankruptcyAuction(Base):
+    """Аукціон банкрутів: 24 години реального часу, будь-який гравець."""
+
+    __tablename__ = "bankruptcy_auctions"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    business_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False
+    )
+    city_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
+    )
+    starting_price: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
+    debt_amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
+    city_percentage: Mapped[float] = mapped_column(Decimal(5, 2), default=10.00)
+    highest_bid: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+    highest_bidder_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("players.id", ondelete="SET NULL")
+    )
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active/won/closed
+    winner_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("players.id", ondelete="SET NULL")
+    )
+    winning_bid: Mapped[float] = mapped_column(Decimal(15, 2), default=0.00)
+
+
+class AuctionBid(Base):
+    """Ставка на аукціоні банкрутів."""
+
+    __tablename__ = "auction_bids"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    auction_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("bankruptcy_auctions.id", ondelete="CASCADE"), nullable=False
+    )
+    bidder_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    amount: Mapped[float] = mapped_column(Decimal(15, 2), nullable=False)
+    placed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
