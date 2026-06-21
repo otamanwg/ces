@@ -79,6 +79,23 @@
 39. [x] Додати перший visible city layer MVP: райони, physical building markers, zoom/focus states, без повної SimCity-системи.
 40. [x] Посилити business/building guidance у UI: вартість, земля, ризик, theoretical profit, upkeep, visual archetype.
 
+## Sprint 61 — Client UI for G6-G10 Backend Systems (CANDIDATE)
+
+Backend для G6-G10 завершено, але клієнт не відображає ці системи. Мета: дати гравцю доступ до нових механік через dashboard/HUD.
+
+1. [ ] Education panel: дерево курсів, поточна освіта, кнопка іспиту, ліцензії.
+2. [ ] Police panel: ієрархія, патрулювання, арешти, конфіскація (для гравця-поліцейського).
+3. [ ] Court/Prison panel: активні справи, вердикти, апеляції, термін ув'язнення.
+4. [ ] Press panel: розслідування, публікації, реклама, шантаж.
+5. [ ] Casino panel: блекджек/рулетка UI, ставка, результат.
+6. [ ] Shadow economy panel: criminal_rep, fraud offers, shadow market, shadow businesses.
+7. [ ] Political panel: вибори, голосування, кандидати, AI-mayor інвестиції.
+8. [ ] Lawyer panel: супровід угод, апеляція, захист.
+9. [ ] Atelier panel: створення скінів, продаж, equip/unequip.
+10. [ ] Bank panel: депозити, кредити, аукціони.
+
+Примітка: порядок і склад items уточнюється. Кожен item — окремий slice з backend API review + client UI + tests.
+
 ## Post-MVP Gameplay Phases — SimCity 4-Inspired Citizen Model
 
 Джерело дизайну: `GAMEPLAY_CORE_MODEL.md` (розділи 13-29). Кожна фаза — це backend-first slice з тестами, без UI/3D, поки не вказано інше.
@@ -214,7 +231,7 @@
 - Player auth tokens зберігаються hash-first; legacy plaintext записи backfill/cleanup через migration і fallback lookup.
 - Production backup/restore drill із sentinel data/row-count validation, external dump validation mode, rollout preflight, rollback strategy, baseline secrets guardrails, Docker secrets / `_FILE` contract і release metadata є.
 - Production expansion заморожений до нового рішення; reverse proxy/TLS staging dry-run чекатиме вибору домену або хоста.
-- Наступний активний debt: Sprint 60 items 37-40 (клієнтський каркас — dashboard HUD, onboarding flow, visible city layer, business guidance).
+- Sprint 60 client polish завершено (items 37-40): dashboard gameplay HUD, visible city layer, arrival onboarding flow з beat 4 + welcome transition, business guidance visual cards.
 - Audit cleanup завершено (commit `a7e0573`): missing db.commit() в /shadow/fraud-offer, atelier endpoints wired, httpx2 видалено, dotnet-format hook fixed, empty dirs cleaned.
 - Test refactor завершено (commit `0cfba61`): shared conftest.py fixtures, named STARTER_*_COUNT constants, wire police refuse_bribe/confiscate_business + press accept_advertising, module-level imports в mvp.py, frozen models docs, confiscate_business bugfix.
 - Observability metrics fix: `ces_http_requests_total` / `ces_http_request_duration_seconds` перенесено з `observability.py` в `metrics.py` — `/metrics` endpoint тепер експортує кастомні метрики без залежності від app startup.
@@ -228,7 +245,7 @@
 - Phase 1 — 5-Minute Core Loop: 100%
 - Phase 2 — Architecture Split: 100%
 - Phase 3 — Economy Balance: 82%
-- Phase 4 — Godot MVP Client: 75%
+- Phase 4 — Godot MVP Client: 85%
 - Phase 5 — Multiplayer Readiness: 90%
 - Phase 6 — Production Ready: 99%
 - Phase G1 — Dynamic District Metrics: 100% (DONE)
@@ -284,7 +301,7 @@
 - sports, cartels, unions, insurance, advanced routes.
 - Shadow economy — розморожено як частину Post-MVP Gameplay Phases (G8-G9: corruption, prison, shadow niches).
 - Нові системи не брати, поки current queue не закрита і 5-minute loop не відчувається стабільним.
-- Post-MVP Gameplay Phases: G1-G10 завершено (backend); G11-G12 (3D visual layers, poker engine) — optional, post-MVP. Активна черга: Sprint 60 client polish (items 37-40).
+- Post-MVP Gameplay Phases: G1-G10 завершено (backend); G11-G12 (3D visual layers, poker engine) — optional, post-MVP. Sprint 60 client polish (items 37-40) завершено. Наступний напрямок: client UI для G6-G10 backend systems (поліція, суд, преса, казино, тіньова економіка, освіта) або Phase G11/G12.
 
 ## Reference Inputs
 
