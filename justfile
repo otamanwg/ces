@@ -100,6 +100,9 @@ check-npcs:
 check-utilities:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 utilities
 
+check-vacancies:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 vacancies
+
 check-prod:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 prod-fast
 

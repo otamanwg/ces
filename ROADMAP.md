@@ -123,14 +123,15 @@
 6. [x] API `/city/utility-status`: статус служб + попередження мера.
 7. [x] Тести: 18 passed (blueprints, payments, bankruptcy, emergency contracts, warnings, metrics, API, day tick).
 
-### Phase G4 — Vacancies and Hiring (NPC + Players)
+### Phase G4 — Vacancies and Hiring (NPC + Players) (DONE)
 
-1. [ ] Розширення вакансій: ЗП фіксована по типу бізнесу (почасова статична), премія % від чистого прибутку (власник виставляє).
-2. [ ] Найм NPC (до ліміту: ФОП 1, ТОВ 5, ВАТ 10, інші позиції — тільки гравці).
-3. [ ] Гравець-власник може працювати сам (витрачає енергію, без ЗП — дивіденди).
-4. [ ] Звільнення гравця-працівника за бажанням власника.
-5. [ ] Біржа "для студентів" (очна освіта — лише вечірні зміни).
-6. [ ] Тести.
+1. [x] Розширення вакансій: ЗП фіксована по типу бізнесу (почасова статична), премія % від чистого прибутку (власник виставляє, до 50%).
+2. [x] Найм NPC (до ліміту: ФОП 1, ТОВ 5, ВАТ 10) — Phase G2; гравець-вакансії — Phase G4.
+3. [x] Гравець-власник може працювати сам (витрачає енергію, без ЗП — дивіденди).
+4. [x] Звільнення гравця-працівника за бажанням власника.
+5. [x] Біржа "для студентів" (очна освіта — лише вечірні зміни, shift_type="student").
+6. [x] API: /vacancies/player, /vacancies/student, /businesses/{id}/vacancies, /businesses/{id}/owner-work, /jobs/{id}/fire.
+7. [x] Тести: 19 passed (fixed salary, post vacancy, apply, fire, owner-works, student vacancies, API).
 
 ### Phase G5 — Bank as Business
 
@@ -226,7 +227,7 @@
 - Phase G1 — Dynamic District Metrics: 100% (DONE)
 - Phase G2 — NPC Residents: 100% (DONE)
 - Phase G3 — Utility Services: 100% (DONE)
-- Phase G4 — Vacancies and Hiring: 0%
+- Phase G4 — Vacancies and Hiring: 100% (DONE)
 - Phase G5 — Bank as Business: 0%
 - Phase G6 — Political System: 0%
 - Phase G7 — 3D Avatar and Locations: 0%

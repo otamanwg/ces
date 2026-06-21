@@ -633,6 +633,10 @@ class Job(Base):
     filled_by_player_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("players.id", ondelete="SET NULL"), unique=True
     )
+    # Phase G4: розширення вакансій
+    bonus_pct: Mapped[float] = mapped_column(Decimal(5, 2), default=0.00)  # % від чистого прибутку
+    shift_type: Mapped[str] = mapped_column(String(20), default="day")  # day/evening/student
+    is_npc_position: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Зв'язки ORM

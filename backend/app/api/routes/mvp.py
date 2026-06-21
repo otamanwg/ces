@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -17,6 +18,7 @@ from backend.app.models import (
     BusinessBlueprint,
     City,
     CityDistrict,
+    Job,
     LandParcel,
     Player,
     SportsClub,
@@ -1242,6 +1244,143 @@ async def do_work_shift(
         WorkActionData,
         city=res.get("city", {}),
     )
+
+
+# --- Phase G4: Vacancies and Hiring ---
+
+
+@router.get("/vacancies/player")
+def list_player_vacancies(db: Session = Depends(get_db)):
+    """Phase G4: список відкритих гравець-вакансій (не NPC)."""
+    from backend.app.services.vacancy_service import job_to_dict, list_open_vacancies
+
+    city = db.query(City).first()
+    city_id = city.id if city else None
+    vacancies = list_open_vacancies(db, city_id)
+    return api_success(
+        "Відкриті вакансії для гравців.",
+        {"vacancies": [job_to_dict(j, include_business=True) for j in vacancies]},
+    )
+
+
+@router.get("/vacancies/student")
+def list_student_vacancies_endpoint(db: Session = Depends(get_db)):
+    """Phase G4: біржа студентських робіт (вечірні зміни)."""
+    from backend.app.services.vacancy_service import job_to_dict, list_student_vacancies
+
+    city = db.query(City).first()
+    city_id = city.id if city else None
+    vacancies = list_student_vacancies(db, city_id)
+    return api_success(
+        "Студентські вакансії (вечірні зміни).",
+        {"vacancies": [job_to_dict(j, include_business=True) for j in vacancies]},
+    )
+
+
+@router.post("/businesses/{business_id}/vacancies")
+def post_vacancy_endpoint(
+    business_id: str,
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G4: власник виставляє вакансію для гравця-працівника."""
+    from backend.app.services.vacancy_service import DEFAULT_BONUS_PCT, post_player_vacancy
+
+    business_uuid = try_uuid(business_id)
+    if business_uuid is None:
+        return api_error("Невірний ідентифікатор бізнесу.")
+
+    business = db.query(Business).filter(Business.id == business_uuid).first()
+    if not business:
+        return api_error("Бізнес не знайдено.")
+
+    if not player_token:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    bonus_pct = Decimal(str(data.get("bonus_pct", DEFAULT_BONUS_PCT)))
+    shift_type = data.get("shift_type", "day")
+    title = data.get("title")
+    min_education = data.get("min_education", "High School")
+
+    result = post_player_vacancy(
+        db,
+        business,
+        title=title,
+        bonus_pct=bonus_pct,
+        shift_type=shift_type,
+        min_education=min_education,
+    )
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/businesses/{business_id}/owner-work")
+def owner_works_endpoint(
+    business_id: str,
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G4: власник працює у власному бізнесі (витрачає енергію)."""
+    from backend.app.services.vacancy_service import owner_works_shift
+
+    business_uuid = try_uuid(business_id)
+    if business_uuid is None:
+        return api_error("Невірний ідентифікатор бізнесу.")
+
+    business = db.query(Business).filter(Business.id == business_uuid).first()
+    if not business:
+        return api_error("Бізнес не знайдено.")
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    result = owner_works_shift(db, business, player)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], result)
+
+
+@router.post("/jobs/{job_id}/fire")
+def fire_player_endpoint(
+    job_id: str,
+    data: dict,
+    player_token: str | None = Header(default=None, alias="X-Player-Token"),
+    db: Session = Depends(get_db),
+):
+    """Phase G4: власник звільняє гравця-працівника."""
+    from backend.app.services.vacancy_service import fire_player
+
+    job_uuid = try_uuid(job_id)
+    if job_uuid is None:
+        return api_error("Невірний ідентифікатор вакансії.")
+
+    job = db.query(Job).filter(Job.id == job_uuid).first()
+    if not job:
+        return api_error("Вакансію не знайдено.")
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    owner = db.query(Player).filter(Player.id == player_uuid).first()
+    if not owner:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+
+    result = fire_player(db, job, owner)
+    if not result["success"]:
+        return api_error(result["message"])
+    db.commit()
+    return api_success(result["message"], {"job_id": job_id})
 
 
 @router.post("/hostels/sleep/{player_id}")
