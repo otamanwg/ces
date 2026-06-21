@@ -10,6 +10,14 @@ static void AssertEqual<T>(T expected, T actual, string message)
 	}
 }
 
+static void Assert(bool condition, string message)
+{
+	if (!condition)
+	{
+		throw new InvalidOperationException($"{message}: condition was false");
+	}
+}
+
 static void AssertSequence(string[] expected, string[] actual, string message)
 {
 	if (!expected.SequenceEqual(actual))
@@ -298,11 +306,14 @@ AssertEqual(
 AssertEqual(DashboardTutorialAgeGroup.Adult, arrivalSnapshot.TutorialAgeGroup, "Legacy snapshot defaults to adult guidance");
 var teenSnapshot = DashboardPlayerSnapshot.FromJson(JsonNode.Parse("""{"tutorial_age_group":"teen"}""")!);
 AssertEqual(DashboardTutorialAgeGroup.Teen, teenSnapshot.TutorialAgeGroup, "Snapshot parses teen guidance group");
-AssertEqual(3, DashboardArrivalStory.Count, "Arrival story has three setup beats");
+AssertEqual(4, DashboardArrivalStory.Count, "Arrival story has four setup beats including robbery");
 AssertEqual("ARRIVAL_BEAT_1_TITLE", DashboardArrivalStory.Get(0).TitleKey, "Arrival story starts with stable title key");
 AssertEqual("ARRIVAL_BEAT_1_NARRATIVE", DashboardArrivalStory.Get(0).NarrativeKey, "Arrival story starts with stable narrative key");
-AssertEqual("ARRIVAL_BEAT_3_TITLE", DashboardArrivalStory.Get(2).TitleKey, "Arrival story ends with stable title key");
-AssertEqual("ARRIVAL_BEAT_3_NARRATIVE", DashboardArrivalStory.Get(2).NarrativeKey, "Arrival story ends with stable narrative key");
+AssertEqual("ARRIVAL_BEAT_3_TITLE", DashboardArrivalStory.Get(2).TitleKey, "Arrival story taxi beat has stable title key");
+AssertEqual("ARRIVAL_BEAT_3_NARRATIVE", DashboardArrivalStory.Get(2).NarrativeKey, "Arrival story taxi beat has stable narrative key");
+AssertEqual("ARRIVAL_BEAT_4_TITLE", DashboardArrivalStory.Get(3).TitleKey, "Arrival story robbery beat has stable title key");
+AssertEqual("ARRIVAL_BEAT_4_NARRATIVE", DashboardArrivalStory.Get(3).NarrativeKey, "Arrival story robbery beat has stable narrative key");
+AssertEqual(DashboardArrivalPortrait.None, DashboardArrivalStory.Get(3).Portrait, "Robbery beat has no portrait");
 AssertEqual(
 	"ARRIVAL_BEAT_2_TEEN_NARRATIVE",
 	DashboardArrivalStory.Get(1, DashboardTutorialAgeGroup.Teen).NarrativeKey,
@@ -760,6 +771,15 @@ AssertEqual("land-2", applicationPlan.Land.Id, "Application plan uses owned land
 AssertEqual("Заявка: Вокзальний кіоск | Вже куплена ділянка | 20-55 ₴/день | ризик 1/5", applicationPlan.ApplicationSummaryText, "Application plan summary");
 AssertEqual("Погоджено: Вокзальний кіоск | можна створити будівлю", applicationPlan.ActivationSummaryText, "Activation plan summary");
 AssertEqual("Будівництво: бракує коштів або сумісної ділянки", buildCatalog.SummaryFor(199), "Build catalog explains missing starter plan");
+
+// DashboardStarterBuildPlan.CardText — Sprint 60 #40 visual card format.
+string cardText = starterPlan.CardText;
+Assert(cardText.Contains("Вокзальний кіоск"), "Card shows blueprint name");
+Assert(cardText.Contains("200 ₴"), "Card shows land price");
+Assert(cardText.Contains("300 ₴"), "Card shows construction cost");
+Assert(cardText.Contains("20-55 ₴/день"), "Card shows profit range");
+Assert(cardText.Contains("1/5"), "Card shows risk level");
+Assert(cardText.Contains("■"), "Card uses risk bar visualization");
 
 AssertEqual(
 	DashboardPlayerActionEndpoint.Vacancies,

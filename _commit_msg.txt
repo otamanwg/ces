@@ -1,0 +1,35 @@
+feat(client): onboarding flow + business guidance cards (Sprint 60 #38, #40)
+
+#38 Arrival onboarding flow:
+- New beat 4 "Крадіжка" closes narrative gap between taxi ride
+  (beat 3 "driver stops") and choice screen ("taxi vanished with luggage")
+- Beat 4 uses BaggageTheft visual with no portrait (player is alone)
+- ARRIVAL_STORY_ARRIVE button text changed to "Обрати наступний крок"
+  to better signal the transition to choice screen
+- Welcome transition overlay when onboarding completes:
+  shows "Ласкаво просимо до міста" with "Почати грати" button
+  instead of abruptly hiding the overlay
+- New _onboardingCompleting state flag gates the welcome screen
+- OnOnboardingContinueButtonPressed now handles welcome dismissal
+
+#40 Business guidance visual cards:
+- New DashboardStarterBuildPlan.CardText property: multi-line
+  structured card with emoji icons (📋🌍💰🔑📈⚙️⚠️💡)
+  showing blueprint name, land, costs, profit, upkeep, risk bar
+  (■■■□□ format), and first player hint
+- UpdateBuildFlowUi uses CardText when a starter plan exists,
+  falls back to flat summary when no plan available
+- BuildPlanLabel restyled: 12px font, outline, green tint
+  for better card readability
+
+Tests:
+- Arrival story beat count updated to 4, new beat 4 assertions
+- DashboardStarterBuildPlan.CardText content assertions
+  (name, prices, profit, risk bar)
+- New Assert(bool, message) helper
+
+Client build: 0 errors, 0 warnings. Client logic tests: passed.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

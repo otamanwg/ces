@@ -206,7 +206,7 @@ public partial class CityDashboardController
         _buildFlowAction = string.IsNullOrEmpty(_starterLandId) ? "" : "buy_land";
         if (BuildPlanLabel != null)
         {
-            BuildPlanLabel.Text = catalog.SummaryFor(_playerBalance);
+            BuildPlanLabel.Text = plan != null ? plan.CardText : catalog.SummaryFor(_playerBalance);
         }
 
         UpdateBuildFlowButtons();

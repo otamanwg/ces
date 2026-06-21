@@ -34,6 +34,12 @@ public static class DashboardArrivalStory
             DashboardArrivalVisual.TaxiRide,
             DashboardArrivalPortrait.TaxiDriver,
             DashboardPortraitSide.Right),
+        new(
+            "ARRIVAL_BEAT_4_TITLE",
+            "ARRIVAL_BEAT_4_NARRATIVE",
+            DashboardArrivalVisual.BaggageTheft,
+            DashboardArrivalPortrait.None,
+            DashboardPortraitSide.Right),
     };
 
     public static int Count => Beats.Length;

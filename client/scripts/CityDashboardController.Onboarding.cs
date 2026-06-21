@@ -11,13 +11,19 @@ public partial class CityDashboardController
             return;
         }
 
-        _onboardingOverlay.Visible = !_onboardingState.Completed;
         if (_onboardingState.Completed)
         {
-            _arrivalStoryInitialized = false;
-            _arrivalStoryBeat = 0;
+            if (!_onboardingCompleting)
+            {
+                _onboardingCompleting = true;
+                ShowOnboardingWelcomeTransition();
+            }
+
             return;
         }
+
+        _onboardingCompleting = false;
+        _onboardingOverlay.Visible = true;
 
         bool showingStory = _onboardingState.Stage == "arrival_choice"
             && _arrivalStoryInitialized
@@ -173,6 +179,13 @@ public partial class CityDashboardController
 
     public void OnOnboardingContinueButtonPressed()
     {
+        // Welcome transition: continue button acts as "Start playing".
+        if (_onboardingCompleting)
+        {
+            OnOnboardingWelcomeButtonPressed();
+            return;
+        }
+
         if (
             _pendingOnboarding
             || _onboardingState.Stage != "arrival_choice"
@@ -183,6 +196,60 @@ public partial class CityDashboardController
 
         _arrivalStoryBeat += 1;
         UpdateOnboardingUi();
+    }
+
+    private void ShowOnboardingWelcomeTransition()
+    {
+        if (_onboardingOverlay == null)
+        {
+            return;
+        }
+
+        _onboardingOverlay.Visible = true;
+        UpdateOnboardingBackdrop(DashboardArrivalVisual.BaggageTheft);
+        UpdateOnboardingPortrait(DashboardArrivalPortrait.None, DashboardPortraitSide.Right);
+        if (_onboardingTitleLabel != null)
+        {
+            _onboardingTitleLabel.Text = Tr("ONBOARDING_WELCOME_TITLE");
+        }
+
+        if (_onboardingNarrativeLabel != null)
+        {
+            _onboardingNarrativeLabel.Text = Tr("ONBOARDING_WELCOME_NARRATIVE");
+        }
+
+        if (_onboardingPoliceStatusLabel != null)
+        {
+            _onboardingPoliceStatusLabel.Visible = false;
+        }
+
+        if (_onboardingPoliceButton != null)
+        {
+            _onboardingPoliceButton.Visible = false;
+        }
+
+        if (_onboardingHousingButton != null)
+        {
+            _onboardingHousingButton.Visible = false;
+        }
+
+        if (_onboardingContinueButton != null)
+        {
+            _onboardingContinueButton.Visible = true;
+            _onboardingContinueButton.Disabled = false;
+            _onboardingContinueButton.Text = Tr("ONBOARDING_WELCOME_BUTTON");
+        }
+    }
+
+    public void OnOnboardingWelcomeButtonPressed()
+    {
+        _onboardingCompleting = false;
+        _arrivalStoryInitialized = false;
+        _arrivalStoryBeat = 0;
+        if (_onboardingOverlay != null)
+        {
+            _onboardingOverlay.Visible = false;
+        }
     }
 
     private void UpdatePoliceRecoveryButton()

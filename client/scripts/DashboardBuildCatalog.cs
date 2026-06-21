@@ -261,4 +261,28 @@ public sealed record DashboardStarterBuildPlan(DashboardLandOption Land, Dashboa
     public string BuySummaryText => $"Перший план: {Blueprint.Name} | земля {Land.CurrentPrice:N0} ₴ | будівництво {Blueprint.ConstructionCost:N0} ₴ | відкриття {Blueprint.OpeningFee:N0} ₴ | резерв {Blueprint.RecommendedCashReserve:N0} ₴";
     public string ApplicationSummaryText => $"Заявка: {Blueprint.Name} | {Land.Label} | {Blueprint.ProfitText} | {Blueprint.RiskText}";
     public string ActivationSummaryText => $"Погоджено: {Blueprint.Name} | можна створити будівлю";
+
+    /// <summary>
+    /// Multi-line visual card for the build flow panel (Sprint 60 #40).
+    /// Shows land, blueprint, costs, profit, upkeep, risk, and first player hint
+    /// in a structured format that reads as a guidance card, not a flat summary.
+    /// </summary>
+    public string CardText
+    {
+        get
+        {
+            string riskBar = new string('■', Blueprint.RiskLevel) + new string('□', 5 - Blueprint.RiskLevel);
+            string firstHint = Blueprint.PlayerHints.Count > 0 ? Blueprint.PlayerHints[0] : "";
+            string hintLine = string.IsNullOrWhiteSpace(firstHint) ? "" : $"\n💡 {firstHint}";
+            return $"""
+📋 {Blueprint.Name} ({Blueprint.Category})
+🌍 {Land.Label} | {Land.DistrictName} | {Land.AreaHectares:N2} га
+💰 Земля: {Land.CurrentPrice:N0} ₴ | Будівництво: {Blueprint.ConstructionCost:N0} ₴
+🔑 Відкриття: {Blueprint.OpeningFee:N0} ₴ | Резерв: {Blueprint.RecommendedCashReserve:N0} ₴
+📈 Прибуток: {Blueprint.ProfitText}
+⚙️ Утримання: {Blueprint.UpkeepDaily:N0} ₴/день
+⚠️ Ризик: {riskBar} ({Blueprint.RiskLevel}/5){hintLine}
+""";
+        }
+    }
 }

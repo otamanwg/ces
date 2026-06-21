@@ -510,6 +510,10 @@ horizontal_alignment = 1
 [node name="BuildPlanLabel" type="Label" parent="RootMargin/LandscapeGrid/CenterScroll/CenterStage/BuildFlowPanel/BuildFlowBox"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.86, 0.78, 0.94)
+theme_override_colors/font_outline_color = Color(0.06, 0.08, 0.1, 0.7)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 12
 text = "Будівництво: завантаження каталогу..."
 autowrap_mode = 3
 text_overrun_behavior = 3
