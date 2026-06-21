@@ -81,6 +81,9 @@ jobs:
           REDIS_URL_FILE: ./secrets/redis_url.example.txt
           CITY_CORS_ORIGINS: https://ci.example.test
           GRAFANA_ADMIN_PASSWORD_FILE: ./secrets/grafana_admin_password.example.txt
+          CITY_RELEASE_IMAGE: ghcr.io/otamanwg/ces-backend:ci-validate
+          CITY_RELEASE_SHA: ${{ github.sha }}
+          CITY_RELEASE_VERSION: ci-validate
         run: docker compose -f docker-compose.prod.yml config --quiet
 
       - name: Run backend tests
