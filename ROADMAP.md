@@ -215,6 +215,7 @@
 - Production backup/restore drill із sentinel data/row-count validation, external dump validation mode, rollout preflight, rollback strategy, baseline secrets guardrails, Docker secrets / `_FILE` contract і release metadata є.
 - Production expansion заморожений до нового рішення; reverse proxy/TLS staging dry-run чекатиме вибору домену або хоста.
 - Наступний активний debt: Godot playability audit і client/gameplay-first slice.
+- G6-G10 day tick integration завершено: police auto-patrol, press investigation tick, shadow business income + discovery + fraud offers + monthly criminal_rep decay, education daily energy/scholarship + auto-completion. `phase_g6_to_g10_tick.py` module, defensive (no-op if no records). 10 integration tests, `just check-g-integration` profile.
 - Post-MVP gameplay design завершено (Round 1-14, `GAMEPLAY_CORE_MODEL.md` розділи 13-29). Витягнуто у Phase G1-G12 нижче. Активна фаза: G1 (Dynamic District Metrics).
 - Test workflow оптимізований через `scripts/check_targeted.ps1` і `just check-*`; це default dev loop. Full gate лишається фінальною перевіркою, а не основним способом ітерації.
 

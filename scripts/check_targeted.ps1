@@ -16,6 +16,7 @@ param(
         "g8",
         "g9",
         "g10",
+        "g-integration",
         "prod-fast",
         "prod-smoke",
         "client",
@@ -114,6 +115,7 @@ function Show-Profiles {
     Write-Host "  g8            Phase G8+ police, court, prison, press, lawyer."
     Write-Host "  g9            Phase G9+ casino, atelier, shadow niches."
     Write-Host "  g10           Phase G10+ education, exams, licenses."
+    Write-Host "  g-integration G6-G10 day tick integration."
     Write-Host "  prod-fast     Production config/lifecycle/health tests + Compose config validation."
     Write-Host "  prod-smoke    Isolated production Compose smoke with migration, readiness, metrics, Prometheus/Grafana."
     Write-Host "  client        Client logic tests + Godot C# build."
@@ -250,6 +252,13 @@ switch ($Profile) {
         Invoke-PythonStatic
         Invoke-Pytest @(
             "backend\tests\test_g10_education.py"
+        )
+    }
+    "g-integration" {
+        Invoke-Alembic
+        Invoke-PythonStatic
+        Invoke-Pytest @(
+            "backend\tests\test_g6_g10_integration.py"
         )
     }
     "prod-fast" {

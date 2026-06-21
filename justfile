@@ -118,6 +118,9 @@ check-g9:
 check-g10:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 g10
 
+check-g-integration:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 g-integration
+
 check-prod:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 prod-fast
 

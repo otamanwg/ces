@@ -361,6 +361,13 @@ def game_day_tick(db: Session, city_id: str) -> dict:
     recalculate_all_districts(db, city_uuid, next_game_day)
     db.flush()
 
+    # Phase G6-G10: police patrol, press investigation, shadow economy,
+    # education daily tick. Defensive — no-op if no relevant records.
+    from backend.app.services.phase_g6_to_g10_tick import run_g6_to_g10_tick
+
+    g6_g10_stats = run_g6_to_g10_tick(db, city, next_game_day)
+    db.flush()
+
     db.commit()
 
     return DayTickServiceResult(
@@ -391,5 +398,6 @@ def game_day_tick(db: Session, city_id: str) -> dict:
             "active_money_after": float(active_after),
             "money_growth_rate": float(snapshot.money_growth_rate),
             "target_growth_rate": float(snapshot.target_growth_rate),
+            "g6_g10": g6_g10_stats,
         },
     ).model_dump()
