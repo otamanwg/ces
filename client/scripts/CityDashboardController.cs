@@ -76,6 +76,7 @@ public partial class CityDashboardController : Control
     private DashboardTutorialAgeGroup _tutorialAgeGroup = DashboardTutorialAgeGroup.Adult;
     private int _arrivalStoryBeat;
     private bool _arrivalStoryInitialized;
+    private bool _onboardingCompleting;
     private bool _applyFirstVacancy;
     private bool _buyFirstBusiness;
     private bool _joinFirstSportsClub;
