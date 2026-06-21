@@ -245,8 +245,14 @@ public partial class CityVisualOverlay : Control
         Vector2 labelPos = rect.Position + new Vector2(8, 18);
         DrawString(font, labelPos, district.ShortLabel, HorizontalAlignment.Left, rect.Size.X - 16, 13, new Color(0.96f, 0.96f, 0.91f, 0.94f));
 
-        DrawMetricBar(rect.Position + new Vector2(8, rect.Size.Y - 18), rect.Size.X - 16, district.JobSupply, AsGodot(_palette.Success));
-        DrawMetricBar(rect.Position + new Vector2(8, rect.Size.Y - 10), rect.Size.X - 16, district.Traffic, AsGodot(_palette.Warning));
+        // Compact metrics line: crime risk and land value for gameplay decisions.
+        string metricsLine = $"⚠{district.CrimeRisk} 💰{district.LandValue}";
+        DrawString(font, rect.Position + new Vector2(8, 34), metricsLine, HorizontalAlignment.Left, rect.Size.X - 16, 11, new Color(0.88f, 0.86f, 0.72f, 0.82f));
+
+        // Metric bars: job supply (green), traffic (yellow), crime risk (red).
+        DrawMetricBar(rect.Position + new Vector2(8, rect.Size.Y - 22), rect.Size.X - 16, district.JobSupply, AsGodot(_palette.Success));
+        DrawMetricBar(rect.Position + new Vector2(8, rect.Size.Y - 14), rect.Size.X - 16, district.Traffic, AsGodot(_palette.Warning));
+        DrawMetricBar(rect.Position + new Vector2(8, rect.Size.Y - 6), rect.Size.X - 16, district.CrimeRisk, AsGodot(_palette.Danger));
     }
 
     private void DrawMetricBar(Vector2 origin, float width, int value, Color color)
@@ -294,7 +300,7 @@ public partial class CityVisualOverlay : Control
 
     private void DrawBuildingMarker(DashboardCityVisualBuilding building, Vector2 position, Font font)
     {
-        Vector2 markerSize = new(24, 24);
+        Vector2 markerSize = new(28, 28);
         Rect2 rect = new(position - markerSize / 2.0f, markerSize);
         Color fill = BuildingColor(building.BlueprintCode, building.ProjectType);
         if (building.OperatingStatus == "inactive")
@@ -309,7 +315,17 @@ public partial class CityVisualOverlay : Control
         DrawRect(new Rect2(rect.Position + new Vector2(2, 3), rect.Size), new Color(0.0f, 0.0f, 0.0f, 0.32f), true);
         DrawRect(rect, fill, true);
         DrawRect(rect, border, false, 2.0f);
-        DrawString(font, rect.Position + new Vector2(0, 17), building.ArchetypeLabel, HorizontalAlignment.Center, rect.Size.X, 13, new Color(0.98f, 0.98f, 0.94f, 0.96f));
+        // Archetype letter (building type icon).
+        DrawString(font, rect.Position + new Vector2(0, 14), building.ArchetypeLabel, HorizontalAlignment.Center, rect.Size.X, 13, new Color(0.98f, 0.98f, 0.94f, 0.96f));
+        // Status indicator dot: green=active, gray=inactive, red=maintenance.
+        Color statusColor = building.OperatingStatus switch
+        {
+            "active" => new Color(0.36f, 0.90f, 0.45f, 0.95f),
+            "inactive" => new Color(0.54f, 0.54f, 0.58f, 0.85f),
+            "maintenance_due" => AsGodot(_palette.Danger),
+            _ => new Color(0.70f, 0.70f, 0.70f, 0.80f),
+        };
+        DrawCircle(rect.Position + new Vector2(rect.Size.X - 4, 4), 3.5f, statusColor);
         if (building.OperatingStatus == "maintenance_due")
         {
             float pulse = DashboardVisualAnimation.Pulse(_animationSeconds, 0.80, position.X * 0.01);
@@ -348,7 +364,7 @@ public partial class CityVisualOverlay : Control
     {
         Font font = GetThemeDefaultFont();
         DrawString(font, new Vector2(18, size.Y - 44), _model.HeadlineText, HorizontalAlignment.Left, size.X - 36, 13, new Color(0.96f, 0.96f, 0.91f, 0.92f));
-        DrawString(font, new Vector2(18, size.Y - 24), "зелена шкала: робота | жовта шкала: трафік | червоний відтінок: навантаження", HorizontalAlignment.Left, size.X - 36, 12, new Color(0.86f, 0.88f, 0.82f, 0.78f));
+        DrawString(font, new Vector2(18, size.Y - 24), "зелена: робота | жовта: трафік | червона: злочинність | ● зелений=активна ● сіра=неактивна ● червона=ремонт", HorizontalAlignment.Left, size.X - 36, 11, new Color(0.86f, 0.88f, 0.82f, 0.78f));
     }
 
     private static Rect2 ScaleRect(Rect2 unit, Vector2 size)
