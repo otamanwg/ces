@@ -15,6 +15,7 @@ from backend.app.models import (
     BuildingApplication,
     BusinessBlueprint,
     City,
+    CityDistrict,
     LandParcel,
     Player,
     SportsClub,
@@ -424,6 +425,23 @@ def get_business_blueprints(db: Session = Depends(get_db)):
 def get_avatar_catalog():
     data = AvatarCatalogData.model_validate(build_avatar_catalog())
     return api_success("Доступні складові персонажа.", data.model_dump())
+
+
+@router.get("/districts/{district_id}/radar")
+def get_district_radar(district_id: str, db: Session = Depends(get_db)):
+    """Phase G1: композитні індекси району (0-100) + тренд за 7 днів."""
+    from backend.app.services.district_metrics import get_radar_with_trend
+
+    district_uuid = try_uuid(district_id)
+    if district_uuid is None:
+        return api_error("Невірний ідентифікатор району.")
+
+    district = db.query(CityDistrict).filter(CityDistrict.id == district_uuid).first()
+    if not district:
+        return api_error("Район не знайдено.")
+
+    radar = get_radar_with_trend(db, district_uuid)
+    return api_success("Радар метрик району.", radar)
 
 
 @router.post("/land/buy")

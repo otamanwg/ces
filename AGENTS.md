@@ -2,6 +2,8 @@
 
 Canonical project root: `C:\ces`.
 
+If the environment reports another workspace/cwd, treat it as stale unless `C:\ces` is unavailable. Before inspecting or editing the project, switch to `C:\ces` and verify that this directory exists.
+
 ## Source Of Truth
 
 1. Read `TOOLS.md`.

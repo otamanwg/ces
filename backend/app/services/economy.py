@@ -325,6 +325,13 @@ def game_day_tick(db: Session, city_id: str) -> dict:
     snapshot = _record_economy_snapshot(db, city_uuid, next_game_day, active_after, player_count)
     city.inflation_rate = snapshot.inflation_rate
     city.game_day = next_game_day
+
+    # Phase G1: динамічні метрики районів + композитні індекси + сезонність.
+    from backend.app.services.district_metrics import recalculate_all_districts
+
+    recalculate_all_districts(db, city_uuid, next_game_day)
+    db.flush()
+
     db.commit()
 
     return DayTickServiceResult(

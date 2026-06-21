@@ -9,6 +9,7 @@ from sqlalchemy import (
     JSON,
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -284,6 +285,17 @@ class CityDistrict(Base):
     medical_coverage: Mapped[int] = mapped_column(Integer, default=0)
     land_value: Mapped[int] = mapped_column(Integer, default=0)
     desirability: Mapped[int] = mapped_column(Integer, default=0)
+    # Post-MVP dynamic metrics (Phase G1). Float for finer granularity; default 50.0.
+    pollution: Mapped[float] = mapped_column(Float, default=50.0)
+    education_coverage: Mapped[float] = mapped_column(Float, default=50.0)
+    fire_safety: Mapped[float] = mapped_column(Float, default=50.0)
+    power_supply: Mapped[float] = mapped_column(Float, default=50.0)
+    water_supply: Mapped[float] = mapped_column(Float, default=50.0)
+    waste_management: Mapped[float] = mapped_column(Float, default=50.0)
+    population: Mapped[float] = mapped_column(Float, default=50.0)
+    housing_capacity: Mapped[float] = mapped_column(Float, default=50.0)
+    green_space: Mapped[float] = mapped_column(Float, default=50.0)
+    happiness: Mapped[float] = mapped_column(Float, default=50.0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     city: Mapped["City"] = relationship("City", back_populates="districts")
@@ -470,6 +482,11 @@ class Player(Base):
     tutorial_age_group: Mapped[str] = mapped_column(String(20), default="adult")
     education_level: Mapped[str] = mapped_column(String(50), default="High School")
     diploma_verified: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Post-MVP foundation fields (Phase G1). criminal_rep grows from background
+    # coefficients per profession/business and from shadow operations (Phase G9).
+    # successful_deals grows from lawyer/police/journalist successful engagements (Phase G8).
+    criminal_rep: Mapped[float] = mapped_column(Float, default=0.0)
+    successful_deals: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Зв'язки ORM
@@ -820,3 +837,329 @@ class Transport(Base):
     maintenance_cost: Mapped[float] = mapped_column(Decimal(10, 2), default=50.00)
     operational_status: Mapped[str] = mapped_column(String(20), default="active")  # 'active', 'inactive', 'overloaded'
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# === POST-MVP GAMEPLAY FOUNDATION (Phase G1) ===
+# These models mirror the schema laid down by migration g1a2b3c4d5e6.
+# Services for them arrive in later phases (G2-G12); for now they exist
+# only as ORM mappings so the dynamic-district-metrics service can read
+# related rows and so future phases have a stable schema to build on.
+
+
+class DistrictMetricSnapshot(Base):
+    """Per-day snapshot of all district metrics + composite indices.
+
+    Written by district_metrics.recalculate_district_metrics on each day tick.
+    Read by /api/districts/{id}/radar to compute 7-day trends.
+    """
+
+    __tablename__ = "district_metric_snapshots"
+    __table_args__ = (
+        UniqueConstraint("district_id", "game_day", name="uq_district_metric_snapshots_district_day"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    district_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False
+    )
+    game_day: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Raw metrics (existing + new)
+    rent_level: Mapped[float] = mapped_column(Float, nullable=False)
+    job_supply: Mapped[float] = mapped_column(Float, nullable=False)
+    crime_risk: Mapped[float] = mapped_column(Float, nullable=False)
+    traffic: Mapped[float] = mapped_column(Float, nullable=False)
+    service_coverage: Mapped[float] = mapped_column(Float, nullable=False)
+    medical_coverage: Mapped[float] = mapped_column(Float, nullable=False)
+    land_value: Mapped[float] = mapped_column(Float, nullable=False)
+    desirability: Mapped[float] = mapped_column(Float, nullable=False)
+    pollution: Mapped[float] = mapped_column(Float, nullable=False)
+    education_coverage: Mapped[float] = mapped_column(Float, nullable=False)
+    fire_safety: Mapped[float] = mapped_column(Float, nullable=False)
+    power_supply: Mapped[float] = mapped_column(Float, nullable=False)
+    water_supply: Mapped[float] = mapped_column(Float, nullable=False)
+    waste_management: Mapped[float] = mapped_column(Float, nullable=False)
+    population: Mapped[float] = mapped_column(Float, nullable=False)
+    housing_capacity: Mapped[float] = mapped_column(Float, nullable=False)
+    green_space: Mapped[float] = mapped_column(Float, nullable=False)
+    happiness: Mapped[float] = mapped_column(Float, nullable=False)
+    # Composite indices (0-100)
+    economy_score: Mapped[float] = mapped_column(Float, nullable=False)
+    production_score: Mapped[float] = mapped_column(Float, nullable=False)
+    household_score: Mapped[float] = mapped_column(Float, nullable=False)
+    commerce_score: Mapped[float] = mapped_column(Float, nullable=False)
+    infrastructure_score: Mapped[float] = mapped_column(Float, nullable=False)
+    social_score: Mapped[float] = mapped_column(Float, nullable=False)
+    season: Mapped[str] = mapped_column(String(10), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    district: Mapped["CityDistrict"] = relationship("CityDistrict")
+
+
+class NpcResident(Base):
+    """Lightweight NPC account (Phase G2). Not a Player: no auth, no onboarding."""
+
+    __tablename__ = "npc_residents"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    city_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
+    )
+    district_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False
+    )
+    workplace_business_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("businesses.id", ondelete="SET NULL")
+    )
+    cash_balance: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
+    salary: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
+    employed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    npc_type: Mapped[str] = mapped_column(String(30), default="worker")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Skin(Base):
+    """Player-designed character skin (Phase G9 / atelier)."""
+
+    __tablename__ = "skins"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    designer_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    atelier_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("businesses.id", ondelete="SET NULL")
+    )
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    config: Mapped[dict] = mapped_column(JSON, nullable=False)
+    rarity: Mapped[str] = mapped_column(String(20), default="common")
+    is_unique: Mapped[bool] = mapped_column(Boolean, default=False)
+    copies_total: Mapped[int] = mapped_column(Integer, default=1)
+    copies_sold: Mapped[int] = mapped_column(Integer, default=0)
+    price: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PlayerSkin(Base):
+    __tablename__ = "player_skins"
+    __table_args__ = (UniqueConstraint("player_id", "skin_id", name="uq_player_skins_player_skin"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    skin_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("skins.id", ondelete="CASCADE"), nullable=False)
+    is_equipped: Mapped[bool] = mapped_column(Boolean, default=False)
+    acquired_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Education(Base):
+    """Education enrollment (Phase G10). Course opens decision-tree branches."""
+
+    __tablename__ = "education"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    course: Mapped[str] = mapped_column(String(40), nullable=False)
+    mode: Mapped[str] = mapped_column(String(20), default="full_time")  # full_time | part_time
+    status: Mapped[str] = mapped_column(String(20), default="enrolled")  # enrolled|completed|revoked
+    is_fake: Mapped[bool] = mapped_column(Boolean, default=False)
+    enrolled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class EducationExam(Base):
+    __tablename__ = "education_exams"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    exam_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    is_passed: Mapped[bool] = mapped_column(Boolean, default=False)
+    taken_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    valid_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class CriminalRepLog(Base):
+    """History of criminal_rep changes (Phase G9)."""
+
+    __tablename__ = "criminal_rep_log"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    delta: Mapped[float] = mapped_column(Float, nullable=False)
+    reason: Mapped[str] = mapped_column(String(40), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CorruptionLog(Base):
+    """Hidden incident log (Phase G8). Accessed by police, AI detector, mayor."""
+
+    __tablename__ = "corruption_log"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    incident_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    perpetrator_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    victim_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
+    amount: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
+    district_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("city_districts.id", ondelete="SET NULL")
+    )
+    evidence_strength: Mapped[float] = mapped_column(Float, default=0.1)
+    is_reported: Mapped[bool] = mapped_column(Boolean, default=False)
+    reported_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("players.id", ondelete="SET NULL")
+    )
+    is_investigated: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_proven: Mapped[bool] = mapped_column(Boolean, default=False)
+    consequence: Mapped[str | None] = mapped_column(String(40))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    discovered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class PressInvestigation(Base):
+    __tablename__ = "press_investigations"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    target_player_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    journalist_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("players.id", ondelete="SET NULL")
+    )
+    incident_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    press_evidence: Mapped[float] = mapped_column(Float, default=0.0)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=False)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    scale: Mapped[str] = mapped_column(String(20), default="local")
+    article_title: Mapped[str | None] = mapped_column(String(200))
+    happiness_impact: Mapped[int] = mapped_column(Integer, default=0)
+    reputation_impact: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CourtCase(Base):
+    __tablename__ = "court_cases"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    corruption_log_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("corruption_log.id", ondelete="SET NULL")
+    )
+    defendant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    verdict: Mapped[str] = mapped_column(String(40), nullable=False)
+    is_appealed: Mapped[bool] = mapped_column(Boolean, default=False)
+    appeal_deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    judge_1_vote: Mapped[str | None] = mapped_column(String(20))
+    judge_2_vote: Mapped[str | None] = mapped_column(String(20))
+    judge_3_vote: Mapped[str | None] = mapped_column(String(20))
+    judge_1_bribed: Mapped[bool] = mapped_column(Boolean, default=False)
+    judge_2_bribed: Mapped[bool] = mapped_column(Boolean, default=False)
+    judge_3_bribed: Mapped[bool] = mapped_column(Boolean, default=False)
+    final_verdict: Mapped[str | None] = mapped_column(String(40))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class PrisonSentence(Base):
+    __tablename__ = "prison_sentences"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    court_case_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("court_cases.id", ondelete="SET NULL")
+    )
+    days_total: Mapped[int] = mapped_column(Integer, nullable=False)
+    days_served: Mapped[int] = mapped_column(Integer, default=0)
+    days_remaining: Mapped[int] = mapped_column(Integer, nullable=False)
+    good_behavior_reduction: Mapped[int] = mapped_column(Integer, default=0)
+    business_impact: Mapped[str] = mapped_column(String(20), default="none")  # none|frozen|confiscated
+    frozen_business_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("businesses.id", ondelete="SET NULL")
+    )
+    status: Mapped[str] = mapped_column(String(20), default="serving")  # serving|released|escaped
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class CasinoGame(Base):
+    __tablename__ = "casino_games"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    casino_business_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False
+    )
+    game_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="waiting")
+    players: Mapped[dict] = mapped_column(JSON, nullable=False)
+    pot: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
+    rake: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
+    winner_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("players.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ShadowBusiness(Base):
+    __tablename__ = "shadow_businesses"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    type: Mapped[str] = mapped_column(String(40), nullable=False)
+    district_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False
+    )
+    cash_balance: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
+    is_discovered: Mapped[bool] = mapped_column(Boolean, default=False)
+    discovered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class LawyerEngagement(Base):
+    __tablename__ = "lawyer_engagements"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    lawyer_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    client_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    deal_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    amount: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
+    commission: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
+    success_chance_bonus: Mapped[float] = mapped_column(Float, default=0.0)
+    is_successful: Mapped[bool | None] = mapped_column(Boolean)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PressBlackmail(Base):
+    __tablename__ = "press_blackmails"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    journalist_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    target_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    investigation_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("press_investigations.id", ondelete="SET NULL")
+    )
+    amount_demanded: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
+    status: Mapped[str] = mapped_column(String(30), default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -79,6 +79,118 @@
 39. [ ] Додати перший visible city layer MVP: райони, physical building markers, zoom/focus states, без повної SimCity-системи.
 40. [ ] Посилити business/building guidance у UI: вартість, земля, ризик, theoretical profit, upkeep, visual archetype.
 
+## Post-MVP Gameplay Phases — SimCity 4-Inspired Citizen Model
+
+Джерело дизайну: `GAMEPLAY_CORE_MODEL.md` (розділи 13-29). Кожна фаза — це backend-first slice з тестами, без UI/3D, поки не вказано інше.
+
+### Phase G1 — Dynamic District Metrics (ACTIVE)
+
+Каркас динамічних метрик районів + композитні індекси + сезонність. Backend-only.
+
+1. [x] Міграція `add_district_metrics_and_foundation`:
+   - Нові поля `CityDistrict`: `pollution`, `education_coverage`, `fire_safety`, `power_supply`, `water_supply`, `waste_management`, `population`, `housing_capacity`, `green_space`, `happiness` (Float, default 50.0).
+   - Нова таблиця `district_metric_snapshots` (історія по днях).
+   - Фундаментні таблиці (порожні, без сервісів): `skins`, `player_skins`, `education`, `education_exams`, `criminal_rep_log`, `corruption_log`, `press_investigations`, `court_cases`, `prison_sentences`, `casino_games`, `shadow_businesses`, `lawyer_engagements`, `press_blackmails`.
+   - Нові поля `Player`: `criminal_rep` (Float, default 0), `successful_deals` (Int, default 0).
+2. [x] Сервіс `district_metrics.py`: формули всіх метрик + feedback loops + композитні індекси (economy/production/household/commerce/infrastructure/social, 0-100).
+3. [x] Сервіс `season_service.py`: сезонні множники (константи), весна як стартовий сезон, плавний перехід 7 днів.
+4. [x] Day tick інтеграція: оновлення метрик + snapshot.
+5. [x] API `/api/districts/{id}/radar`: 6 композитних індексів + тренд за 7 днів.
+6. [x] Тести: day tick оновлює метрики, feedback loops, сезони, snapshot, radar endpoint (20 passed).
+
+### Phase G2 — NPC Residents
+
+Полегшені NPC-акаунти як робітники і споживачі.
+
+1. [ ] Таблиця `npc_residents` (окрема від `Player`): `district_id`, `workplace_business_id`, `cash_balance`, `salary`, `employed_at`, `npc_type`.
+2. [ ] Сервіс `npc_service.py`: генерація (мінімальна кількість для функціонування бізнесу), найм, звільнення (стирається як видалений акаунт).
+3. [ ] Цикл витрат: рандомні дії з ймовірністю, баланс кешу в коридорі (не банкрут, не накопичує).
+4. [ ] ЗП і премія двічі на місяць (8-10 день ЗП, 20-23 премія).
+5. [ ] Тести.
+
+### Phase G3 — Utility Services as Businesses
+
+Комунальні служби (електростанція, водоканал, сміттєзавод) як бізнеси.
+
+1. [ ] Blueprint-категорія `utility`.
+2. [ ] Комунальні платежі йдуть службам → служби платять у казну, мають свій баланс.
+3. [ ] Банкрутство служби → тригер тендеру → 1 ігровий день без сервісу → контракт з сусіднім містом за завищеними цінами (різницю платить мерія, руйнує рейтинг мера).
+4. [ ] Попередження у мера про проблеми з усіма службами.
+5. [ ] Тести.
+
+### Phase G4 — Vacancies and Hiring (NPC + Players)
+
+1. [ ] Розширення вакансій: ЗП фіксована по типу бізнесу (почасова статична), премія % від чистого прибутку (власник виставляє).
+2. [ ] Найм NPC (до ліміту: ФОП 1, ТОВ 5, ВАТ 10, інші позиції — тільки гравці).
+3. [ ] Гравець-власник може працювати сам (витрачає енергію, без ЗП — дивіденди).
+4. [ ] Звільнення гравця-працівника за бажанням власника.
+5. [ ] Біржа "для студентів" (очна освіта — лише вечірні зміни).
+6. [ ] Тести.
+
+### Phase G5 — Bank as Business
+
+1. [ ] Blueprint `bank` (окремий, оперує з власного `cash_balance`).
+2. [ ] Кредити (AI-банк: умови з економіки; банк гравця: гравець обирає).
+3. [ ] Депозити від гравців + відсоток.
+4. [ ] Банкрутство бізнесу → аукціон (24 години реального часу, стартова ціна = борги + % місту, будь-який гравець, AI-мер не купує).
+5. [ ] Тести.
+
+### Phase G6 — Political System
+
+1. [ ] Ієрархія посад у мерії (працівник → начальник відділу → заступник → мер). Робота в мерії 3 місяці — вимога для балотування.
+2. [ ] Вибори мера: вимоги (репутація, економічна + юридична освіта, робота в мерії 3 міс), відкрите голосування, мандат 6 місяців, вотум недовіри.
+3. [ ] Підкуп голосів: тіньовий фонд, анонімна пропозиція виборцю, виборець може обдурити або повідомити в поліцію, `corruption_log` з evidence_strength.
+4. [ ] AI-мер: інвестує з treasury там, де метрики найгірші.
+5. [ ] Тести.
+
+### Phase G7 — 3D Avatar and Locations (Godot)
+
+1. [ ] `PlayerAvatar.tscn`: 3D-персонаж, базові анімації (idle/walk/run), third-person камера, WASD + миша.
+2. [ ] Скін-система: JSON-конфіг → матеріали/меші (зачіска, обличчя, очі, губи, зріст, вага, костюм, кольори).
+3. [ ] Перша локація: `CityStreetLocation.tscn` (перехід між локаціями через портали/меню).
+4. [ ] WebSocket-синхронізація позиції гравця з іншими в тій самій локації.
+5. [ ] Тести (Godot MCP diagnostics).
+
+### Phase G8 — Prison, Police, Press, Court, Lawyer
+
+1. [ ] `PrisonLocation.tscn`: 3D-локація (камери, двір, їдальня, покерний стіл). Дії: покер, апеляція, тюремна робота, соціалізація (кримінальні зв'язки), спроба втечі (опціонально).
+2. [ ] Гравець-поліцейський: ієрархія (Patrol → Detective → Chief), патрулювання, розслідування, арешт, конфіскація. Начальник призначається мером (один раз за термін, з діючих або колишніх поліцейських з 3 міс стажу).
+3. [ ] Преса як бізнес гравця (blueprint `media_outlet`): журналісти, розслідування, публікація, реклама, шантаж (НЕ впливає на репутацію журналіста).
+4. [ ] Суд: автоматичний вердикт за evidence_strength, апеляція (3 AI-судді з corruption_resistance), підкуп суддів, невдалий хабар = подвоєне покарання.
+5. [ ] Адвокат як професія: супровід угод (success_chance_bonus, detection_chance_reduction), апеляція, захист від поліції. successful_deals росте → нижчий шанс перевірки.
+6. [ ] Конфіскація/заморозка бізнесу залежно від тяжкості.
+7. [ ] Тести.
+
+### Phase G9 — Casino, Atelier, Shadow Niches
+
+1. [ ] Казино як бізнес (blueprint `gambling`): блекджек + рулетка (покер пізніше), rake, house edge, ліцензія від мера, податок 25%. Підпільне казино (тіньова ніша, без ліцензії).
+2. [ ] Ательє як бізнес (blueprint `fashion`): створення скінів (JSON-конфіг через API), продаж (унікальні/масові), аукціон скінів, equip.
+3. [ ] Тіньові ніші після тюрми: `criminal_rep` (фоновий приріст за професією/бізнесом), пропозиції шахрайства (ймовірність залежить від criminal_rep), тіньовий ринок, тіньові бізнеси (підпільне казино, контрабанда, тіньова аптека, нелегальний бар, відмивання).
+4. [ ] Тести.
+
+### Phase G10 — Education Tree, Exams, Licenses
+
+1. [ ] Освіта як дерево рішень: базова → економічна/юридична/поліцейська/медична/інженерна/журналістська/дизайн/гостинність. Очно одна + заочно одна, їсть енергію (1000/день).
+2. [ ] Іспити: міні-гра раз на ігровий день. Два провали → варіант підкупу (шансовий, залежить від criminal_rep).
+3. [ ] Ліцензії: адвокат (3 міс у юридичній фірмі + іспит, діє 1 рік), поліцейський (щорічний іспит), суддя (щорічний іспит), мер (економічна + юридична освіта + 3 міс у мерії).
+4. [ ] Куплений диплом (корупція): повноцінний диплом, розкриття не блокує, тільки мінус репутація.
+5. [ ] Стипендія від AI (фіксована) для очної освіти.
+6. [ ] Тести.
+
+### Phase G11 — 3D Visual Layers (Optional, post-G7)
+
+1. [ ] Шейдери для сезонів (весна — зелені дерева, зима — сніг).
+2. [ ] Шейдери для pollution (туман, жовтий відтінок).
+3. [ ] Динамічне освітлення (crime_risk → темніше, happiness → ящиріше).
+4. [ ] UI-редактор скінів на клієнті (Godot Control, прев'ю аватара в реальному часі).
+
+### Phase G12 — Poker Engine (post-G9)
+
+1. [ ] Texas Hold'em: колода, руки, банк, раунди (preflop/flop/turn/river), дії (fold/check/call/raise/all-in).
+2. [ ] WebSocket real-time гра.
+3. [ ] AI-гравці (NPC) з різними стилями (tight/loose/aggressive).
+4. [ ] Тести.
+
 ## Open Debt Register
 
 - `CityDashboardController.cs` зменшено до 535 рядків; presentation та API orchestration ізольовані у власних partial-ах.
@@ -94,6 +206,7 @@
 - Production backup/restore drill із sentinel data/row-count validation, external dump validation mode, rollout preflight, rollback strategy, baseline secrets guardrails, Docker secrets / `_FILE` contract і release metadata є.
 - Production expansion заморожений до нового рішення; reverse proxy/TLS staging dry-run чекатиме вибору домену або хоста.
 - Наступний активний debt: Godot playability audit і client/gameplay-first slice.
+- Post-MVP gameplay design завершено (Round 1-14, `GAMEPLAY_CORE_MODEL.md` розділи 13-29). Витягнуто у Phase G1-G12 нижче. Активна фаза: G1 (Dynamic District Metrics).
 - Test workflow оптимізований через `scripts/check_targeted.ps1` і `just check-*`; це default dev loop. Full gate лишається фінальною перевіркою, а не основним способом ітерації.
 
 ## Progress Snapshot
@@ -105,6 +218,18 @@
 - Phase 4 — Godot MVP Client: 75%
 - Phase 5 — Multiplayer Readiness: 90%
 - Phase 6 — Production Ready: 99%
+- Phase G1 — Dynamic District Metrics: 100% (DONE)
+- Phase G2 — NPC Residents: 0%
+- Phase G3 — Utility Services: 0%
+- Phase G4 — Vacancies and Hiring: 0%
+- Phase G5 — Bank as Business: 0%
+- Phase G6 — Political System: 0%
+- Phase G7 — 3D Avatar and Locations: 0%
+- Phase G8 — Prison/Police/Press/Court/Lawyer: 0%
+- Phase G9 — Casino/Atelier/Shadow Niches: 0%
+- Phase G10 — Education Tree/Exams/Licenses: 0%
+- Phase G11 — 3D Visual Layers: 0%
+- Phase G12 — Poker Engine: 0%
 
 ## Verified Now
 
@@ -143,8 +268,10 @@
 
 ## Frozen Until MVP Is Stable
 
-- sports, shadow economy, cartels, unions, insurance, advanced routes.
+- sports, cartels, unions, insurance, advanced routes.
+- Shadow economy — розморожено як частину Post-MVP Gameplay Phases (G8-G9: corruption, prison, shadow niches).
 - Нові системи не брати, поки current queue не закрита і 5-minute loop не відчувається стабільним.
+- Post-MVP Gameplay Phases (G1-G12) — активна черга після Sprint 60 client polish (items 37-40).
 
 ## Reference Inputs
 
