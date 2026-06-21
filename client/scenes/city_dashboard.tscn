@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://c0gtwynhiqsc8"]
+[gd_scene load_steps=15 format=3 uid="uid://c0gtwynhiqsc8"]
 
 [ext_resource type="Script" path="res://scripts/CityDashboardController.cs" id="1"]
 [ext_resource type="Script" path="res://scripts/ExamPanelController.cs" id="2"]
@@ -12,6 +12,8 @@
 [ext_resource type="Script" path="res://scripts/CourtPanelController.cs" id="10_court"]
 [ext_resource type="Script" path="res://scripts/PoliticalPanelController.cs" id="11_political"]
 [ext_resource type="Script" path="res://scripts/PressPanelController.cs" id="12_press"]
+[ext_resource type="Script" path="res://scripts/CasinoPanelController.cs" id="13_casino"]
+[ext_resource type="Script" path="res://scripts/ShadowPanelController.cs" id="14_shadow"]
 
 [node name="CityDashboard" type="Control"]
 layout_mode = 3
@@ -769,6 +771,22 @@ size_flags_horizontal = 3
 text = "Преса"
 text_overrun_behavior = 3
 
+[node name="CasinoButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Казино"
+text_overrun_behavior = 3
+
+[node name="ShadowButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Тіньова"
+text_overrun_behavior = 3
+
 [node name="PoliceRecoveryButton" type="Button" parent="RootMargin/LandscapeGrid/ActionRail"]
 unique_name_in_owner = true
 visible = false
@@ -1524,6 +1542,282 @@ disabled = true
 text = "Повідомити поліцію"
 
 [node name="PressCloseButton" type="Button" parent="PressOverlay/PressMargin/PressVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Закрити"
+
+[node name="CasinoOverlay" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 25
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("13_casino")
+
+[node name="CasinoMargin" type="MarginContainer" parent="CasinoOverlay"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="CasinoVBox" type="VBoxContainer" parent="CasinoOverlay/CasinoMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CasinoTitleLabel" type="Label" parent="CasinoOverlay/CasinoMargin/CasinoVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Казино"
+
+[node name="CasinoDescriptionLabel" type="Label" parent="CasinoOverlay/CasinoMargin/CasinoVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "У вас немає казино"
+
+[node name="CasinoScroll" type="ScrollContainer" parent="CasinoOverlay/CasinoMargin/CasinoVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CasinoContent" type="VBoxContainer" parent="CasinoOverlay/CasinoMargin/CasinoVBox/CasinoScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="CasinosSection" type="Label" parent="CasinoOverlay/CasinoMargin/CasinoVBox/CasinoScroll/CasinoContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.56, 0.9, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Мої казино"
+
+[node name="CasinoCasinosContainer" type="VBoxContainer" parent="CasinoOverlay/CasinoMargin/CasinoVBox/CasinoScroll/CasinoContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CasinoCasinoOption" type="OptionButton" parent="CasinoOverlay/CasinoMargin/CasinoVBox/CasinoScroll/CasinoContent"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GamesSection" type="Label" parent="CasinoOverlay/CasinoMargin/CasinoVBox/CasinoScroll/CasinoContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.6, 0.36, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Ігри"
+
+[node name="CasinoGamesContainer" type="VBoxContainer" parent="CasinoOverlay/CasinoMargin/CasinoVBox/CasinoScroll/CasinoContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BetRow" type="HBoxContainer" parent="CasinoOverlay/CasinoMargin/CasinoVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BetLabel" type="Label" parent="CasinoOverlay/CasinoMargin/CasinoVBox/BetRow"]
+layout_mode = 2
+text = "Ставка:"
+
+[node name="CasinoBetBox" type="SpinBox" parent="CasinoOverlay/CasinoMargin/CasinoVBox/BetRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+min_value = 1.0
+max_value = 100000.0
+value = 100.0
+
+[node name="CasinoRouletteBetTypeOption" type="OptionButton" parent="CasinoOverlay/CasinoMargin/CasinoVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+item_count = 5
+text = "red"
+item_0/text = "red"
+item_0/icon = null
+item_1/text = "black"
+item_1/icon = null
+item_2/text = "even"
+item_2/icon = null
+item_3/text = "odd"
+item_3/icon = null
+item_4/text = "number"
+item_4/icon = null
+selected = 0
+
+[node name="CasinoActions" type="HBoxContainer" parent="CasinoOverlay/CasinoMargin/CasinoVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CasinoBlackjackButton" type="Button" parent="CasinoOverlay/CasinoMargin/CasinoVBox/CasinoActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Blackjack"
+
+[node name="CasinoRouletteButton" type="Button" parent="CasinoOverlay/CasinoMargin/CasinoVBox/CasinoActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Рулетка"
+
+[node name="CasinoCreatePokerButton" type="Button" parent="CasinoOverlay/CasinoMargin/CasinoVBox/CasinoActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Створити покер"
+
+[node name="CasinoCloseButton" type="Button" parent="CasinoOverlay/CasinoMargin/CasinoVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Закрити"
+
+[node name="ShadowOverlay" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 25
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("14_shadow")
+
+[node name="ShadowMargin" type="MarginContainer" parent="ShadowOverlay"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="ShadowVBox" type="VBoxContainer" parent="ShadowOverlay/ShadowMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ShadowTitleLabel" type="Label" parent="ShadowOverlay/ShadowMargin/ShadowVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Тіньова економіка"
+
+[node name="ShadowDescriptionLabel" type="Label" parent="ShadowOverlay/ShadowMargin/ShadowVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Кримінальна репутація: 0.0"
+
+[node name="ShadowRepProgressBar" type="ProgressBar" parent="ShadowOverlay/ShadowMargin/ShadowVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+max_value = 100.0
+value = 0.0
+show_percentage = true
+
+[node name="ShadowScroll" type="ScrollContainer" parent="ShadowOverlay/ShadowMargin/ShadowVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ShadowContent" type="VBoxContainer" parent="ShadowOverlay/ShadowMargin/ShadowVBox/ShadowScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="BusinessesSection" type="Label" parent="ShadowOverlay/ShadowMargin/ShadowVBox/ShadowScroll/ShadowContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.56, 0.9, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Тіньові бізнеси"
+
+[node name="ShadowBusinessesContainer" type="VBoxContainer" parent="ShadowOverlay/ShadowMargin/ShadowVBox/ShadowScroll/ShadowContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MarketSection" type="Label" parent="ShadowOverlay/ShadowMargin/ShadowVBox/ShadowScroll/ShadowContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.36, 0.36, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Тіньовий ринок"
+
+[node name="ShadowMarketContainer" type="VBoxContainer" parent="ShadowOverlay/ShadowMargin/ShadowVBox/ShadowScroll/ShadowContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ShadowItemTypeOption" type="OptionButton" parent="ShadowOverlay/ShadowMargin/ShadowVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+item_count = 5
+text = "alcohol"
+item_0/text = "alcohol"
+item_0/icon = null
+item_1/text = "tobacco"
+item_1/icon = null
+item_2/text = "medicine"
+item_2/icon = null
+item_3/text = "weapons"
+item_3/icon = null
+item_4/text = "electronics"
+item_4/icon = null
+selected = 0
+
+[node name="QuantityRow" type="HBoxContainer" parent="ShadowOverlay/ShadowMargin/ShadowVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="QuantityLabel" type="Label" parent="ShadowOverlay/ShadowMargin/ShadowVBox/QuantityRow"]
+layout_mode = 2
+text = "Кількість:"
+
+[node name="ShadowQuantityBox" type="SpinBox" parent="ShadowOverlay/ShadowMargin/ShadowVBox/QuantityRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+min_value = 1.0
+max_value = 1000.0
+value = 1.0
+
+[node name="ShadowActions" type="HBoxContainer" parent="ShadowOverlay/ShadowMargin/ShadowVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ShadowOpenBusinessButton" type="Button" parent="ShadowOverlay/ShadowMargin/ShadowVBox/ShadowActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Відкрити бізнес"
+
+[node name="ShadowFraudAcceptButton" type="Button" parent="ShadowOverlay/ShadowMargin/ShadowVBox/ShadowActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Прийняти шахрайство"
+
+[node name="ShadowFraudRefuseButton" type="Button" parent="ShadowOverlay/ShadowMargin/ShadowVBox/ShadowActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Відхилити"
+
+[node name="ShadowMarketActions" type="HBoxContainer" parent="ShadowOverlay/ShadowMargin/ShadowVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ShadowMarketBuyButton" type="Button" parent="ShadowOverlay/ShadowMargin/ShadowVBox/ShadowMarketActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Купити"
+
+[node name="ShadowMarketSellButton" type="Button" parent="ShadowOverlay/ShadowMargin/ShadowVBox/ShadowMarketActions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Продати"
+
+[node name="ShadowCloseButton" type="Button" parent="ShadowOverlay/ShadowMargin/ShadowVBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Закрити"

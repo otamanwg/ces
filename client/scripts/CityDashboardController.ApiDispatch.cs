@@ -81,6 +81,16 @@ public partial class CityDashboardController
             return;
         }
 
+        if (TryHandleCasinoResponse(endpoint, root))
+        {
+            return;
+        }
+
+        if (TryHandleShadowResponse(endpoint, root))
+        {
+            return;
+        }
+
         bool apiSuccess = root["success"]?.GetValue<bool>() ?? false;
         string message = root["message"]?.ToString() ?? "";
         var data = root["data"];

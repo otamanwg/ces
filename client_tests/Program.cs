@@ -993,4 +993,41 @@ var emptyPressModel = DashboardPressModel.FromJson(null, null);
 Assert(!emptyPressModel.HasInvestigations, "No investigations flag");
 Assert(!emptyPressModel.HasBlackmails, "No blackmails flag");
 
+// DashboardCasinoModel — Sprint 61 casino panel data parsing.
+var casinoJson = JsonNode.Parse("""
+{"casinos": [{"id": "c-1", "name": "Lucky", "cash_balance": 10000.0, "daily_revenue": 500.0}], "games": [{"id": "g-1", "casino_business_id": "c-1", "game_type": "poker", "status": "waiting", "pot": 0.0, "rake": 0.0, "created_at": "2024-01-01T00:00:00Z"}]}
+""")!;
+var emptyCasinoJson = JsonNode.Parse("""{"casinos": [], "games": []}""")!;
+var casinoModel = DashboardCasinoModel.FromJson(casinoJson);
+Assert(casinoModel.HasCasinos, "Has casinos flag");
+Assert(casinoModel.HasGames, "Has games flag");
+AssertEqual(1, casinoModel.Casinos.Count, "One casino");
+AssertEqual("Lucky", casinoModel.Casinos[0].Name, "Casino name");
+AssertEqual(10000.0, casinoModel.Casinos[0].CashBalance, "Casino cash balance");
+AssertEqual(1, casinoModel.Games.Count, "One game");
+AssertEqual("poker", casinoModel.Games[0].GameType, "Game type");
+AssertEqual("Очікує гравців", casinoModel.Games[0].StatusLabel, "Waiting status label");
+var emptyCasinoModel = DashboardCasinoModel.FromJson(emptyCasinoJson);
+Assert(!emptyCasinoModel.HasCasinos, "No casinos flag");
+
+// DashboardShadowModel — Sprint 61 shadow panel data parsing.
+var shadowBizJson = JsonNode.Parse("""
+{"criminal_rep": 45.5, "businesses": [{"id": "b-1", "type": "illegal_bar", "district_id": "d-1", "cash_balance": 150.0, "is_discovered": false, "created_at": "2024-01-01T00:00:00Z"}]}
+""")!;
+var shadowMarketJson = JsonNode.Parse("""
+{"criminal_rep": 45.5, "items": [{"type": "contraband_electronics", "price_modifier": 0.6}]}
+""")!;
+var shadowModel = DashboardShadowModel.FromJson(shadowBizJson, shadowMarketJson);
+Assert(shadowModel.HasMarketAccess, "Has market access (rep >= 30)");
+Assert(shadowModel.HasBusinesses, "Has businesses flag");
+AssertEqual(45.5, shadowModel.CriminalRep, "Criminal rep value");
+AssertEqual(1, shadowModel.Businesses.Count, "One shadow business");
+AssertEqual("Нелегальний бар", shadowModel.Businesses[0].TypeLabel, "Illegal bar label");
+Assert(!shadowModel.Businesses[0].IsDiscovered, "Business not discovered");
+AssertEqual(1, shadowModel.MarketItems.Count, "One market item");
+AssertEqual("Контрабандна електроніка", shadowModel.MarketItems[0].TypeLabel, "Contraband electronics label");
+var lowRepShadowModel = DashboardShadowModel.FromJson(
+    JsonNode.Parse("""{"criminal_rep": 10.0, "businesses": []}"""), null);
+Assert(!lowRepShadowModel.HasMarketAccess, "No market access (rep < 30)");
+
 Console.WriteLine("Client logic tests passed.");

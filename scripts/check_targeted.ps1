@@ -246,7 +246,8 @@ switch ($Profile) {
         Invoke-Alembic
         Invoke-PythonStatic
         Invoke-Pytest @(
-            "backend\tests\test_g9_services.py"
+            "backend\tests\test_g9_services.py",
+            "backend\tests\test_casino_shadow_query_api.py"
         )
     }
     "g10" {
