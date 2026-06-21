@@ -136,17 +136,13 @@ def get_season_modifiers(game_day: int) -> SeasonModifiers:
         season=current,
         desirability_delta=_lerp(cur.desirability_delta, nxt.desirability_delta, factor),
         power_demand_delta=_lerp(cur.power_demand_delta, nxt.power_demand_delta, factor),
-        job_supply_commerce_delta=_lerp(
-            cur.job_supply_commerce_delta, nxt.job_supply_commerce_delta, factor
-        ),
+        job_supply_commerce_delta=_lerp(cur.job_supply_commerce_delta, nxt.job_supply_commerce_delta, factor),
         pollution_delta=_lerp(cur.pollution_delta, nxt.pollution_delta, factor),
         crime_risk_delta=_lerp(cur.crime_risk_delta, nxt.crime_risk_delta, factor),
         land_value_delta=_lerp(cur.land_value_delta, nxt.land_value_delta, factor),
         water_demand_delta=_lerp(cur.water_demand_delta, nxt.water_demand_delta, factor),
         traffic_delta=_lerp(cur.traffic_delta, nxt.traffic_delta, factor),
-        education_coverage_delta=_lerp(
-            cur.education_coverage_delta, nxt.education_coverage_delta, factor
-        ),
+        education_coverage_delta=_lerp(cur.education_coverage_delta, nxt.education_coverage_delta, factor),
         happiness_delta=_lerp(cur.happiness_delta, nxt.happiness_delta, factor),
     )
 

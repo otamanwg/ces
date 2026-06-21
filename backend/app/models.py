@@ -854,14 +854,10 @@ class DistrictMetricSnapshot(Base):
     """
 
     __tablename__ = "district_metric_snapshots"
-    __table_args__ = (
-        UniqueConstraint("district_id", "game_day", name="uq_district_metric_snapshots_district_day"),
-    )
+    __table_args__ = (UniqueConstraint("district_id", "game_day", name="uq_district_metric_snapshots_district_day"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    district_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False
-    )
+    district_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False)
     game_day: Mapped[int] = mapped_column(Integer, nullable=False)
     # Raw metrics (existing + new)
     rent_level: Mapped[float] = mapped_column(Float, nullable=False)
@@ -901,15 +897,9 @@ class NpcResident(Base):
     __tablename__ = "npc_residents"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    city_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("cities.id", ondelete="CASCADE"), nullable=False
-    )
-    district_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False
-    )
-    workplace_business_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("businesses.id", ondelete="SET NULL")
-    )
+    city_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cities.id", ondelete="CASCADE"), nullable=False)
+    district_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False)
+    workplace_business_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("businesses.id", ondelete="SET NULL"))
     cash_balance: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
     salary: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
     employed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -923,12 +913,8 @@ class Skin(Base):
     __tablename__ = "skins"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    designer_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
-    atelier_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("businesses.id", ondelete="SET NULL")
-    )
+    designer_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
+    atelier_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("businesses.id", ondelete="SET NULL"))
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     config: Mapped[dict] = mapped_column(JSON, nullable=False)
     rarity: Mapped[str] = mapped_column(String(20), default="common")
@@ -944,9 +930,7 @@ class PlayerSkin(Base):
     __table_args__ = (UniqueConstraint("player_id", "skin_id", name="uq_player_skins_player_skin"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     skin_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("skins.id", ondelete="CASCADE"), nullable=False)
     is_equipped: Mapped[bool] = mapped_column(Boolean, default=False)
     acquired_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -958,9 +942,7 @@ class Education(Base):
     __tablename__ = "education"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     course: Mapped[str] = mapped_column(String(40), nullable=False)
     mode: Mapped[str] = mapped_column(String(20), default="full_time")  # full_time | part_time
     status: Mapped[str] = mapped_column(String(20), default="enrolled")  # enrolled|completed|revoked
@@ -974,9 +956,7 @@ class EducationExam(Base):
     __tablename__ = "education_exams"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     exam_type: Mapped[str] = mapped_column(String(40), nullable=False)
     is_passed: Mapped[bool] = mapped_column(Boolean, default=False)
     taken_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -989,9 +969,7 @@ class CriminalRepLog(Base):
     __tablename__ = "criminal_rep_log"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     delta: Mapped[float] = mapped_column(Float, nullable=False)
     reason: Mapped[str] = mapped_column(String(40), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -1004,19 +982,13 @@ class CorruptionLog(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     incident_type: Mapped[str] = mapped_column(String(40), nullable=False)
-    perpetrator_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    perpetrator_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     victim_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
     amount: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
-    district_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("city_districts.id", ondelete="SET NULL")
-    )
+    district_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("city_districts.id", ondelete="SET NULL"))
     evidence_strength: Mapped[float] = mapped_column(Float, default=0.1)
     is_reported: Mapped[bool] = mapped_column(Boolean, default=False)
-    reported_by_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("players.id", ondelete="SET NULL")
-    )
+    reported_by_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
     is_investigated: Mapped[bool] = mapped_column(Boolean, default=False)
     is_proven: Mapped[bool] = mapped_column(Boolean, default=False)
     consequence: Mapped[str | None] = mapped_column(String(40))
@@ -1028,12 +1000,8 @@ class PressInvestigation(Base):
     __tablename__ = "press_investigations"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    target_player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
-    journalist_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("players.id", ondelete="SET NULL")
-    )
+    target_player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
+    journalist_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
     incident_type: Mapped[str] = mapped_column(String(40), nullable=False)
     press_evidence: Mapped[float] = mapped_column(Float, default=0.0)
     is_published: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -1049,12 +1017,8 @@ class CourtCase(Base):
     __tablename__ = "court_cases"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    corruption_log_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("corruption_log.id", ondelete="SET NULL")
-    )
-    defendant_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    corruption_log_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("corruption_log.id", ondelete="SET NULL"))
+    defendant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     verdict: Mapped[str] = mapped_column(String(40), nullable=False)
     is_appealed: Mapped[bool] = mapped_column(Boolean, default=False)
     appeal_deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -1073,20 +1037,14 @@ class PrisonSentence(Base):
     __tablename__ = "prison_sentences"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    player_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
-    court_case_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("court_cases.id", ondelete="SET NULL")
-    )
+    player_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
+    court_case_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("court_cases.id", ondelete="SET NULL"))
     days_total: Mapped[int] = mapped_column(Integer, nullable=False)
     days_served: Mapped[int] = mapped_column(Integer, default=0)
     days_remaining: Mapped[int] = mapped_column(Integer, nullable=False)
     good_behavior_reduction: Mapped[int] = mapped_column(Integer, default=0)
     business_impact: Mapped[str] = mapped_column(String(20), default="none")  # none|frozen|confiscated
-    frozen_business_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("businesses.id", ondelete="SET NULL")
-    )
+    frozen_business_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("businesses.id", ondelete="SET NULL"))
     status: Mapped[str] = mapped_column(String(20), default="serving")  # serving|released|escaped
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -1104,9 +1062,7 @@ class CasinoGame(Base):
     players: Mapped[dict] = mapped_column(JSON, nullable=False)
     pot: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
     rake: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
-    winner_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("players.id", ondelete="SET NULL")
-    )
+    winner_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("players.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
@@ -1115,13 +1071,9 @@ class ShadowBusiness(Base):
     __tablename__ = "shadow_businesses"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    owner_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     type: Mapped[str] = mapped_column(String(40), nullable=False)
-    district_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False
-    )
+    district_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("city_districts.id", ondelete="CASCADE"), nullable=False)
     cash_balance: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
     is_discovered: Mapped[bool] = mapped_column(Boolean, default=False)
     discovered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -1132,12 +1084,8 @@ class LawyerEngagement(Base):
     __tablename__ = "lawyer_engagements"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    lawyer_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
-    client_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    lawyer_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
+    client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     deal_type: Mapped[str] = mapped_column(String(40), nullable=False)
     amount: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
     commission: Mapped[float] = mapped_column(Decimal(15, 2), default=0.0)
@@ -1150,12 +1098,8 @@ class PressBlackmail(Base):
     __tablename__ = "press_blackmails"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    journalist_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
-    target_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
-    )
+    journalist_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
+    target_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("players.id", ondelete="CASCADE"), nullable=False)
     investigation_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("press_investigations.id", ondelete="SET NULL")
     )

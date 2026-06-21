@@ -99,12 +99,7 @@ def _district_population(db: Session, district_id: uuid.UUID) -> tuple[int, int]
     Населення району поки оцінюється через NPC (Phase G2) + district.population
     (яку AI-мер може встановлювати). player_count повертає 0 до Phase G2.
     """
-    npc_count = (
-        db.query(func.count(NpcResident.id))
-        .filter(NpcResident.district_id == district_id)
-        .scalar()
-        or 0
-    )
+    npc_count = db.query(func.count(NpcResident.id)).filter(NpcResident.district_id == district_id).scalar() or 0
     return 0, npc_count
 
 
@@ -157,47 +152,25 @@ def recalculate_district_metrics(
     )
 
     # power_supply: потужність - попит населення - попит бізнесів - сезонний попит
-    power_supply = _clamp(
-        power_capacity
-        - population * 0.5
-        - counts.active_total * 2.0
-        - sm.power_demand_delta
-    )
+    power_supply = _clamp(power_capacity - population * 0.5 - counts.active_total * 2.0 - sm.power_demand_delta)
 
     # water_supply: потужність - попит населення - попит бізнесів - сезонний попит
-    water_supply = _clamp(
-        water_capacity
-        - population * 0.4
-        - counts.active_total * 1.5
-        - sm.water_demand_delta
-    )
+    water_supply = _clamp(water_capacity - population * 0.4 - counts.active_total * 1.5 - sm.water_demand_delta)
 
     # waste_management: базова - попит населення + озеленення (компост)
-    waste_management = _clamp(
-        70.0
-        - population * 0.3
-        + float(district.green_space) * 0.5
-    )
+    waste_management = _clamp(70.0 - population * 0.3 + float(district.green_space) * 0.5)
 
     # fire_safety: базова + інфраструктура - виробництво (ризик пожежі)
-    fire_safety = _clamp(
-        60.0
-        + float(district.service_coverage) * 0.2
-        - counts.production * 3.0
-    )
+    fire_safety = _clamp(60.0 + float(district.service_coverage) * 0.2 - counts.production * 3.0)
 
     # education_coverage: базова + сезон (осінь = шкільний сезон)
-    education_coverage = _clamp(
-        float(district.education_coverage) + sm.education_coverage_delta * 0.1
-    )
+    education_coverage = _clamp(float(district.education_coverage) + sm.education_coverage_delta * 0.1)
 
     # green_space: стабільна (змінюється AI-мером або гравцями пізніше)
     green_space = _clamp(float(district.green_space))
 
     # housing_capacity: базова + utility_housing бізнеси
-    housing_capacity = _clamp(
-        40.0 + counts.utility * 15.0 + float(district.green_space) * 0.1
-    )
+    housing_capacity = _clamp(40.0 + counts.utility * 15.0 + float(district.green_space) * 0.1)
 
     # happiness: базова + desirability + (100-crime) + (100-pollution) + job_supply - rent + сезон
     happiness = _clamp(
@@ -250,19 +223,10 @@ def recalculate_district_metrics(
     )
 
     # traffic: базова + бізнеси + населення + сезон
-    traffic = _clamp(
-        float(district.traffic)
-        + counts.active_total * 2.0
-        + population * 0.2
-        + sm.traffic_delta
-    )
+    traffic = _clamp(float(district.traffic) + counts.active_total * 2.0 + population * 0.2 + sm.traffic_delta)
 
     # job_supply: базова + commerce + сезон (весняний/літній бум)
-    job_supply = _clamp(
-        float(district.job_supply)
-        + counts.commerce * 5.0
-        + sm.job_supply_commerce_delta
-    )
+    job_supply = _clamp(float(district.job_supply) + counts.commerce * 5.0 + sm.job_supply_commerce_delta)
 
     # --- Оновлюємо поля району (in-place) ---
     district.pollution = pollution

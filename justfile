@@ -91,6 +91,9 @@ check-scheduler:
 check-observability:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 observability
 
+check-districts:
+    ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 districts
+
 check-prod:
     ./scripts/pwsh7.ps1 -NoProfile -File ./scripts/check_targeted.ps1 prod-fast
 
