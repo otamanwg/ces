@@ -91,6 +91,16 @@ public partial class CityDashboardController
             return;
         }
 
+        if (TryHandleLawyerResponse(endpoint, root))
+        {
+            return;
+        }
+
+        if (TryHandleAtelierResponse(endpoint, root))
+        {
+            return;
+        }
+
         bool apiSuccess = root["success"]?.GetValue<bool>() ?? false;
         string message = root["message"]?.ToString() ?? "";
         var data = root["data"];
