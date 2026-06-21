@@ -74,9 +74,9 @@
 34. [x] Додати перший city/street focus layout: місто і персонаж стають головним ігровим станом, side report прибирається.
 35. [x] Додати gameplay HUD polish для city/street focus: район, робота, ризик і стан будівель читаються поверх міста.
 36. [x] Додати перший pass gameplay HUD під city/street focus: next action, ціль і наслідки видно в першому viewport.
-37. [ ] Переробити решту dashboard у більш ігровий екран: події, цілі й основні дії мають читатись як gameplay HUD, не як звіт.
+37. [x] Переробити решту dashboard у більш ігровий екран: події, цілі й основні дії мають читатись як gameplay HUD, не як звіт.
 38. [ ] Довести arrival onboarding flow: вокзал -> крадіжка -> поліція або житло -> передача керування.
-39. [ ] Додати перший visible city layer MVP: райони, physical building markers, zoom/focus states, без повної SimCity-системи.
+39. [x] Додати перший visible city layer MVP: райони, physical building markers, zoom/focus states, без повної SimCity-системи.
 40. [ ] Посилити business/building guidance у UI: вартість, земля, ризик, theoretical profit, upkeep, visual archetype.
 
 ## Post-MVP Gameplay Phases — SimCity 4-Inspired Citizen Model
