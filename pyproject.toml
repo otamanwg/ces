@@ -26,7 +26,6 @@ dev = [
     "ruff>=0.11.0",
     "pyright>=1.1.410",
     "pre-commit>=4.6.0",
-    "httpx2>=2.3.0",
 ]
 
 [tool.ruff]

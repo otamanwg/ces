@@ -11,6 +11,7 @@ venv/
 
 # Local database/runtime
 .installers/
+logs/
 database/*.db
 database/*.sqlite
 database/*.sqlite3

@@ -1786,6 +1786,37 @@ def atelier_list_skins_endpoint(atelier_id: str, db: Session = Depends(get_db)):
     return api_success("Скіни на продажу.", {"skins": skins})
 
 
+@router.get("/atelier/player-skins")
+def atelier_player_skins_endpoint(player_id: str, db: Session = Depends(get_db)):
+    """Phase G9: скіни гравця (власні)."""
+    from backend.app.services.atelier_service import list_player_skins
+
+    player_uuid = try_uuid(player_id)
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    skins = list_player_skins(db, player)
+    return api_success("Скіни гравця.", {"skins": skins})
+
+
+@router.post("/atelier/unequip-all")
+def atelier_unequip_all_endpoint(data: dict, db: Session = Depends(get_db)):
+    """Phase G9: зняти всі скіни."""
+    from backend.app.services.atelier_service import unequip_all
+
+    player_uuid = try_uuid(data.get("player_id", ""))
+    if player_uuid is None:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    player = db.query(Player).filter(Player.id == player_uuid).first()
+    if not player:
+        return api_error(INVALID_PLAYER_SESSION_MESSAGE)
+    result = unequip_all(db, player)
+    db.commit()
+    return api_success(result["message"], result)
+
+
 # --- Phase G9: Shadow ---
 
 
@@ -1861,6 +1892,7 @@ def shadow_fraud_offer_endpoint(data: dict, db: Session = Depends(get_db)):
         return api_error(INVALID_PLAYER_SESSION_MESSAGE)
     game_day = int(data.get("game_day", 0))
     result = offer_fraud(db, player, game_day)
+    db.commit()
     return api_success(result["message"], result)
 
 
